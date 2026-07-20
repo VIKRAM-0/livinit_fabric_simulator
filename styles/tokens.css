@@ -1,0 +1,122 @@
+/* Livinit design tokens — ported from web-pipeline lib/design-system (2026-07-07).
+   Color roles are space-separated RGB triples so alpha compositing works:
+   color: rgb(var(--md-primary) / 0.06). Do not add hex role tokens. */
+@font-face { font-family:'Eudoxus Sans'; src:url('../fonts/EudoxusSans-Regular.woff2') format('woff2'); font-weight:400; font-display:swap; }
+@font-face { font-family:'Eudoxus Sans'; src:url('../fonts/EudoxusSans-Medium.woff2') format('woff2'); font-weight:500; font-display:swap; }
+@font-face { font-family:'Eudoxus Sans'; src:url('../fonts/EudoxusSans-Bold.woff2') format('woff2'); font-weight:700; font-display:swap; }
+@font-face { font-family:'Eudoxus Sans'; src:url('../fonts/EudoxusSans-ExtraBold.woff2') format('woff2'); font-weight:800; font-display:swap; }
+
+:root {
+  /* type */
+  --font-sans: 'Eudoxus Sans', ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  /* primary (functional #5870D6; brand #7A91EE decorative only) */
+  --md-primary: 88 112 214;
+  --md-on-primary: 255 255 255;
+  --md-primary-container: 236 239 253;
+  --md-on-primary-container: 5 22 75;
+  --brand-periwinkle: #7A91EE;
+  /* surfaces / neutrals (brand navy #101C2D) */
+  --md-surface: 255 255 255;
+  --md-on-surface: 16 28 45;
+  --md-surface-variant: 241 244 249;
+  --md-on-surface-variant: 102 118 142;
+  --md-surface-dim: 249 250 251;
+  --md-surface-container-low: 249 250 251;
+  --md-surface-container: 241 244 249;
+  --md-surface-container-high: 234 238 245;
+  --md-surface-container-highest: 221 228 238;
+  --md-outline: 204 212 224;
+  --md-outline-variant: 221 228 238;
+  --md-scrim: 16 28 45;
+  /* status */
+  --md-success: 21 128 61;
+  --md-warning: 194 85 12;
+  --md-error: 243 64 64;
+  --md-on-success: 255 255 255; --md-success-container: 236 254 242; --md-on-success-container: 21 82 47;
+  --md-on-warning: 255 255 255; --md-warning-container: 255 245 235; --md-on-warning-container: 125 53 17;
+  --md-on-error: 255 255 255;   --md-error-container: 254 235 235;   --md-on-error-container: 117 26 26;
+  /* tertiary (info blue) */
+  --md-tertiary: 15 160 232; --md-tertiary-container: 235 249 255; --md-on-tertiary-container: 10 62 92;
+  /* extra surfaces + inverse */
+  --md-surface-container-lowest: 255 255 255;
+  --md-inverse-primary: 183 196 255; --md-inverse-surface: 16 28 45;
+  /* elevation — navy-tinted, dual-layer */
+  --elev-1: 0 1px 2px rgb(16 28 45 / .06), 0 1px 3px rgb(16 28 45 / .04);
+  --elev-2: 0 2px 6px rgb(16 28 45 / .08), 0 1px 2px rgb(16 28 45 / .05);
+  --elev-3: 0 6px 16px rgb(16 28 45 / .10), 0 2px 6px rgb(16 28 45 / .06);
+  --elev-4: 0 12px 28px rgb(16 28 45 / .12), 0 4px 10px rgb(16 28 45 / .06);
+  --elev-5: 0 20px 44px rgb(16 28 45 / .16), 0 6px 14px rgb(16 28 45 / .08);
+  /* periwinkle CTA glow (reusable filled-button hover) */
+  --shadow-cta: 0 8px 24px rgb(var(--md-primary) / .38);
+  /* radius */
+  --r-xs: 4px; --r-sm: 8px; --r-md: 12px; --r-lg: 16px; --r-xl: 24px; --r-full: 9999px;
+  /* motion */
+  --dur-fast: 140ms; --dur-base: 220ms; --dur-slow: 420ms;
+  --ease-motion: cubic-bezier(0.2, 0.8, 0.2, 1);
+
+  /* ── LEGACY — migrating out, do not add consumers ─────────────────────
+     Old token names re-pointed at Livinit roles (or nearest ramp literal
+     where no role maps). NOTE: old --r-lg (8px) was renamed to --r-sm in
+     app.css; --r-lg now belongs to the new 16px radius scale above. */
+  --bg: rgb(var(--md-surface-dim));
+  --surface: rgb(var(--md-surface));
+  --panel: rgb(var(--md-surface));
+  --border: rgb(var(--md-outline-variant));
+  --border-strong: rgb(var(--md-outline));
+  --text: rgb(var(--md-on-surface));
+  --text-mid: rgb(var(--md-on-surface-variant));
+  --text-muted: #919FB6;            /* Livinit neutral-400 */
+  --accent: rgb(var(--md-primary));
+  --accent-hover: #4354B3;          /* periwinkle-700 */
+  --accent-light: #4354B3;          /* periwinkle-700 (was same as hover) */
+  --accent-pale: rgb(var(--md-primary-container));
+  --green: rgb(var(--md-success));
+  --yellow: rgb(var(--md-warning));
+  --warm: rgb(var(--md-primary));
+  --warm-light: #C7D0F4;            /* periwinkle-200 */
+  --accent-deep: #374491;           /* periwinkle-800 */
+  --accent-bright: var(--brand-periwinkle);
+  --purple-300: #97ABEF;            /* periwinkle-300 */
+  --purple-100: #EDF2FE;            /* periwinkle-100 */
+  --purple-50: #F7FAFF;             /* periwinkle-50 */
+  --ink-900: rgb(var(--md-on-surface));
+  --ink-600: rgb(var(--md-on-surface-variant));
+  --ink-400: #919FB6;               /* Livinit neutral-400 */
+  --surface-tint: rgb(var(--md-surface-container));
+  --border-soft: rgb(var(--md-surface-container));
+  --border-dot: rgb(var(--md-outline-variant));
+  /* info blue — repointed at the DS tertiary role */
+  --info: rgb(var(--md-tertiary)); --info-bg: rgb(var(--md-tertiary-container)); --info-border: rgb(var(--md-tertiary) / .35);
+  --font-b: var(--font-sans);
+  --font-d: var(--font-sans);
+  /* type scale — use these, not raw px (fractional legacy sizes pending normalization) */
+  --fs-3xs:8px; --fs-2xs:9px; --fs-xs:10px; --fs-sm:11px;
+  --fs-md:12px; --fs-base:13px; --fs-lg:15px; --fs-xl:18px;
+  /* composite type roles — size+leading+weight bound per role (web-pipeline parity) */
+  --type-eyebrow: 800 11px/16px var(--font-sans);   /* CardEyebrow */
+  --tracking-eyebrow: .12em;
+  --type-body-sm: 400 13px/18px var(--font-sans);
+  --type-body-md: 400 14px/20px var(--font-sans);
+  --type-label-lg: 500 14px/20px var(--font-sans);
+  --type-title-lg: 700 22px/28px var(--font-sans);
+  --type-h6: 700 18px/26px var(--font-sans);
+  --type-h4: 700 26px/32px var(--font-sans);
+  /* spacing scale */
+  --space-1:4px; --space-2:8px; --space-3:12px; --space-4:16px; --space-5:24px;
+}
+
+/* ── Dark theme (INERT until a toggle stamps .dark / [data-theme=dark]) ────
+   Light is the studio default. This block only overrides the consumed --md-*
+   roles; every Phase-3 literal was tokenized so it flips cleanly if enabled.
+   Not wired to any toggle in this app — ships dormant. */
+.dark, :root[data-theme="dark"] {
+  --md-primary:183 196 255; --md-on-primary:31 45 97;
+  --md-primary-container:54 68 121; --md-on-primary-container:221 225 255;
+  --md-surface:16 28 45; --md-on-surface:241 244 249;
+  --md-surface-variant:47 58 76; --md-on-surface-variant:204 212 224;
+  --md-surface-dim:12 21 34; --md-surface-container-low:28 38 54;
+  --md-surface-container:34 45 62; --md-surface-container-high:47 58 76;
+  --md-surface-container-highest:58 70 90; --md-surface-container-lowest:16 28 45;
+  --md-outline:102 118 142; --md-outline-variant:47 58 76; --md-scrim:0 0 0;
+  --md-success:80 226 133; --md-warning:251 152 65; --md-error:249 118 118;
+}

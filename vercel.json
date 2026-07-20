@@ -1,0 +1,12 @@
+{
+  "rewrites": [
+    { "source": "/((?!api/).*)", "destination": "/index.html" }
+  ],
+  "functions": {
+    "api/generate.ts": { "maxDuration": 60 },
+    "api/gemini-room.ts": { "maxDuration": 60 },
+    "api/enhance-texture.ts": { "maxDuration": 60 },
+    "api/find-fabric.ts": { "maxDuration": 60 },
+    "api/s3proxy.ts": { "maxDuration": 30 }
+  }
+}

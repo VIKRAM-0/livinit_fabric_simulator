@@ -1,0 +1,472 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>GLB Placement Viewer</title>
+<style>
+  *{margin:0;padding:0;box-sizing:border-box;}
+  body{background:#1a1a1a;color:#eee;font-family:monospace;display:flex;height:100vh;overflow:hidden;}
+  #canvas-wrap{flex:1;position:relative;}
+  canvas{display:block;width:100%;height:100%;}
+  #panel{width:320px;background:#222;border-left:1px solid #444;display:flex;flex-direction:column;overflow-y:auto;}
+  .section{padding:12px;border-bottom:1px solid #333;}
+  .section h3{font-size:11px;text-transform:uppercase;color:#aaa;letter-spacing:1px;margin-bottom:10px;}
+  label{font-size:11px;color:#aaa;display:block;margin-top:6px;}
+  input[type=range]{width:100%;accent-color:#4af;margin:3px 0;}
+  input[type=number]{width:100%;background:#333;border:1px solid #555;color:#eee;padding:3px 6px;font-size:12px;font-family:monospace;border-radius:3px;}
+  button{background:#333;border:1px solid #555;color:#eee;padding:5px 10px;cursor:pointer;border-radius:3px;font-size:11px;margin:2px 0;}
+  button:hover{background:#444;}
+  button.primary{background:#1a5f9a;border-color:#4af;}
+  .value-row{display:flex;gap:6px;align-items:center;margin-top:4px;}
+  .value-row label{min-width:18px;margin:0;color:#888;}
+  .output{background:#111;border:1px solid #333;padding:8px;font-size:10px;color:#4f8;line-height:1.7;border-radius:3px;margin-top:8px;word-break:break-all;white-space:pre;}
+  #loading-bar{position:absolute;top:0;left:0;right:0;height:3px;background:#4af;width:0%;transition:width .3s;display:none;}
+  #hint{position:absolute;bottom:12px;left:50%;transform:translateX(-50%);font-size:11px;color:#666;pointer-events:none;}
+  select{background:#333;border:1px solid #555;color:#eee;padding:3px 6px;font-size:11px;width:100%;border-radius:3px;}
+  .row2{display:grid;grid-template-columns:1fr 1fr 1fr;gap:4px;}
+  .axis-x{color:#f66;}
+  .axis-y{color:#6f6;}
+  .axis-z{color:#66f;}
+  .tag{font-size:10px;background:#333;color:#4af;padding:1px 5px;border-radius:3px;margin-left:4px;}
+</style>
+</head>
+<body>
+
+<div id="canvas-wrap">
+  <canvas id="c"></canvas>
+  <div id="loading-bar"></div>
+  <div id="hint">Drag to orbit · Scroll to zoom · Right-drag to pan · F = fit all · R = re-fit room</div>
+</div>
+
+<div id="panel">
+
+  <!-- ROOM GLB -->
+  <div class="section">
+    <h3>Room GLB</h3>
+    <label>Select room</label>
+    <select id="room-preset" onchange="setRoomPreset()">
+      <option value="/api/s3proxy?key=glbs/bed_room_fabric_bed.glb">Fabric Bed Room</option>
+      <option value="/api/s3proxy?key=glbs/bed_room_wodden_bed.glb">Wooden Bed Room</option>
+      <option value="">— custom file —</option>
+    </select>
+    <input type="file" id="room-file" accept=".glb" style="margin-top:6px;">
+    <button class="primary" onclick="loadRoomFromPreset()" style="width:100%;margin-top:6px;">Load Room</button>
+    <label style="margin-top:8px;">
+      <input type="checkbox" id="room-hide-bed" checked onchange="toggleEmbeddedBed()">
+      Hide embedded bed node
+    </label>
+    <div id="room-status" style="font-size:10px;color:#888;margin-top:4px;"></div>
+  </div>
+
+  <!-- BED GLB -->
+  <div class="section">
+    <h3>Bed / Product Model</h3>
+    <label>Select model</label>
+    <select id="bed-preset" onchange="setBedPreset()">
+      <option value="/api/s3proxy?key=custom_assets/bed_fabric_frame.glb">Fabric Frame Bed</option>
+      <option value="/api/s3proxy?key=custom_assets/bed_wooden_frame.glb">Wooden Frame Bed</option>
+      <option value="">— custom file —</option>
+    </select>
+    <input type="file" id="bed-file" accept=".glb" style="margin-top:6px;">
+    <button class="primary" onclick="loadBedFromPreset()" style="width:100%;margin-top:6px;">Load Bed</button>
+    <div id="bed-status" style="font-size:10px;color:#888;margin-top:4px;"></div>
+  </div>
+
+  <!-- ROOM TRANSFORM -->
+  <div class="section" id="room-controls" style="display:none;">
+    <h3>Room Transform</h3>
+
+    <label>Scale (uniform)</label>
+    <input type="number" id="r-scale" value="1" step="0.001" min="0.001" max="10" oninput="applyRoomTransform()">
+
+    <label>Rotation Y <span style="color:#aaa;font-size:10px">(degrees)</span></label>
+    <input type="range" id="r-roty-range" min="-180" max="180" step="1" value="0" oninput="syncRotY('r');applyRoomTransform()">
+    <input type="number" id="r-roty" value="0" step="1" oninput="syncRotY('r');applyRoomTransform()">
+
+    <label>Position</label>
+    <div class="row2">
+      <div><span class="axis-x">X</span><input type="number" id="r-px" value="0" step="0.05" oninput="applyRoomTransform()"></div>
+      <div><span class="axis-y">Y</span><input type="number" id="r-py" value="0" step="0.05" oninput="applyRoomTransform()"></div>
+      <div><span class="axis-z">Z</span><input type="number" id="r-pz" value="0" step="0.05" oninput="applyRoomTransform()"></div>
+    </div>
+
+    <button onclick="autoFitRoom()" style="width:100%;margin-top:8px;">Auto-Fit Room</button>
+  </div>
+
+  <!-- BED TRANSFORM -->
+  <div class="section" id="bed-controls" style="display:none;">
+    <h3>Bed Transform</h3>
+
+    <label>Scale (uniform)</label>
+    <input type="number" id="b-scale" value="1" step="0.01" min="0.01" max="5" oninput="applyBedTransform()">
+
+    <label>Rotation Y <span style="color:#aaa;font-size:10px">(degrees)</span></label>
+    <input type="range" id="b-roty-range" min="-180" max="180" step="1" value="0" oninput="syncRotY('b');applyBedTransform()">
+    <input type="number" id="b-roty" value="0" step="1" oninput="syncRotY('b');applyBedTransform()">
+
+    <label>Position</label>
+    <div class="row2">
+      <div><span class="axis-x">X</span><input type="number" id="b-px" value="0" step="0.05" oninput="applyBedTransform()"></div>
+      <div><span class="axis-y">Y</span><input type="number" id="b-py" value="0" step="0.05" oninput="applyBedTransform()"></div>
+      <div><span class="axis-z">Z</span><input type="number" id="b-pz" value="0" step="0.05" oninput="applyBedTransform()"></div>
+    </div>
+
+    <button onclick="snapBedToFloor()" style="width:100%;margin-top:8px;">Snap to Floor (Y=-1.6)</button>
+  </div>
+
+  <!-- HELPERS -->
+  <div class="section">
+    <h3>Helpers</h3>
+    <label><input type="checkbox" id="show-grid" checked onchange="grid.visible=this.checked;markDirty()"> Grid</label>
+    <label><input type="checkbox" id="show-axes" checked onchange="axes.visible=this.checked;markDirty()"> Axes (X=red Y=green Z=blue)</label>
+    <label><input type="checkbox" id="show-wireframe" onchange="toggleWireframe()"> Wireframe overlay</label>
+    <label>Background</label>
+    <input type="color" id="bg-color" value="#2a2a2a" oninput="renderer.setClearColor(this.value);markDirty()">
+  </div>
+
+  <!-- OUTPUT -->
+  <div class="section">
+    <h3>Output</h3>
+    <button onclick="generateOutput()" style="width:100%;" class="primary">Generate Constants</button>
+    <div id="output" class="output" style="display:none;"></div>
+  </div>
+
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+
+<script>
+// ── Renderer ──────────────────────────────────────────────────────────────────
+const canvas = document.getElementById('c');
+const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
+renderer.setPixelRatio(devicePixelRatio);
+renderer.shadowMap.enabled = true;
+renderer.outputEncoding = THREE.sRGBEncoding;
+renderer.setClearColor(0x2a2a2a);
+
+const scene = new THREE.Scene();
+const camera = new THREE.PerspectiveCamera(45, 1, 0.01, 200);
+camera.position.set(0, 5, 10);
+camera.lookAt(0, 0, 0);
+
+const controls = new THREE.OrbitControls(camera, canvas);
+controls.enableDamping = true;
+controls.dampingFactor = 0.08;
+
+scene.add(new THREE.AmbientLight(0xffffff, 0.6));
+const dir1 = new THREE.DirectionalLight(0xffffff, 0.9);
+dir1.position.set(5, 10, 5); scene.add(dir1);
+const dir2 = new THREE.DirectionalLight(0xffffff, 0.4);
+dir2.position.set(-5, 5, -5); scene.add(dir2);
+
+const grid = new THREE.GridHelper(20, 40, 0x444444, 0x333333);
+scene.add(grid);
+const axes = new THREE.AxesHelper(3);
+scene.add(axes);
+
+let dirty = true;
+function markDirty() { dirty = true; }
+controls.addEventListener('change', markDirty);
+
+function resize() {
+  const wrap = document.getElementById('canvas-wrap');
+  renderer.setSize(wrap.clientWidth, wrap.clientHeight);
+  camera.aspect = wrap.clientWidth / wrap.clientHeight;
+  camera.updateProjectionMatrix();
+  markDirty();
+}
+new ResizeObserver(resize).observe(document.getElementById('canvas-wrap'));
+resize();
+
+(function loop() {
+  requestAnimationFrame(loop);
+  controls.update();
+  if (dirty) { renderer.render(scene, camera); dirty = false; }
+})();
+
+// ── GLTF loader ───────────────────────────────────────────────────────────────
+const loader = new THREE.GLTFLoader();
+let roomScene = null, bedScene = null;
+
+function setProgress(pct) {
+  const bar = document.getElementById('loading-bar');
+  bar.style.display = 'block';
+  bar.style.width = pct + '%';
+  if (pct >= 100) setTimeout(() => { bar.style.display = 'none'; }, 500);
+}
+
+function loadGLB(url, onLoad, statusEl) {
+  setProgress(5);
+  if (statusEl) statusEl.textContent = 'Downloading…';
+  loader.load(url, gltf => {
+    setProgress(100);
+    if (statusEl) statusEl.textContent = 'Loaded ✓';
+    onLoad(gltf);
+  }, xhr => {
+    if (xhr.lengthComputable) {
+      const pct = Math.round(5 + 90 * xhr.loaded / xhr.total);
+      setProgress(pct);
+      if (statusEl) statusEl.textContent = Math.round(xhr.loaded/1024/1024) + ' MB / ' + Math.round(xhr.total/1024/1024) + ' MB';
+    }
+  }, err => {
+    setProgress(0);
+    document.getElementById('loading-bar').style.display = 'none';
+    if (statusEl) statusEl.textContent = 'Error: ' + (err.message || err);
+    alert('Load error: ' + (err.message || err));
+  });
+}
+
+// ── Room ──────────────────────────────────────────────────────────────────────
+function setRoomPreset() {
+  document.getElementById('room-file').style.display =
+    document.getElementById('room-preset').value === '' ? '' : 'none';
+}
+
+function loadRoomFromPreset() {
+  const url = document.getElementById('room-preset').value;
+  const file = document.getElementById('room-file').files[0];
+  if (!url && !file) { alert('Select a room first'); return; }
+  if (roomScene) { scene.remove(roomScene); roomScene = null; }
+  const src = file ? URL.createObjectURL(file) : url;
+  loadGLB(src, gltf => {
+    roomScene = gltf.scene;
+    scene.add(roomScene);
+    document.getElementById('room-controls').style.display = '';
+    autoFitRoom();
+    toggleEmbeddedBed();
+    markDirty();
+  }, document.getElementById('room-status'));
+}
+
+document.getElementById('room-file').style.display = 'none'; // hidden until "custom file" chosen
+
+function toggleEmbeddedBed() {
+  if (!roomScene) return;
+  const hide = document.getElementById('room-hide-bed').checked;
+  const bed = roomScene.getObjectByName('bed');
+  if (bed) bed.traverse(c => { c.visible = !hide; });
+  markDirty();
+}
+
+function applyRoomTransform() {
+  if (!roomScene) return;
+  roomScene.scale.setScalar(parseFloat(document.getElementById('r-scale').value) || 1);
+  roomScene.rotation.y = (parseFloat(document.getElementById('r-roty').value) || 0) * Math.PI / 180;
+  roomScene.position.set(
+    parseFloat(document.getElementById('r-px').value) || 0,
+    parseFloat(document.getElementById('r-py').value) || 0,
+    parseFloat(document.getElementById('r-pz').value) || 0
+  );
+  markDirty();
+}
+
+function syncRotY(p) {
+  const r = document.getElementById(p+'-roty-range');
+  const n = document.getElementById(p+'-roty');
+  if (document.activeElement === r) n.value = r.value;
+  else r.value = n.value;
+}
+
+function autoFitRoom() {
+  if (!roomScene) return;
+  roomScene.scale.setScalar(1);
+  roomScene.position.set(0,0,0);
+  roomScene.rotation.set(0,0,0);
+  roomScene.updateWorldMatrix(false, true);
+
+  const arch = roomScene.getObjectByName('_9_minimalist_medium') || roomScene;
+
+  // IQR-filtered scale from arch bounds
+  const boxes = [];
+  arch.traverse(c => {
+    if (!c.isMesh) return;
+    const b = new THREE.Box3().setFromObject(c);
+    if (!b.isEmpty()) boxes.push(b);
+  });
+  if (!boxes.length) return;
+
+  const cxs = boxes.map(b => (b.min.x+b.max.x)/2).sort((a,b) => a-b);
+  const q1=cxs[Math.floor(cxs.length*.25)]||0, q3=cxs[Math.floor(cxs.length*.75)]||0;
+  const iqr=q3-q1, fl=q1-3*iqr, fh=q3+3*iqr;
+  const filt = boxes.filter(b => { const cx=(b.min.x+b.max.x)/2; return cx>=fl&&cx<=fh; });
+  const src = filt.length ? filt : boxes;
+  const minX=Math.min(...src.map(b=>b.min.x)), maxX=Math.max(...src.map(b=>b.max.x));
+  const minZ=Math.min(...src.map(b=>b.min.z)), maxZ=Math.max(...src.map(b=>b.max.z));
+  const rs = 6.0 / Math.max(maxX-minX, maxZ-minZ, 0.001);
+
+  roomScene.scale.setScalar(rs);
+  roomScene.updateWorldMatrix(false, true);
+
+  // Centre on arch
+  const archBox = new THREE.Box3().setFromObject(arch);
+  const ctr = archBox.getCenter(new THREE.Vector3());
+  roomScene.position.set(-ctr.x, 0, -ctr.z);
+  roomScene.updateWorldMatrix(false, true);
+
+  // Pin floor to Y=-1.6
+  let floorY = null, bestArea = 0;
+  arch.traverse(c => {
+    if (!c.isMesh) return;
+    const b = new THREE.Box3().setFromObject(c);
+    const sz = b.getSize(new THREE.Vector3());
+    if (sz.y > 0 && sz.y < Math.max(sz.x,sz.z)*0.25) {
+      const area = sz.x*sz.z;
+      if (area > bestArea) { bestArea=area; floorY=b.max.y; }
+    }
+  });
+  if (floorY === null) { const fb = new THREE.Box3().setFromObject(arch); floorY=fb.min.y; }
+  roomScene.position.y = -1.6 - floorY;
+
+  // DoubleSide so walls are visible from camera
+  arch.traverse(c => {
+    if (!c.isMesh) return;
+    const mats = Array.isArray(c.material) ? c.material : [c.material];
+    mats.forEach(m => { if(m){m.side=THREE.DoubleSide;m.needsUpdate=true;} });
+  });
+
+  // Update UI
+  document.getElementById('r-scale').value = rs.toFixed(4);
+  document.getElementById('r-roty').value = 0;
+  document.getElementById('r-roty-range').value = 0;
+  document.getElementById('r-px').value = roomScene.position.x.toFixed(3);
+  document.getElementById('r-py').value = roomScene.position.y.toFixed(3);
+  document.getElementById('r-pz').value = roomScene.position.z.toFixed(3);
+  markDirty();
+
+  // Focus camera
+  const totalBox = new THREE.Box3().setFromObject(roomScene);
+  const tc = totalBox.getCenter(new THREE.Vector3());
+  const ts = totalBox.getSize(new THREE.Vector3());
+  controls.target.copy(tc);
+  camera.position.set(tc.x, tc.y + ts.y*0.5, tc.z - ts.z*1.2);
+  controls.update();
+
+  console.log('[Room] scale:', rs.toFixed(4), '| pos:', roomScene.position.x.toFixed(3), roomScene.position.y.toFixed(3), roomScene.position.z.toFixed(3));
+}
+
+// ── Bed ───────────────────────────────────────────────────────────────────────
+function setBedPreset() {
+  document.getElementById('bed-file').style.display =
+    document.getElementById('bed-preset').value === '' ? '' : 'none';
+}
+
+function loadBedFromPreset() {
+  const url = document.getElementById('bed-preset').value;
+  const file = document.getElementById('bed-file').files[0];
+  if (!url && !file) { alert('Select a bed model first'); return; }
+  if (bedScene) { scene.remove(bedScene); bedScene = null; }
+  const src = file ? URL.createObjectURL(file) : url;
+  loadGLB(src, gltf => {
+    bedScene = gltf.scene;
+    // Normalize to ~1.6m max dimension (same as main app processGLTF)
+    const b = new THREE.Box3().setFromObject(bedScene);
+    const sz = b.getSize(new THREE.Vector3());
+    const ns = 1.6 / Math.max(sz.x, sz.y, sz.z, 0.001);
+    bedScene.scale.setScalar(ns);
+    scene.add(bedScene);
+    document.getElementById('bed-controls').style.display = '';
+    document.getElementById('b-scale').value = ns.toFixed(4);
+    document.getElementById('b-roty').value = 0;
+    document.getElementById('b-roty-range').value = 0;
+    document.getElementById('b-px').value = 0;
+    document.getElementById('b-pz').value = 0;
+    snapBedToFloor();
+    markDirty();
+    console.log('[Bed] scale:', ns.toFixed(4), '| raw size:', sz.x.toFixed(2), sz.y.toFixed(2), sz.z.toFixed(2));
+  }, document.getElementById('bed-status'));
+}
+
+document.getElementById('bed-file').style.display = 'none';
+
+function applyBedTransform() {
+  if (!bedScene) return;
+  bedScene.scale.setScalar(parseFloat(document.getElementById('b-scale').value) || 1);
+  bedScene.rotation.y = (parseFloat(document.getElementById('b-roty').value) || 0) * Math.PI / 180;
+  bedScene.position.set(
+    parseFloat(document.getElementById('b-px').value) || 0,
+    parseFloat(document.getElementById('b-py').value) || 0,
+    parseFloat(document.getElementById('b-pz').value) || 0
+  );
+  markDirty();
+}
+
+function snapBedToFloor() {
+  if (!bedScene) return;
+  bedScene.updateMatrixWorld(true);
+  const b = new THREE.Box3().setFromObject(bedScene);
+  bedScene.position.y += -1.6 - b.min.y;
+  document.getElementById('b-py').value = bedScene.position.y.toFixed(3);
+  markDirty();
+}
+
+// ── Wireframe ─────────────────────────────────────────────────────────────────
+let wireframeOverlays = [];
+function toggleWireframe() {
+  wireframeOverlays.forEach(m => scene.remove(m));
+  wireframeOverlays = [];
+  if (!document.getElementById('show-wireframe').checked) { markDirty(); return; }
+  [roomScene, bedScene].forEach(sc => {
+    if (!sc) return;
+    sc.traverse(c => {
+      if (!c.isMesh) return;
+      const wf = new THREE.Mesh(c.geometry,
+        new THREE.MeshBasicMaterial({color:0xffffff,wireframe:true,opacity:.12,transparent:true}));
+      wf.applyMatrix4(c.matrixWorld);
+      scene.add(wf);
+      wireframeOverlays.push(wf);
+    });
+  });
+  markDirty();
+}
+
+// ── Output ────────────────────────────────────────────────────────────────────
+function generateOutput() {
+  const lines = [];
+  if (roomScene) {
+    const s = roomScene.scale.x;
+    const ry = roomScene.rotation.y;
+    const p = roomScene.position;
+    lines.push('// ── paste into buildBedroomRoom ──');
+    lines.push('fullScene.scale.setScalar(' + s.toFixed(4) + ');');
+    lines.push('fullScene.rotation.y = ' + ry.toFixed(4) + '; // ' + (ry*180/Math.PI).toFixed(1) + 'deg');
+    lines.push('fullScene.position.set(' + p.x.toFixed(3) + ', ' + p.y.toFixed(3) + ', ' + p.z.toFixed(3) + ');');
+    lines.push('');
+  }
+  if (bedScene) {
+    const s = bedScene.scale.x;
+    const ry = bedScene.rotation.y;
+    const p = bedScene.position;
+    lines.push('// ── paste into BEDROOM_SLOTS ──');
+    lines.push('bed_fabric: { x: ' + p.x.toFixed(3) + ', z: ' + p.z.toFixed(3) + ', rotY: ' + ry.toFixed(4) + ', scale: ' + s.toFixed(4) + ' },');
+    lines.push('bed_wooden: { x: ' + p.x.toFixed(3) + ', z: ' + p.z.toFixed(3) + ', rotY: ' + ry.toFixed(4) + ', scale: ' + s.toFixed(4) + ' },');
+    lines.push('');
+    lines.push('// ── _seatOnFloor call ──');
+    lines.push('_seatOnFloor(currentModel, ' + p.x.toFixed(3) + ', ' + p.z.toFixed(3) + ', ' + ry.toFixed(4) + ', ' + s.toFixed(4) + ');');
+  }
+  if (!lines.length) return;
+  const out = document.getElementById('output');
+  out.textContent = lines.join('\n');
+  out.style.display = 'block';
+}
+
+// ── Keyboard ──────────────────────────────────────────────────────────────────
+document.addEventListener('keydown', e => {
+  if (e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT') return;
+  if (e.key === 'r') { if (roomScene) autoFitRoom(); }
+  if (e.key === 'f') {
+    const box = new THREE.Box3();
+    [roomScene, bedScene].forEach(sc => { if (sc) box.expandByObject(sc); });
+    if (!box.isEmpty()) {
+      const tc = box.getCenter(new THREE.Vector3());
+      const ts = box.getSize(new THREE.Vector3());
+      controls.target.copy(tc);
+      camera.position.set(tc.x, tc.y + ts.y*0.5, tc.z - ts.z*1.5);
+      controls.update(); markDirty();
+    }
+  }
+});
+</script>
+</body>
+</html>

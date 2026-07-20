@@ -1,0 +1,616 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LIVINIT · Product Configurator</title>
+<link rel="stylesheet" href="styles/tokens.css">
+<link rel="stylesheet" href="styles/app.css">
+<!-- Tailwind Play CDN — engine + token-mapped config; preflight OFF so it does
+     not reset the existing styled app. Redesign component looks live in the
+     tailwindcss @apply layer below (JS-emitted class hooks are preserved). -->
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+tailwind.config = {
+  corePlugins: { preflight: false },
+  theme: { extend: {
+    colors: {
+      primary: 'rgb(var(--md-primary) / <alpha-value>)',
+      'on-primary': 'rgb(var(--md-on-primary) / <alpha-value>)',
+      'primary-container': 'rgb(var(--md-primary-container) / <alpha-value>)',
+      'on-primary-container': 'rgb(var(--md-on-primary-container) / <alpha-value>)',
+      surface: 'rgb(var(--md-surface) / <alpha-value>)',
+      'on-surface': 'rgb(var(--md-on-surface) / <alpha-value>)',
+      'on-surface-variant': 'rgb(var(--md-on-surface-variant) / <alpha-value>)',
+      'surface-low': 'rgb(var(--md-surface-container-low) / <alpha-value>)',
+      'surface-container': 'rgb(var(--md-surface-container) / <alpha-value>)',
+      'surface-high': 'rgb(var(--md-surface-container-high) / <alpha-value>)',
+      outline: 'rgb(var(--md-outline) / <alpha-value>)',
+      'outline-variant': 'rgb(var(--md-outline-variant) / <alpha-value>)',
+      periwinkle: '#7A91EE',
+    },
+    fontFamily: { sans: ['Eudoxus Sans','ui-sans-serif','system-ui','sans-serif'] },
+    borderRadius: { card: '16px', pill: '9999px', soft: '12px' },
+    boxShadow: { chip: '0 1px 2px rgb(16 28 45 / .10), 0 2px 6px rgb(16 28 45 / .06)' },
+  } },
+};
+</script>
+<style type="text/tailwindcss">
+  @layer components {
+    /* Flat gray track + WHITE-chip active (DS convention) — replaces the dated
+       filled-primary active across every segmented control in the app. */
+    .seg-chip.active,
+    .room-sec-btn.active,
+    .finder-tab.active {
+      @apply bg-surface text-on-surface shadow-chip font-medium;
+    }
+    /* De-boxed panel cards: soft fill, no border, no heavy shadow, more air —
+       grouping by fill+space, not boxes. Overrides app.css .cp-section rule. */
+    .cp-section,
+    .room-section-block {
+      @apply bg-surface-low border-0 shadow-none rounded-card p-5;
+    }
+    .applied-card {
+      @apply bg-surface-low border-0 shadow-none rounded-card p-5;
+    }
+    /* Room-element + curtain-shape chips: soft-fill, borderless (was heavy
+       periwinkle-outlined boxes). Active = tonal container with a hairline ring. */
+    .room-chip,
+    .curtain-shape-btn {
+      @apply bg-surface-container border-0 text-on-surface-variant;
+    }
+    .room-chip.on,
+    .curtain-shape-btn.active {
+      @apply bg-primary-container text-on-primary-container;
+      box-shadow: inset 0 0 0 1.5px rgb(var(--md-primary) / .45);
+    }
+    /* Library filter chips: unify to the same soft-fill grammar. */
+    .fab-tab { @apply bg-surface-container border-0; }
+    .finder-chip { @apply bg-surface-container border-0; }
+    .finder-chip.active { @apply bg-primary-container text-on-primary-container; }
+  }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <!-- ══ LEFT NAV RAIL ════════════════════════════════════════════════ -->
+  <nav class="nav-rail" aria-label="Primary">
+    <div class="nav-rail-logo" title="livinit"><span class="brand-mark" aria-hidden="true"></span><span class="nav-rail-brand-lbl">livinit</span></div>
+    <button class="nav-rail-item nav-item active" id="nav-simulator" onclick="if(appStore.getState().roomMode)toggleRoomView()">
+      <span class="nav-rail-ico"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg></span>
+      <span class="nav-rail-lbl">Design</span>
+    </button>
+    <button class="nav-rail-item nav-item" id="nav-room" onclick="if(!appStore.getState().roomMode)toggleRoomView()">
+      <span class="nav-rail-ico"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg></span>
+      <span class="nav-rail-lbl">Room</span>
+    </button>
+    <button class="nav-rail-item nav-item" id="nav-saved" onclick="" title="Saved">
+      <span class="nav-rail-ico"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg></span>
+      <span class="nav-rail-lbl">Saved</span>
+    </button>
+    <div class="nav-rail-spacer"></div>
+    <button class="nav-rail-item" onclick="document.getElementById('glb-input').click()" title="Upload GLB">
+      <span class="nav-rail-ico"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg></span>
+      <span class="nav-rail-lbl">Upload</span>
+    </button>
+    <button class="nav-rail-item" id="nav-settings" onclick="toggleSettingsPanel()" title="Settings">
+      <span class="nav-rail-ico"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M2 12h3M19 12h3M4.9 19.1L7 17M17 7l2.1-2.1"/></svg></span>
+      <span class="nav-rail-lbl">Settings</span>
+    </button>
+    <div class="nav-rail-avatar" title="Ave R.">AR</div>
+  </nav>
+
+  <!-- Settings popover — scene/environment lighting controls (separate from
+       the per-fabric "Brightness" slider in Material Adjustments, which only
+       scales the applied material's own color, not the scene lights). -->
+  <div id="settings-popover" style="display:none;position:fixed;left:80px;bottom:16px;z-index:200;width:260px;background:rgb(var(--md-surface-container));border:1px solid rgb(var(--md-outline-variant));border-radius:var(--r-lg);box-shadow:var(--elev-3);padding:16px">
+    <div style="font:700 11px/1 var(--font-sans);letter-spacing:.06em;text-transform:uppercase;color:rgb(var(--md-on-surface-variant));margin-bottom:12px">Scene Lighting</div>
+    <div style="display:flex;flex-direction:column;gap:6px">
+      <div style="display:flex;justify-content:space-between;font:600 11px var(--font-sans);color:rgb(var(--md-on-surface))">
+        <span>Environment Brightness</span>
+        <span id="v-env-brightness">1.00</span>
+      </div>
+      <input type="range" id="s-env-brightness" min="0.3" max="2.5" step="0.05" value="1" oninput="updateEnvBrightness(this.value)" style="width:100%">
+      <div style="font:400 10px var(--font-sans);color:rgb(var(--md-on-surface-variant))">Adjusts the room/studio lighting intensity — not the fabric's own color.</div>
+    </div>
+    <div style="height:1px;background:rgb(var(--md-outline-variant));margin:14px 0"></div>
+    <button class="cp-link-btn" style="width:100%;text-align:left" onclick="window._tourRestart()">↺ Replay Onboarding Tour</button>
+  </div>
+
+  <!-- ══ WORKSPACE ════════════════════════════════════════════════════ -->
+  <div class="workspace">
+
+    <!-- Top bar removed → controls live in the left nav rail, the tool panel,
+         and the floating canvas CTA cluster. Hidden legacy nodes kept for JS. -->
+    <span id="lib-title" style="display:none">Chair Fabrics</span>
+    <span id="lib-sub" style="display:none"></span>
+    <button id="btn-room-view" style="display:none" onclick="toggleRoomView()">Room View</button>
+
+    <!-- ── MAIN ROW: viewport + config panel ────────────────────────── -->
+    <div class="main-row">
+
+      <!-- VIEWPORT -->
+      <div class="viewport-area" id="viewport-wrap">
+        <canvas id="viewer"></canvas>
+        <!-- Floating CTA cluster (was top-bar right) -->
+        <div class="canvas-cta">
+          <button class="pill-btn" id="btn-view-in-my-room" onclick="openViewInMyRoom()" title="View in My Room">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+            <span class="pill-label">View in My Room</span>
+          </button>
+          <button class="pill-btn pill-btn--primary" onclick="">Get A Quote →</button>
+        </div>
+        <div id="zone-overlay"></div>
+        <div id="loading">
+          <div class="spinner"></div>
+          <div id="load-txt">Loading Model…</div>
+          <div class="load-bar"><div class="load-bar-inner"></div></div>
+        </div>
+        <div class="v-hint" id="v-hint" style="display:none">
+          <span><span class="h-key">drag</span> Orbit</span>
+          <span><span class="h-key">right-drag</span> Pan</span>
+          <span><span class="h-key">scroll</span> Zoom</span>
+          <span><span class="h-key">drag fabric</span> Apply</span>
+        </div>
+        <div id="drop-hint">Drop fabric on a part to apply</div>
+
+        <!-- Move HUD — shown when furniture move mode is active -->
+        <div id="move-hud" class="move-hud">
+          <div class="mhud-section">
+            <div class="mhud-label">Move</div>
+            <div class="mhud-grid">
+              <div></div>
+              <button class="mhud-btn" onclick="nudgeFurniture(0,-0.2)" title="Move back">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8"><polyline points="18 15 12 9 6 15"/></svg>
+              </button>
+              <div></div>
+              <button class="mhud-btn" onclick="nudgeFurniture(-0.2,0)" title="Move left">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8"><polyline points="15 18 9 12 15 6"/></svg>
+              </button>
+              <div style="border:1.5px solid var(--border);border-radius:var(--r-sm);background:var(--bg);color:var(--text-muted);display:flex;align-items:center;justify-content:center">
+                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/></svg>
+              </div>
+              <button class="mhud-btn" onclick="nudgeFurniture(0.2,0)" title="Move right">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8"><polyline points="9 18 15 12 9 6"/></svg>
+              </button>
+              <div></div>
+              <button class="mhud-btn" onclick="nudgeFurniture(0,0.2)" title="Move forward">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8"><polyline points="6 9 12 15 18 9"/></svg>
+              </button>
+              <div></div>
+            </div>
+            <div class="mhud-hint">or drag furniture</div>
+          </div>
+          <div class="mhud-divider"></div>
+          <div class="mhud-section">
+            <div class="mhud-label">Rotate</div>
+            <div class="mhud-rot-row">
+              <button class="mhud-rot-btn" onclick="rotateFurnitureY(15)" title="Rotate left">↺</button>
+              <button class="mhud-rot-btn" onclick="rotateFurnitureY(-15)" title="Rotate right">↻</button>
+            </div>
+            <div class="mhud-hint">double-click to exit</div>
+          </div>
+        </div>
+        <!-- Full View button — top-left corner -->
+        <button class="vp-fullscreen-btn" onclick="document.getElementById('viewport-wrap').requestFullscreen?.()" title="Full Screen">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/><line x1="21" y1="3" x2="14" y2="10"/><line x1="3" y1="21" x2="10" y2="14"/></svg>
+        </button>
+        <div class="vp-controls">
+          <span class="vp-info-pill">Drag to orbit &nbsp;·&nbsp; Scroll to zoom &nbsp;·&nbsp; Right-click to pan</span>
+          <div class="vp-ctrl-sep"></div>
+          <button class="vp-ctrl-btn" onclick="sph.r=Math.max(.5,sph.r*.82);camUpdate()">
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="11" y1="8" x2="11" y2="14"/><line x1="8" y1="11" x2="14" y2="11"/></svg>
+            Zoom In
+          </button>
+          <button class="vp-ctrl-btn" id="btn-spin-360" onclick="spinModel360()" title="Slow 360° turntable spin">
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12a9 9 0 1 1-3-6.7"/><polyline points="21 3 21 9 15 9"/></svg>
+            Spin 360°
+          </button>
+        </div>
+
+        <!-- Room controls moved into the Room panel tab (Task 3) -->
+      </div>
+
+      <!-- CONFIG PANEL (right) -->
+      <aside class="config-panel" id="right-panel">
+       <!-- Guided single flow: Product → Part → Fabric (no tabs). Room staging
+            lives in the left rail. showPanelTab shows the design bodies together
+            or the room body. -->
+       <div class="panel-context" id="panel-context">
+         <span id="context-model">Chair</span>
+         <span class="zone-chip" id="zone-count-badge">0 zones</span>
+       </div>
+
+       <!-- Pinned Applied card (panels.js renders into #cp-sliders + near #diffuse-upload-input) -->
+       <div class="applied-card" id="applied-card">
+         <div class="cp-section-hdr"><span class="cp-section-title">Applied Fabric</span></div>
+         <input type="file" id="diffuse-upload-input" accept="image/*" style="display:none">
+         <details class="applied-adjust" id="cp-sliders">
+           <summary class="adjust-summary"><span class="cp-section-title">Material Adjustments</span><span class="adjust-caret" aria-hidden="true"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg></span></summary>
+         </details>
+       </div>
+
+       <div class="panel-scroll" id="panel-scroll">
+
+        <!-- STEP 3 — FABRIC (design flow; ordered after Product/Part via CSS) -->
+        <div class="panel-tab-body on" data-tab="fabrics">
+        <div class="flow-step"><span class="flow-step-n">3</span>Pick a fabric<span class="flow-step-hint">applies to the selected part</span></div>
+        <!-- FABRIC LIBRARY -->
+        <div class="lib-pane" id="lib-pane">
+          <div class="lib-head">
+            <input type="text" id="fab-search-input" class="lib-search" placeholder="Search fabrics…" oninput="filterFabricSearch(this.value)">
+            <div class="lib-filter-chips" id="fabric-tabs"></div>
+          </div>
+          <div class="lib-grid" id="fabric-grid"></div>
+        </div>
+        </div><!-- /fabrics tab -->
+
+        <!-- STEP 1+2 — PRODUCT + PART (design flow) -->
+        <div class="panel-tab-body on" data-tab="parts">
+        <div id="panel-product">
+          <div class="flow-step"><span class="flow-step-n">1</span>Choose your product</div>
+          <!-- Model picker -->
+          <div class="seg seg--models-panel" role="tablist">
+            <button class="seg-chip active" id="tab-chair" onclick="switchModel('chair')">Chair</button>
+            <button class="seg-chip" id="tab-accent_chair" onclick="switchModel('accent_chair')">Accent Chair</button>
+            <button class="seg-chip" id="tab-sofa" onclick="switchModel('sofa')">Sofa</button>
+          </div>
+          <!-- Product info -->
+          <div class="cp-section">
+            <div class="cp-section-hdr">
+              <span class="cp-section-title">Configuration</span>
+            </div>
+            <div class="cp-product-info">
+              <div class="cp-product-thumb" id="cp-product-thumb"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 11V7a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v4"/><path d="M2 13a2 2 0 0 1 4 0v3h12v-3a2 2 0 0 1 4 0v4a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1z"/><path d="M6 19v2"/><path d="M18 19v2"/></svg></div>
+              <div>
+                <div class="cp-product-name" id="cp-product-name">Chair</div>
+                <div class="cp-product-dims" id="cp-product-dims">Exposed-frame armchair</div>
+              </div>
+            </div>
+            <div class="cp-product-meta">
+              <div class="cp-meta-row">
+                <span class="cp-meta-lbl">Est. Lead Time</span>
+                <span class="cp-meta-val">5-8 weeks</span>
+              </div>
+              <div class="cp-meta-row">
+                <span class="cp-meta-lbl">Ships From</span>
+                <span class="cp-meta-val">North Carolina, USA</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Zone/part selector -->
+          <div class="flow-step"><span class="flow-step-n">2</span>Select a part to customize<span class="flow-step-hint">or tap a label on the model</span></div>
+          <div class="cp-section">
+            <div class="cp-section-hdr">
+              <span class="cp-section-title">Parts</span>
+              <div style="display:flex;gap:6px">
+                <button class="cp-link-btn" onclick="selectAll()">All</button>
+                <button class="cp-link-btn" onclick="deselectAll()">None</button>
+              </div>
+            </div>
+            <div id="mesh-list" style="display:flex;flex-direction:column;gap:3px"></div>
+          </div>
+
+        </div>
+        </div><!-- /parts tab -->
+
+        <!-- ROOM TAB — single Living Room, single active piece (chair / accent chair / sofa) -->
+        <div class="panel-tab-body" data-tab="room">
+          <div class="room-section-block">
+            <div class="room-section-label">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>
+              Room Elements
+            </div>
+            <div class="room-chips-grid">
+              <button class="room-chip on" id="chip-walls" onclick="toggleRoomEl('walls')"><span class="room-chip-ico"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="1"/><path d="M3 10h18"/><path d="M3 16h18"/><path d="M9 4v6"/><path d="M15 10v6"/><path d="M9 16v4"/></svg></span>Walls</button>
+              <button class="room-chip on" id="chip-floor" onclick="toggleRoomEl('floor')"><span class="room-chip-ico"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 20h18"/><path d="M6 20l1.5-9h9L18 20"/><path d="M7 15h10"/><path d="M9.5 11v9"/><path d="M14.5 11v9"/></svg></span>Floor</button>
+              <button class="room-chip on" id="chip-windows" onclick="toggleRoomEl('windows')"><span class="room-chip-ico"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="3" width="16" height="18" rx="1"/><path d="M4 12h16"/><path d="M12 3v18"/></svg></span>Windows</button>
+              <button class="room-chip on" id="chip-doors" onclick="toggleRoomEl('doors')"><span class="room-chip-ico"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 21V4a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v17"/><path d="M4 21h16"/><circle cx="14" cy="12" r="1"/></svg></span>Doors</button>
+              <button class="room-chip on" id="chip-rug" onclick="toggleRoomEl('rug')"><span class="room-chip-ico"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="7" width="16" height="10" rx="1"/><path d="M4 10h16"/><path d="M4 14h16"/><path d="M6 7l-1-2"/><path d="M18 7l1-2"/></svg></span>Rug</button>
+              <button class="room-chip" id="chip-ceiling" onclick="toggleRoomEl('ceiling')"><span class="room-chip-ico"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 5h18"/><path d="M8 5l-1 4"/><path d="M16 5l1 4"/><path d="M12 5v5"/></svg></span>Ceiling</button>
+              <button class="room-chip on" id="chip-curtains-living" onclick="toggleCurtains()"><span class="room-chip-ico"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 3h16"/><path d="M6.5 3C6.5 9 5.5 15 3.5 21"/><path d="M17.5 3c0 6 1 12 3 18"/><path d="M12 3v13"/></svg></span>Curtains</button>
+            </div>
+          </div>
+        <div id="panel-room">
+
+          <!-- Curtain configurator — shown whenever the room has curtain meshes
+               and they're toggled visible -->
+          <div id="curtain-config-panel" class="room-section-block" style="display:none">
+            <div class="room-section-label">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M4 3v18M20 3v18M8 3c0 5 8 5 8 10S8 21 8 21" stroke-linecap="round"/></svg>
+              Curtain Style
+            </div>
+            <div class="curtain-style-group-label">Drapery</div>
+            <div class="curtain-shape-grid">
+              <button class="curtain-shape-btn active" id="cshape-drape" onclick="setCurtainShape('drape')" title="Drape">Drape</button>
+              <button class="curtain-shape-btn" id="cshape-pleated" onclick="setCurtainShape('pleated')" title="Pleated">Pleated</button>
+              <button class="curtain-shape-btn" id="cshape-sheer" onclick="setCurtainShape('sheer')" title="Sheer">Sheer</button>
+            </div>
+            <div class="curtain-style-group-label">Shades</div>
+            <div class="curtain-shape-grid">
+              <button class="curtain-shape-btn" id="cshape-blinds" onclick="setCurtainShape('blinds')" title="Blinds">Blinds</button>
+            </div>
+            <button class="curtain-shape-btn curtain-shape-none" id="cshape-none" onclick="setCurtainShape('none')">Clear / None</button>
+
+            <div class="room-section-label" style="margin-top:12px">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="12" cy="12" r="9"/><path d="M12 3v18M3 12h18"/></svg>
+              Fabric
+            </div>
+            <div class="curtain-fabric-row" id="curtain-fabric-row"></div>
+            <div style="margin-top:10px">
+              <span class="curtain-color-label">Color</span>
+              <div class="curtain-color-presets" id="curtain-color-presets"></div>
+            </div>
+            <div style="margin-top:10px">
+              <span class="curtain-color-label">Size</span>
+              <div class="curtain-size-row">
+                <label class="curtain-size-label" for="curtain-width">Width</label>
+                <input type="range" id="curtain-width" class="curtain-size-slider"
+                       min="0.7" max="1.4" step="0.02" value="1"
+                       oninput="setCurtainSize('width', this.value)">
+                <span class="curtain-size-val" id="curtain-width-val">100%</span>
+              </div>
+              <div class="curtain-size-row">
+                <label class="curtain-size-label" for="curtain-length">Length</label>
+                <input type="range" id="curtain-length" class="curtain-size-slider"
+                       min="0.7" max="1.4" step="0.02" value="1"
+                       oninput="setCurtainSize('length', this.value)">
+                <span class="curtain-size-val" id="curtain-length-val">100%</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- ── Shared room blocks (always visible in room mode) ── -->
+          <div class="room-section-block">
+            <div class="room-section-label">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M20 9V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v3"/><path d="M2 11a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v9H2z"/><path d="M7 20v-5h10v5"/></svg>
+              <span id="piece-list-label">Furniture Parts</span>
+            </div>
+            <div id="move-mode-bar" class="move-mode-bar">
+              <span class="move-mode-label">Move Mode Active</span>
+              <div class="move-mode-mode-btns">
+                <button class="move-mode-mode-btn active" id="mm-translate" onclick="setMoveMode('translate')">Move</button>
+                <button class="move-mode-mode-btn" id="mm-rotate" onclick="setMoveMode('rotate')">Rotate</button>
+              </div>
+              <button class="move-mode-done" onclick="toggleMoveMode()">Done</button>
+            </div>
+            <div class="piece-hint">
+              <div class="piece-hint-row">
+                <div class="piece-hint-ico"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8z"/></svg></div>Double-click to enter move mode
+              </div>
+              <div class="piece-hint-row">
+                <div class="piece-hint-ico"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3"/></svg></div>Click a part below, then pick a swatch
+              </div>
+            </div>
+            <div id="piece-list"></div>
+          </div>
+
+          <div class="room-section-block" id="room-applied-block">
+            <div class="room-section-label">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="m21 15-5-5L5 21"/></svg>
+              Applied Material
+            </div>
+            <!-- .app-prev rendered by src/panels.js -->
+          </div>
+
+          <div class="room-section-block" id="room-sliders-block">
+            <div class="room-section-label">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="12" cy="12" r="3"/><path d="M12 1v4M12 19v4M4.22 4.22l2.83 2.83M16.95 16.95l2.83 2.83M1 12h4M19 12h4M4.22 19.78l2.83-2.83M16.95 7.05l2.83-2.83"/></svg>
+              Material Adjustments
+            </div>
+            <!-- .sl-row rows rendered by src/panels.js -->
+          </div>
+
+          <div style="padding:14px 16px 18px">
+            <button class="pill-btn pill-btn--primary" onclick="" style="width:100%">Get A Quote →</button>
+          </div>
+
+        </div><!-- /panel-room -->
+        </div><!-- /room tab -->
+       </div><!-- /panel-scroll -->
+
+        <!-- Persistent CTA footer tray -->
+        <div class="side-footer">
+          <button class="pill-btn pill-btn--primary side-footer-cta" onclick="renderScene()" title="Render">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>
+            Render
+          </button>
+          <button class="pill-btn side-footer-cta" onclick="exportGLB()" title="Export GLB">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+            Export GLB
+          </button>
+        </div>
+
+      </aside>
+    </div><!-- /main-row -->
+
+  </div><!-- /workspace -->
+</div><!-- /app -->
+
+<!-- Drag ghost -->
+<div id="drag-ghost"><img id="drag-ghost-img" src="" alt=""></div>
+<button class="glass-pill sidebar-toggle" onclick="toggleSidebar()" aria-label="Toggle fabric panel"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M9 4v16"/><path d="M13 9h4"/><path d="M13 13h4"/></svg>Fabrics</button>
+
+<!-- File inputs -->
+<input type="file" id="glb-input" accept=".glb,.gltf" style="display:none" onchange="handleGLBUpload(this)">
+<input type="file" id="finder-img-input" accept="image/*" style="display:none" onchange="handleFinderImage(this)">
+
+<!-- Fabric Finder — upload a photo, Gemini-vision AI detects material
+     properties, preview on model / save to "My Fabrics". The old PolyHaven/
+     AmbientCG search tab has been removed; the fixed 14-series catalog
+     covers the rest. -->
+<div id="finder-overlay" onclick="if(event.target===this)closeFabricFinder()">
+  <div id="finder-modal">
+
+    <!-- ── Header ────────────────────────────────────────────── -->
+    <div class="finder-hdr">
+      <div class="finder-tabs">
+        <button class="finder-tab active">
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+          Upload Image
+        </button>
+      </div>
+      <button class="finder-close" onclick="closeFabricFinder()"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg></button>
+    </div>
+
+    <div class="finder-body-2col">
+
+      <!-- ════════════════ LEFT COLUMN ════════════════ -->
+      <div class="finder-left">
+        <div id="finder-drop-zone" onclick="document.getElementById('finder-img-input').click()">
+          <div id="finder-drop-content">
+            <div class="finder-drop-ico">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+            </div>
+            <div class="finder-drop-lbl">Drop a fabric photo here</div>
+            <div class="finder-drop-hint">PNG · JPG · WebP — auto-made seamless</div>
+          </div>
+          <img id="finder-img-preview" style="display:none" alt="preview">
+          <button class="finder-img-clear" onclick="clearFinderImage(event)" title="Remove"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg></button>
+        </div>
+        <button class="finder-choose-btn" onclick="document.getElementById('finder-img-input').click()">Choose File</button>
+        <div class="finder-form-grid">
+          <div class="finder-form-row">
+            <div class="finder-field-row">
+              <label class="finder-lbl">Fabric Type</label>
+              <select id="finder-material-type" class="finder-select" onchange="updateFinderMode()">
+                <option value="">Any type</option>
+                <option value="fabric">Fabric / Textile</option>
+                <option value="vinyl">Vinyl</option>
+                <option value="leather">Leather</option>
+                <option value="suede">Suede / Velvet</option>
+              </select>
+            </div>
+            <div class="finder-field-row">
+              <label class="finder-lbl">Material Name</label>
+              <input type="text" id="finder-name" class="finder-input" placeholder="e.g. Navy Linen" oninput="updateFinderMode()">
+            </div>
+          </div>
+          <div class="finder-scale-row">
+            <label class="finder-lbl">Repeat</label>
+            <div class="finder-scale-inputs">
+              <input type="number" id="finder-scale-val" class="finder-input finder-input-sm" value="10" min="2" max="20" step="0.5">
+              <span class="finder-scale-sep">↔</span>
+              <input type="number" class="finder-input finder-input-sm" value="16" min="2" max="20" step="0.5" tabindex="-1" style="opacity:.4;pointer-events:none">
+            </div>
+          </div>
+        </div>
+      </div><!-- /finder-left -->
+
+      <!-- ════════════════ RIGHT COLUMN ════════════════ -->
+      <div class="finder-right">
+        <div style="display:flex;flex-direction:column;gap:12px">
+          <div class="finder-right-hdr">
+            <span class="finder-right-title" id="finder-right-title">Preview</span>
+            <span class="finder-right-dot" id="finder-right-dot"></span>
+          </div>
+          <div class="finder-preview-box" id="finder-preview-box">
+            <div class="finder-preview-placeholder" id="finder-preview-placeholder">
+              <div class="finder-preview-ph-ico"><svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" stroke="none"><rect x="6" y="6" width="12" height="12" rx="2"/></svg></div>
+              <div class="finder-preview-ph-lbl">Upload an image to preview</div>
+            </div>
+            <img id="finder-preview-full" style="display:none" alt="preview">
+          </div>
+          <div id="finder-props-rows" style="display:none"></div>
+          <button class="finder-prev-model-btn" id="finder-prev-model-btn" style="display:none" onclick="previewAnalyzedOnModel()">
+            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+            Preview on Model
+          </button>
+          <div class="finder-hint-text" id="finder-hint-text-upload">Upload a fabric photo — AI detects material properties and makes it seamlessly tileable.</div>
+        </div>
+      </div><!-- /finder-right -->
+    </div><!-- /finder-body-2col -->
+
+    <!-- ── Footer ─────────────────────────────────────────────── -->
+    <div class="finder-footer">
+      <button class="finder-footer-cancel" onclick="closeFabricFinder()">Cancel</button>
+      <div class="finder-footer-actions">
+        <div style="display:flex;gap:7px;align-items:center">
+          <button class="finder-footer-save" id="finder-save-btn" onclick="saveAsMaterial()" disabled>Save as Material</button>
+          <button class="finder-footer-generate" id="finder-btn" onclick="analyzeAndAddFabric()">
+            <span id="finder-btn-txt">Analyze &amp; Add</span>
+          </button>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /finder-modal -->
+</div><!-- /finder-overlay -->
+
+<div id="finder-confirm-bar">
+  <span class="fcb-label">Previewing —</span>
+  <span class="fcb-name" id="fcb-name"></span>
+  <button class="fcb-yes" onclick="confirmAddFromBar()">+ Add to Library</button>
+  <button class="fcb-no" onclick="hideConfirmBar()">Dismiss</button>
+</div>
+
+<div id="toast"></div>
+
+<!-- Three.js r128 -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script type="module" src="src/app/boot.js"></script>
+
+<!-- ── Spotlight Tour ────────────────────────────────────────────────── -->
+<div id="tour-ov">
+  <!-- Step 0 backdrop (no spotlight hole) -->
+  <div id="tour-back"></div>
+
+  <!-- Spotlight cutout — box-shadow creates the dark overlay -->
+  <div id="tour-spot"></div>
+
+  <!-- Coach-mark bubble (steps 1-4) -->
+  <div id="tour-bubble">
+    <div class="tb-header">
+      <div class="tb-left">
+        <span class="tb-pill" id="tb-pill">Step 1 of 4</span>
+        <div class="tb-dots" id="tb-dots"></div>
+      </div>
+      <button class="tb-close" onclick="_tourSkip()">×</button>
+    </div>
+    <h3 id="tb-title"></h3>
+    <p id="tb-desc"></p>
+    <div class="tb-features" id="tb-feats"></div>
+    <div class="tb-footer">
+      <button class="tb-skip" onclick="_tourSkip()">Skip tour</button>
+      <div class="tb-nav">
+        <button class="tb-back" id="tb-back" onclick="_tourBack()">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8"><polyline points="15 18 9 12 15 6"/></svg>
+        </button>
+        <button class="tb-next" id="tb-next" onclick="_tourNext()">Next →</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Welcome card (step 0) -->
+  <div id="tour-welcome">
+    <div class="tw-body">
+      <div class="tw-brand"><span class="brand-dot"></span>livinit</div>
+      <span class="tw-eyebrow"><svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor" stroke="none" style="vertical-align:-2px"><path d="M12 2l1.6 6.4L20 10l-6.4 1.6L12 18l-1.6-6.4L4 10l6.4-1.6z"/></svg> Quick Tour</span>
+      <h2>Design furniture, your way</h2>
+      <p>A professional 3D configurator for visualising real fabric collections on furniture — apply swatches in seconds, view in a room, and generate AI renders.</p>
+      <div class="tw-steps">
+        <div class="tw-step"><div class="tw-step-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 20v-4h12v4"/><path d="M6 16V8a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v8"/><path d="M8 6V4"/><path d="M16 6V4"/><path d="M7 20v1"/><path d="M17 20v1"/></svg></div><div class="tw-step-label">Pick Piece</div></div>
+        <div class="tw-step"><div class="tw-step-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="3" width="16" height="12" rx="2"/><path d="M9 15v3a2 2 0 0 0 2 2h0a2 2 0 0 0 2-2v-1a2 2 0 0 1 2-2h1"/></svg></div><div class="tw-step-label">Apply Fabrics</div></div>
+        <div class="tw-step"><div class="tw-step-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.5V20a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V9.5"/><path d="M9 21v-6h6v6"/></svg></div><div class="tw-step-label">Room View</div></div>
+        <div class="tw-step"><div class="tw-step-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8z"/></svg></div><div class="tw-step-label">AI Render</div></div>
+      </div>
+      <div class="tw-actions">
+        <button class="tw-btn-start" onclick="_tourNext()">
+          Start Tour
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8"><polyline points="9 18 15 12 9 6"/></svg>
+        </button>
+        <button class="tw-btn-skip" onclick="_tourSkip()">Skip</button>
+      </div>
+    </div>
+    <div class="tw-load">
+      <div class="tw-load-track"><div class="tw-load-bar" id="tw-load-bar"></div></div>
+      <div class="tw-load-label" id="tw-load-label">Loading models in background…</div>
+    </div>
+  </div>
+
+</div><!-- /tour-ov -->
+
+</body>
+</html>
