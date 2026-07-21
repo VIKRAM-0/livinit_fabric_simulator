@@ -134,6 +134,7 @@ export function buildMeshList() {
     const allChecked = group.every(e=>e.checked);
     const row = document.createElement('label');
     row.className = 'mesh-item'+(allChecked?' sel':'');
+    row.dataset.zone = group[0].name;   // render gate flashes missing zones by name
     const cb = document.createElement('input');
     cb.type='checkbox'; cb.checked=allChecked;
     cb.addEventListener('change',()=>{ toggleCheckGroup(group, cb.checked); window._refreshZoneLabelStates(); });
@@ -163,6 +164,7 @@ export function buildPieceList() {
     const allSelected = group.every(e=>e.pieceSelected);
     const row = document.createElement('div');
     row.className='piece-item'+(allSelected?' sel-piece':'');
+    row.dataset.zone = group[0].name;   // render gate flashes missing zones by name
     const dotEl=document.createElement('div');
     dotEl.className='piece-dot'; dotEl.style.backgroundColor=dot;
     const txt=document.createElement('span'); txt.className='piece-item-name'; txt.textContent=group[0].name;

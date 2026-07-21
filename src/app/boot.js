@@ -15,7 +15,7 @@ import '../features/tour/tour.js';      // self-wires window._tour*
 
 // Inline onclick= handlers + cross-feature window.* calls resolve here.
 Object.assign(window, configurator, library, room, render, finder,
-  { showPanelTab, toggleSidebar });
+  { showPanelTab, toggleSidebar, focusProductPicker });
 
 // Non-function globals that inline onclick= handlers reference in GLOBAL scope
 // (module bindings are invisible to inline handlers, so they must be shimmed):
@@ -92,6 +92,23 @@ window.loadScripts([
 
 // Narrow-window sidebar drawer toggle (floating "Fabrics" pill; no-op >=1024px)
 function toggleSidebar(){ document.getElementById('right-panel')?.classList.toggle('open'); }
+
+// Products nav-rail item. For now a shortcut: leave room mode (so the design
+// flow is showing — toggleRoomView also fixes the nav active state), then reveal
+// and briefly pulse the Chair/Accent Chair/Sofa picker. When the catalog grows,
+// replace this with a dedicated Products gallery panel (see nav-products comment
+// in index.html).
+function focusProductPicker(){
+  if (appStore.getState().roomMode) window.toggleRoomView();
+  window.showPanelTab('parts');
+  const el = document.getElementById('panel-product');
+  if (el) {
+    el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    el.classList.remove('panel-pulse'); void el.offsetWidth; // restart animation
+    el.classList.add('panel-pulse');
+    setTimeout(() => el.classList.remove('panel-pulse'), 1400);
+  }
+}
 
 // Guided single flow: the panel shows either the DESIGN bodies (product+part and
 // fabric, stacked and ordered via CSS) or the ROOM staging body. room.js calls

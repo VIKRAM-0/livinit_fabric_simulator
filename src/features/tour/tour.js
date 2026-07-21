@@ -28,7 +28,7 @@
     {
       target:'#panel-scroll', scrollInto:'#lib-pane', pos:'right',
       title:'Apply Real Fabric Collections',
-      desc:'Browse 14 fabric series — vinyl and Crypton performance fabric, plus wood finishes. Select a series, then click any swatch — it applies instantly to your selected part.',
+      desc:'Browse our fabric series — vinyl and woven performance fabrics, plus wood finishes. Select a series, then click any swatch — it applies instantly to your selected part.',
       feats:[
         {icon:'🎨', text:'14 fabric series, 200+ colors'},
         {icon:'📷', text:'Upload your own fabric photo'},

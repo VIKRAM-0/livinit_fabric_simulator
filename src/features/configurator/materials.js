@@ -5,6 +5,34 @@ import { MATERIAL_MAPS, POLY_IDS, loadTexFirstSuccess, LIBRARY } from '../../lib
 // Fabric apply pipeline, diffuse upload, seamless blend, drag&drop, sliders
 // Classic script (not a module): top-level let/const/function share the
 // global scope across all src/*.js files, preserving original semantics.
+// ── Wood-zone exclusivity ─────────────────────────────────────────────────
+// The wood finish may only be applied to the exposed structural part of each
+// product, and those parts take ONLY wood (fabric is blocked there too):
+//   chair        → Frame        (exposed wooden armchair frame)
+//   accent_chair → Legs / Base  (upholstered frame, wooden legs)
+//   sofa         → Legs / Base
+// Zone display names come from classifyMesh() in model.js. Products not in this
+// map (e.g. an uploaded custom GLB) are left unrestricted.
+export const WOOD_ZONE_NAMES = {
+  chair:        ['Frame'],
+  accent_chair: ['Legs / Base'],
+  sofa:         ['Legs / Base'],
+};
+function _isWoodZone(entry) {
+  const zones = WOOD_ZONE_NAMES[appStore.getState().currentModelKey];
+  return !!zones && zones.includes(entry.name);
+}
+// Split target entries into those an item is ALLOWED on and those it isn't:
+// wood items only on wood zones, fabric/vinyl items only on non-wood zones.
+// Unrestricted products (not in WOOD_ZONE_NAMES) pass everything through.
+function _filterEntriesForItem(item, entries) {
+  if (!WOOD_ZONE_NAMES[appStore.getState().currentModelKey]) return { valid: entries, rejected: [] };
+  const wantWood = item.type === 'wood';
+  const valid = [], rejected = [];
+  entries.forEach(e => ((_isWoodZone(e) === wantWood) ? valid : rejected).push(e));
+  return { valid, rejected };
+}
+
 // ── Apply swatch logic (shared between click and drop) ────────────────────
 export function texToDataUrl(tex) {
   const img = tex.image;
@@ -79,6 +107,27 @@ export function _commitEntryMaterial(entry, mat) {
 
 export async function applySwatchToEntries(item, targetEntries) {
   if(!targetEntries || !targetEntries.length) { showToast('Select a part →'); return; }
+
+  // Enforce wood-zone exclusivity (see WOOD_ZONE_NAMES). Wood only lands on the
+  // legs/frame; fabric only on upholstered parts. Reject or trim accordingly.
+  {
+    const woodZones = WOOD_ZONE_NAMES[appStore.getState().currentModelKey] || [];
+    const { valid, rejected } = _filterEntriesForItem(item, targetEntries);
+    if (!valid.length) {
+      showToast(item.type === 'wood'
+        ? `Wood finish only applies to: ${woodZones.join(', ')}`
+        : `${[...new Set(rejected.map(e => e.name))].join(', ')} takes a wood finish only`);
+      return;
+    }
+    if (rejected.length) {
+      const skipped = [...new Set(rejected.map(e => e.name))].join(', ');
+      showToast(item.type === 'wood'
+        ? `Wood applies to ${woodZones.join(', ')} only — skipped ${skipped}`
+        : `Skipped ${skipped} — wood-only part`);
+      targetEntries = valid;
+    }
+  }
+
   const _gen = ++_applyGen;
   document.getElementById('loading').classList.add('on');
   document.getElementById('load-txt').textContent = 'Loading Texture…';
@@ -116,6 +165,10 @@ export async function applySwatchToEntries(item, targetEntries) {
 
   // Update applied preview (both panels)
   const vendorLabel = item.series || (item.vendor==='mity' ? 'Wood Finish' : 'My Fabrics');
+  // Remember what each part is wearing so the render captions can name the
+  // fabric + colour per part (series = "Kimono", name = "Aragon"). isWood lets
+  // the render label the upholstery only when summarising the whole piece.
+  targetEntries.forEach(e => { e.appliedFabric = { name: item.name, series: vendorLabel, isWood: item.type === 'wood' }; });
   ['','room'].forEach(sfx=>{
     const n=document.getElementById('app-name'+(sfx?'-'+sfx:''));
     const v=document.getElementById('app-vend'+(sfx?'-'+sfx:''));

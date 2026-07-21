@@ -36,8 +36,10 @@ body{background:var(--bg);color:var(--text);font-family:var(--font-b);font-size:
 .brand-mark{
   display:inline-block;width:22px;height:22px;flex-shrink:0;
   background-color:var(--brand-periwinkle);
-  -webkit-mask:url('/api/s3proxy?key=logo.png') no-repeat center / contain;
-  mask:url('/api/s3proxy?key=logo.png') no-repeat center / contain;
+  /* Logo lives at fabric_assets/logo.png in S3; the bare "logo.png" key 404s
+     (that's why the mark was invisible). */
+  -webkit-mask:url('/api/s3proxy?key=fabric_assets/logo.png') no-repeat center / contain;
+  mask:url('/api/s3proxy?key=fabric_assets/logo.png') no-repeat center / contain;
 }
 
 /* Segmented control (studio grammar: surface-container track, primary chip) */
@@ -109,17 +111,44 @@ body{background:var(--bg);color:var(--text);font-family:var(--font-b);font-size:
 #loading{position:absolute;inset:0;background:rgb(var(--md-surface) / .85);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:24;opacity:0;pointer-events:none;transition:opacity .3s}
 /* When the overlay is hidden (no .on) its spinner/bar still animate invisibly —
    pause them so an idle app does zero compositor work. Resume when shown. */
-#loading:not(.on) .spinner::after,#loading:not(.on) .load-bar-inner{animation-play-state:paused}
+#loading:not(.on) .loader,#loading:not(.on) .load-bar-inner{animation-play-state:paused}
 #loading.on{opacity:1;pointer-events:all}
 #load-txt{font-size:var(--fs-base);line-height:20px;font-weight:600;color:rgb(var(--md-on-surface))}
-.spinner{width:32px;height:32px;border:none;position:relative;margin-bottom:10px;animation:none}
-.spinner::before,.spinner::after{content:'';position:absolute;inset:0;border-radius:50%}
-.spinner::before{border:2px solid var(--border)}
-.spinner::after{border:2px solid transparent;border-top-color:var(--accent);animation:spin .75s cubic-bezier(.6,.1,.4,.9) infinite}
+
+/* Loading animation — personalised, logo-based. The livinit house mark is used
+   as a vector mask (same asset as .brand-mark) and a brand-periwinkle fill rises
+   and falls through it, so the logo "charges up" while loading. A faint base
+   keeps the whole mark visible; a soft pulse gives it life. Reused wherever a
+   .loader appears (#loading overlay, View-in-My-Room). #load-txt sits below it. */
+.loader{
+  --lc:122,145,238;                 /* brand periwinkle, rgb */
+  width:82px;height:82px;
+  margin:0 auto 18px;
+  -webkit-mask:url('/api/s3proxy?key=fabric_assets/logo.png') no-repeat center/contain;
+          mask:url('/api/s3proxy?key=fabric_assets/logo.png') no-repeat center/contain;
+  /* topmost layer = rising solid fill; bottom layer = faint always-on base */
+  background:
+    linear-gradient(rgb(var(--lc)) 0 0) no-repeat,
+    linear-gradient(rgba(var(--lc),.20) 0 0) no-repeat;
+  background-position:bottom,center;
+  background-size:100% 8%,100% 100%;
+  animation:logoFill 1.9s cubic-bezier(.55,.1,.45,.9) infinite, logoPulse 1.9s ease-in-out infinite;
+}
+@keyframes logoFill{
+  0%,100%{background-size:100% 8%,100% 100%}
+  50%    {background-size:100% 100%,100% 100%}
+}
+@keyframes logoPulse{
+  0%,100%{opacity:.85;transform:scale(.97)}
+  50%    {opacity:1;transform:scale(1)}
+}
+
 .load-bar{width:110px;height:2px;background:rgb(var(--md-outline-variant));border-radius:2px;margin-top:14px;overflow:hidden}
 .load-bar-inner{height:100%;width:40%;background:var(--accent);border-radius:2px;animation:lbar 1.5s ease-in-out infinite}
-@keyframes spin{to{transform:rotate(360deg)}}
 @keyframes lbar{0%{transform:translateX(-200%)}100%{transform:translateX(400%)}}
+/* Kept for the small inline ring spinners (.finder-*-spin); the primary
+   #loading + render overlays now use the .loader coffee animation above. */
+@keyframes spin{to{transform:rotate(360deg)}}
 #load-txt{font-size:var(--fs-sm);color:var(--text-muted);letter-spacing:.04em}
 .viewport-area.drag-over #viewer{outline:2px solid var(--accent);outline-offset:-2px}
 /* ── Glass overlay utility ─────────────────────────────────────────────── */

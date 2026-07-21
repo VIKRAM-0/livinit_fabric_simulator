@@ -1,5 +1,29 @@
 import { E, showToast, escapeHtml, markDirty } from '../../lib/engine.js';
 import { appStore } from '../../lib/store.js';
+import { groupEntriesByName } from '../configurator/model.js';
+import { LOGO_URL } from '../../lib/catalog.js';
+
+// Format a part's applied material as "Series — Colour" (e.g. "Kimono — Aragon").
+// When the series is the same as the colour (custom uploads) show just the name.
+function _fmtFabric(f) {
+  if (!f) return '';
+  return (f.series && f.series !== f.name) ? `${f.series} — ${f.name}` : f.name;
+}
+// The material a given part is wearing (by name regex), or null.
+function _partFabric(nameRe) {
+  const e = E.meshEntries.find(x => nameRe.test(x.name) && x.appliedFabric);
+  return e ? e.appliedFabric : null;
+}
+// Whole-piece summary: the single upholstery fabric if every non-wood part
+// shares one; otherwise null (caller falls back to the product name).
+function _overallFabric() {
+  const fabrics = E.meshEntries
+    .filter(e => e.appliedFabric && !e.appliedFabric.isWood)
+    .map(e => e.appliedFabric);
+  if (!fabrics.length) return null;
+  const key = f => `${f.series}::${f.name}`;
+  return fabrics.every(f => key(f) === key(fabrics[0])) ? fabrics[0] : null;
+}
 // AI render + View in My Room + result modal
 // Classic script (not a module): top-level let/const/function share the
 // global scope across all src/*.js files, preserving original semantics.
@@ -84,9 +108,11 @@ function _frameWhole(theta, phi, r) {
   window.camUpdate();
 }
 
-// Compose the panels into one 2x2 sheet with captions.
-function _composeCollage(panels, title) {
-  const CELL = 640, PAD = 12, CAP = 34, HEAD = 40;
+// Compose the panels into one 2x2 sheet with a branded header and per-panel
+// captions (label = fabric·colour, sub = the view). logoImg is the loaded brand
+// mark drawn in a dark badge (optional — omitted if it failed to load).
+function _composeCollage(panels, title, logoImg) {
+  const CELL = 640, PAD = 12, CAP = 46, HEAD = 56;
   const W = CELL * 2 + PAD * 3;
   const H = HEAD + (CELL + CAP) * 2 + PAD * 3;
   const c = document.createElement('canvas');
@@ -94,6 +120,22 @@ function _composeCollage(panels, title) {
   const ctx = c.getContext('2d');
   ctx.fillStyle = '#f7f5f2';
   ctx.fillRect(0, 0, W, H);
+
+  // Header: brand lockup left, product title right.
+  const by = (HEAD - 30) / 2, bx = PAD + 2;
+  ctx.fillStyle = '#111';
+  if (ctx.roundRect) { ctx.beginPath(); ctx.roundRect(bx, by, 30, 30, 7); ctx.fill(); }
+  else ctx.fillRect(bx, by, 30, 30);
+  if (logoImg) ctx.drawImage(logoImg, bx + 5, by + 5, 20, 20);
+  ctx.fillStyle = '#111';
+  ctx.font = '800 20px system-ui, sans-serif';
+  ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
+  ctx.fillText('livinit', bx + 40, HEAD / 2);
+  if (title) {
+    ctx.fillStyle = 'rgba(0,0,0,.5)';
+    ctx.font = '600 16px system-ui, sans-serif';
+    ctx.fillText('· ' + title, bx + 40 + ctx.measureText('livinit').width + 12, HEAD / 2 + 1);
+  }
 
   panels.forEach((p, i) => {
     const col = i % 2, row = (i / 2) | 0;
@@ -111,19 +153,17 @@ function _composeCollage(panels, title) {
       ctx.drawImage(p.img, x + (CELL - dw) / 2, y + (CELL - dh) / 2, dw, dh);
       ctx.restore();
     }
+    ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
     ctx.fillStyle = '#111';
-    ctx.font = '600 18px system-ui, sans-serif';
-    ctx.textBaseline = 'middle';
-    ctx.fillText(p.label, x + 14, y + CELL + CAP / 2);
+    ctx.font = '700 18px system-ui, sans-serif';
+    ctx.fillText(p.label, x + 14, y + CELL + 22);
+    if (p.sub) {
+      ctx.fillStyle = 'rgba(0,0,0,.5)';
+      ctx.font = '500 13px system-ui, sans-serif';
+      ctx.fillText(p.sub, x + 14, y + CELL + 38);
+    }
   });
 
-  if (title) {
-    ctx.fillStyle = 'rgba(0,0,0,.62)';
-    ctx.font = '600 19px system-ui, sans-serif';
-    ctx.textAlign = 'left';
-    ctx.textBaseline = 'middle';
-    ctx.fillText(title, PAD + 2, HEAD / 2 + 4);
-  }
   return c.toDataURL('image/jpeg', 0.94);
 }
 
@@ -137,8 +177,48 @@ function _loadImg(src) {
   });
 }
 
+// ── Render gate ─────────────────────────────────────────────────────────────
+// A part counts as "materialed" once its working material (greyMat) carries a
+// diffuse map — set by applySwatchToEntries and restored from snapshots
+// (model.js). Curtains are staging, not a product part, so they don't gate.
+function _partsMissingMaterial() {
+  const groups = groupEntriesByName(E.meshEntries.filter(e => !e._isCurtain));
+  return groups.filter(g => !g.some(e => e.greyMat && e.greyMat.map)).map(g => g[0].name);
+}
+// Flash the unassigned parts: pulse their rows in the zone/part lists (tagged
+// with data-zone in model.js) and briefly glow their meshes red in the viewport.
+function _flashMissingZones(names) {
+  const set = new Set(names);
+  document.querySelectorAll('[data-zone]').forEach(row => {
+    if (set.has(row.dataset.zone)) {
+      row.classList.remove('zone-flash'); void row.offsetWidth; // restart animation
+      row.classList.add('zone-flash');
+      setTimeout(() => row.classList.remove('zone-flash'), 1800);
+    }
+  });
+  const targets = E.meshEntries.filter(e => set.has(e.name));
+  targets.forEach(e => { e.greyMat.emissive = new THREE.Color(0x7a1500); e.greyMat.emissiveIntensity = 0.55; e.greyMat.needsUpdate = true; });
+  markDirty();
+  setTimeout(() => { targets.forEach(e => { e.greyMat.emissive = new THREE.Color(0); e.greyMat.emissiveIntensity = 0; e.greyMat.needsUpdate = true; }); markDirty(); }, 1800);
+}
+
 export async function renderCollage() {
   if (!E.currentModel) { showToast('Load a model first!'); return; }
+
+  // Gate: every product part must have a material (fabric on upholstery, the
+  // wood finish on the legs/frame) before we render. On failure, take the user
+  // to the customize section (same pattern as the Products shortcut) and flash
+  // the parts still missing a material so it's obvious what to fix.
+  const missing = _partsMissingMaterial();
+  if (missing.length) {
+    showToast(`Add a material to every part first — missing: ${missing.join(', ')}`);
+    if (appStore.getState().roomMode && window.toggleRoomView) window.toggleRoomView();
+    if (window.showPanelTab) window.showPanelTab('parts');
+    document.getElementById('mesh-list')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    _flashMissingZones(missing);
+    return;
+  }
+
   const loading = document.getElementById('loading');
   const label = document.getElementById('load-txt');
   loading.classList.add('on');
@@ -197,18 +277,21 @@ export async function renderCollage() {
     }
 
     label.textContent = 'Composing…';
-    const imgs = await Promise.all([heroFinal, backShot, seatShot, angleShot].map(_loadImg));
-    const fabric = document.getElementById('app-name')?.textContent || '';
     const product = document.getElementById('cp-product-name')?.textContent
       || appStore.getState().currentModelKey || '';
-    const sheet = _composeCollage([
-      { img: imgs[0], label: 'In a living room' },
-      { img: imgs[1], label: 'Backrest — fabric detail' },
-      { img: imgs[2], label: 'Seat cushion — fabric detail' },
-      { img: imgs[3], label: 'Alternate angle' },
-    ], [product, fabric].filter(Boolean).join(' · '));
-
-    showRenderedImage(sheet, !apiAvailable);
+    const overall = _overallFabric();
+    const backF = _partFabric(/back\s*(cushion|rest)/i) || overall;
+    const seatF = _partFabric(/seat\s*cushion/i) || overall;
+    // Each slide names the fabric + colour it's showing (main line); the view
+    // (Backrest / Seat cushion / In a living room / Alternate angle) is the
+    // secondary context line in the carousel.
+    const slides = [
+      { src: heroFinal, fabric: overall, view: 'In a living room' },
+      { src: backShot,  fabric: backF,   view: 'Backrest' },
+      { src: seatShot,  fabric: seatF,   view: 'Seat cushion' },
+      { src: angleShot, fabric: overall, view: 'Alternate angle' },
+    ];
+    showRenderedCarousel(slides, { product, isLocal: !apiAvailable });
   } catch (e) {
     console.error('Collage error:', e);
     showToast('Error generating render.');
@@ -552,7 +635,7 @@ export async function _vimrGenerate(ov, body, genBtn) {
   const loadSub = document.createElement('div');
   loadSub.style.cssText = 'font-size:11px;color:#9ca3af;line-height:1.6';
   loadSub.textContent = 'Converting your 3D design to a photorealistic render';
-  loadEl.innerHTML = `<svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#7c3aed" stroke-width="1.8" style="animation:spin 1.2s linear infinite"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>`;
+  loadEl.innerHTML = '<div class="loader"></div>';
   loadEl.appendChild(loadLabel);
   loadEl.appendChild(loadSub);
   body.appendChild(loadEl);
@@ -688,6 +771,120 @@ export function showRenderedImage(imageUrl, isLocal) {
   md.appendChild(hd);md.appendChild(iw);md.appendChild(ft);ov.appendChild(md);
   ov.addEventListener('click',e=>{if(e.target===ov)document.body.removeChild(ov);});
   document.body.appendChild(ov);
+}
+
+// Multi-shot render viewer: one image at a time with ‹ Back / Next ›, a slide
+// counter, per-slide caption, Download (current slide) and Download all (the
+// 2×2 sheet composed on demand via _composeCollage). Used by renderCollage;
+// room mode's single render still uses showRenderedImage.
+export function showRenderedCarousel(slides, { product = '', isLocal = false } = {}) {
+  let i = 0;
+  const ov = document.createElement('div');
+  ov.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.7);display:flex;align-items:center;justify-content:center;z-index:1000;backdrop-filter:blur(6px)';
+  const md = document.createElement('div');
+  md.style.cssText = 'background:#fff;border-radius:8px;overflow:hidden;max-width:90vw;max-height:90vh;box-shadow:0 20px 60px rgba(0,0,0,.35);display:flex;flex-direction:column';
+
+  const hd = document.createElement('div');
+  hd.style.cssText = 'padding:12px 20px;border-bottom:1px solid #ebebeb;display:flex;justify-content:space-between;align-items:center;flex-shrink:0;gap:16px';
+  // Brand lockup: the white house mark on a dark badge + "livinit" wordmark.
+  const brand = document.createElement('div');
+  brand.style.cssText = 'display:flex;align-items:center;gap:9px;min-width:0';
+  const badge = document.createElement('span');
+  badge.style.cssText = 'display:flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:7px;background:#111;flex-shrink:0';
+  const logo = document.createElement('img');
+  logo.src = LOGO_URL; logo.alt = 'livinit';
+  logo.style.cssText = 'width:20px;height:20px;object-fit:contain';
+  logo.onerror = () => { badge.textContent = 'L'; badge.style.color = '#fff'; badge.style.fontWeight = '800'; };
+  badge.appendChild(logo);
+  const wordmark = document.createElement('span');
+  wordmark.textContent = 'livinit';
+  wordmark.style.cssText = 'font-family:var(--font-d);font-weight:800;font-size:15px;color:#111;letter-spacing:.01em';
+  const ti = document.createElement('span');
+  ti.textContent = product ? `· ${product}` : '';
+  ti.style.cssText = 'font-size:13px;font-weight:600;color:#888;font-family:var(--font-d);white-space:nowrap;overflow:hidden;text-overflow:ellipsis';
+  brand.appendChild(badge); brand.appendChild(wordmark); brand.appendChild(ti);
+  const cb = document.createElement('button');
+  cb.textContent = '×'; cb.style.cssText = 'background:none;border:none;font-size:24px;cursor:pointer;color:#888;padding:0;flex-shrink:0';
+  const close = () => { document.removeEventListener('keydown', onKey); document.body.removeChild(ov); };
+  cb.onclick = close;
+  hd.appendChild(brand); hd.appendChild(cb);
+
+  // Image stage with overlaid prev/next controls.
+  const stage = document.createElement('div');
+  stage.style.cssText = 'position:relative;padding:16px;display:flex;align-items:center;justify-content:center;overflow:hidden;flex:1;background:#faf9f7';
+  const im = document.createElement('img');
+  im.style.cssText = 'max-width:min(80vw,900px);max-height:64vh;object-fit:contain;border-radius:4px;box-shadow:0 4px 18px rgba(0,0,0,.12)';
+  const navBtn = (txt, side) => {
+    const b = document.createElement('button');
+    b.textContent = txt;
+    b.style.cssText = `position:absolute;${side}:18px;top:50%;transform:translateY(-50%);width:40px;height:40px;border-radius:50%;border:none;background:rgba(255,255,255,.92);box-shadow:0 2px 10px rgba(0,0,0,.2);font-size:20px;cursor:pointer;color:#222;display:flex;align-items:center;justify-content:center`;
+    return b;
+  };
+  const prev = navBtn('‹', 'left');
+  const next = navBtn('›', 'right');
+  stage.appendChild(prev); stage.appendChild(im); stage.appendChild(next);
+
+  const ft = document.createElement('div');
+  ft.style.cssText = 'padding:12px 20px;border-top:1px solid #ebebeb;display:flex;justify-content:space-between;align-items:center;flex-shrink:0;gap:12px';
+  const meta = document.createElement('div');
+  meta.style.cssText = 'display:flex;flex-direction:column;gap:2px;min-width:0';
+  const caption = document.createElement('div');
+  caption.style.cssText = 'font-size:12px;font-weight:700;color:#222;font-family:var(--font-d);white-space:nowrap;overflow:hidden;text-overflow:ellipsis';
+  const counter = document.createElement('div');
+  counter.style.cssText = 'font-size:11px;color:#888';
+  meta.appendChild(caption); meta.appendChild(counter);
+
+  const actions = document.createElement('div');
+  actions.style.cssText = 'display:flex;gap:8px;flex-shrink:0';
+  const dl = document.createElement('a');
+  dl.style.cssText = 'background:var(--accent);color:#fff;padding:9px 16px;border-radius:var(--r);text-decoration:none;font-size:12px;font-family:var(--font-b);cursor:pointer';
+  const dlAll = document.createElement('button');
+  dlAll.textContent = 'Download all';
+  dlAll.style.cssText = 'background:#f0eeea;color:#333;padding:9px 16px;border:none;border-radius:var(--r);font-size:12px;font-family:var(--font-b);cursor:pointer';
+  actions.appendChild(dl); actions.appendChild(dlAll);
+  ft.appendChild(meta); ft.appendChild(actions);
+
+  function show(n) {
+    i = (n + slides.length) % slides.length;
+    const s = slides[i];
+    im.src = s.src;
+    // Main line: the fabric + colour this shot shows (falls back to product).
+    caption.textContent = _fmtFabric(s.fabric) || product || 'Render';
+    // Secondary line: the view + slide position.
+    counter.textContent = `${s.view} · ${i + 1} / ${slides.length}`;
+    dl.href = s.src;
+    dl.download = `render-${i + 1}.${isLocal ? 'png' : 'jpg'}`;
+    dl.textContent = 'Download';
+  }
+  prev.onclick = () => show(i - 1);
+  next.onclick = () => show(i + 1);
+  const onKey = e => {
+    if (e.key === 'Escape') close();
+    else if (e.key === 'ArrowLeft') show(i - 1);
+    else if (e.key === 'ArrowRight') show(i + 1);
+  };
+  document.addEventListener('keydown', onKey);
+
+  dlAll.onclick = async () => {
+    dlAll.textContent = 'Composing…'; dlAll.disabled = true;
+    try {
+      const [imgs, logoImg] = await Promise.all([
+        Promise.all(slides.map(s => _loadImg(s.src))),
+        _loadImg(LOGO_URL),
+      ]);
+      const sheet = _composeCollage(
+        imgs.map((img, k) => ({ img, label: _fmtFabric(slides[k].fabric) || slides[k].view, sub: slides[k].view })),
+        product, logoImg);
+      const a = document.createElement('a');
+      a.href = sheet; a.download = 'render-all.jpg'; a.click();
+    } catch (_) { showToast('Could not compose sheet'); }
+    finally { dlAll.textContent = 'Download all'; dlAll.disabled = false; }
+  };
+
+  hd && md.appendChild(hd); md.appendChild(stage); md.appendChild(ft); ov.appendChild(md);
+  ov.addEventListener('click', e => { if (e.target === ov) close(); });
+  document.body.appendChild(ov);
+  show(0);
 }
 
 export async function exportGLB() {

@@ -21,6 +21,9 @@ export const ACCENT_CHAIR_GLB = SB + 'fabric_assets_v2/glbs/accent_chair_fabric.
 export const SOFA_GLB         = SB + 'fabric_assets_v2/glbs/sofa.glb';
 // Living Room GLB — unchanged, reused read-only from the old app's bucket space.
 export const ROOM_GLB         = SB + 'fabric_assets/glbs/room_new.glb';
+// Brand mark (white line-art house on transparent) — reused read-only from the
+// old app's bucket space. White, so it must sit on a dark/coloured badge.
+export const LOGO_URL         = SB + 'fabric_assets/logo.png';
 
 export function getGLBUrl(key){return{chair:CHAIR_GLB,accent_chair:ACCENT_CHAIR_GLB,sofa:SOFA_GLB}[key]||null;}
 
@@ -57,7 +60,8 @@ export const CHAIR_WOOD = [
 // that series. `fabric`/`vinyl` are generic type-level aliases (pointing at
 // Crypton's and Allante's generated maps respectively) used when an item has
 // no `series` of its own (e.g. Fabric-Finder photo-analysis results, which
-// only carry a Gemini-vision-detected `type`).
+// only carry a Gemini-vision-detected `type`). The `fabric` alias points at
+// Thalassa's maps (a woven-fabric weave) since the Crypton series was removed.
 const FM = SB + 'fabric_assets_v2/fabric_maps/';
 function seriesMaps(series) {
   const enc = encodeURIComponent(series);
@@ -69,7 +73,7 @@ export const MATERIAL_MAPS = {
   wood: { norm: [SB+'fabric_assets/wood_texture/Normal.jpg', SB+'fabric_assets/wood_texture/Normal.webp'],
           rough:[SB+'fabric_assets/wood_texture/Roughness.jpg', SB+'fabric_assets/wood_texture/Roughness.webp'] },
   Allante: seriesMaps('Allante'), Bali: seriesMaps('Bali'), Carson: seriesMaps('Carson'),
-  Chaise: seriesMaps('Chaise'), Cinema: seriesMaps('Cinema'), Crypton: seriesMaps('Crypton'),
+  Chaise: seriesMaps('Chaise'), Cinema: seriesMaps('Cinema'),
   Heirloom: seriesMaps('Heirloom'), Linum: seriesMaps('Linum'), 'Milano Stitch': seriesMaps('Milano Stitch'),
   'Natural Linen': seriesMaps('Natural Linen'), Parlour: seriesMaps('Parlour'), Rivulet: seriesMaps('Rivulet'),
   'Rivulet Pattern': seriesMaps('Rivulet Pattern'), Twist: seriesMaps('Twist'),
@@ -77,8 +81,8 @@ export const MATERIAL_MAPS = {
   // pattern 5316 ("7693"); its swatches were the douglassfabric.com colourways.
   Thalassa: seriesMaps('Thalassa'), Challenger: seriesMaps('Challenger'), Kimono: seriesMaps('Kimono'),
 };
-MATERIAL_MAPS.fabric = MATERIAL_MAPS.Crypton;  // generic Crypton-fabric alias
-MATERIAL_MAPS.vinyl  = MATERIAL_MAPS.Allante;  // generic vinyl alias
+MATERIAL_MAPS.fabric = MATERIAL_MAPS.Thalassa;  // generic woven-fabric alias
+MATERIAL_MAPS.vinyl  = MATERIAL_MAPS.Allante;   // generic vinyl alias
 
 // ── Fabric series (fabric_assets_v2/fabrics/<Series>/<Color>.jpg) ───────
 // Flat, vendor-agnostic library — all 14 series are available on all 3
@@ -193,15 +197,6 @@ export const FABRIC_CINEMA = seriesItems('Cinema', 'fabric', [
   ['Royal.jpg', 'Royal'],
   ['Sage.jpg', 'Sage'],
   ['Sienna.jpg', 'Sienna'],
-]);
-
-export const FABRIC_CRYPTON = seriesItems('Crypton', 'fabric', [
-  ['Alabaster.jpg', 'Alabaster'],
-  ['Baltic.jpg', 'Baltic'],
-  ['Carbon.jpg', 'Carbon'],
-  ['Forest.jpg', 'Forest'],
-  ['Pebble.jpg', 'Pebble'],
-  ['Sky.jpg', 'Sky'],
 ]);
 
 export const FABRIC_HEIRLOOM = seriesItems('Heirloom', 'fabric', [
@@ -452,7 +447,6 @@ export const ALL_SERIES = [
   { group:'Challenger', vclass:'vinyl', items: FABRIC_CHALLENGER },
   { group:'Chaise', vclass:'vinyl', items: FABRIC_CHAISE },
   { group:'Cinema', vclass:'fabric', items: FABRIC_CINEMA },
-  { group:'Crypton', vclass:'fabric', items: FABRIC_CRYPTON },
   { group:'Heirloom', vclass:'fabric', items: FABRIC_HEIRLOOM },
   { group:'Kimono', vclass:'fabric', items: FABRIC_KIMONO },
   { group:'Linum', vclass:'vinyl', items: FABRIC_LINUM },
