@@ -27,6 +27,20 @@ export const LOGO_URL         = SB + 'fabric_assets/logo.png';
 
 export function getGLBUrl(key){return{chair:CHAIR_GLB,accent_chair:ACCENT_CHAIR_GLB,sofa:SOFA_GLB}[key]||null;}
 
+// ── Default per-product camera viewpoints ("framed shot") ──────────────────
+// The baseline camera pose shipped to EVERY visitor. On load the camera snaps
+// here and the radius `r` becomes the closest allowed zoom (visitors can't zoom
+// in past it; orbit + zoom-out stay free). Fill these in with the values the
+// Settings → Viewpoint → Lock button produces for each product, then redeploy.
+// Runtime admin overrides (S3, api/viewpoints.ts) take precedence when present.
+// See add-on feature/lock-viewpoint.md.
+//   Shape: { theta, phi, r, tgt: [x, y, z] }
+export const PRODUCT_VIEWPOINTS = {
+  chair:        { theta: 0.043, phi: 1.066, r: 1.111, tgt: [0, 0, 0] },
+  accent_chair: { theta: 0.449, phi: 0.947, r: 1.327, tgt: [0, 0, 0] },
+  sofa:         { theta: 0.092, phi: 1.29,  r: 0.891, tgt: [0, 0, 0] },
+};
+
 export async function loadTexFirstSuccess(urls, isSrgb) {
   for(const url of urls) {
     try { const t = await tryLoadTex(url, isSrgb); if(t) return t; } catch(e){}

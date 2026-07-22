@@ -137,6 +137,30 @@ tailwind.config = {
       <input type="range" id="s-env-brightness" min="0.3" max="2.5" step="0.05" value="1" oninput="updateEnvBrightness(this.value)" style="width:100%">
       <div style="font:400 10px var(--font-sans);color:rgb(var(--md-on-surface-variant))">Adjusts the room/studio lighting intensity — not the fabric's own color.</div>
     </div>
+    <!-- Viewpoint lock — set this product's framed shot. A locked viewpoint
+         snaps the camera on load and becomes the closest allowed zoom. For now
+         Lock stores the shot locally + copies a PRODUCT_VIEWPOINTS snippet to
+         bake as the default for everyone; runtime admin publishing comes later. -->
+    <div id="viewpoint-settings">
+      <div style="height:1px;background:rgb(var(--md-outline-variant));margin:14px 0"></div>
+      <div style="font:700 11px/1 var(--font-sans);letter-spacing:.06em;text-transform:uppercase;color:rgb(var(--md-on-surface-variant));margin-bottom:10px">Viewpoint</div>
+      <div style="display:flex;justify-content:space-between;font:600 11px var(--font-sans);color:rgb(var(--md-on-surface));margin-bottom:6px">
+        <span id="vp-state-label">No viewpoint set</span>
+        <span id="vp-live-readout" style="font-weight:400;color:rgb(var(--md-on-surface-variant));font-variant-numeric:tabular-nums"></span>
+      </div>
+      <div style="display:flex;gap:8px">
+        <button class="vp-btn" id="btn-vp-lock" style="flex:1" onclick="lockCurrentViewpoint()">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+          Lock
+        </button>
+        <button class="vp-btn" id="btn-vp-unlock" style="flex:1" onclick="unlockCurrentViewpoint()">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 9.9-1"/></svg>
+          Unlock
+        </button>
+      </div>
+      <div style="font:400 10px var(--font-sans);color:rgb(var(--md-on-surface-variant));margin-top:6px">Lock publishes the current zoom as the closest-allowed view for every visitor (needs the admin key). The scene still loads normally — visitors just can't zoom in past this. Unlock reverts to the default.</div>
+      <textarea id="vp-snippet" readonly onclick="this.select()" style="display:none;width:100%;margin-top:8px;height:52px;resize:none;font:400 10px/1.4 var(--font-mono,monospace);color:rgb(var(--md-on-surface));background:rgb(var(--md-surface-container-high,var(--md-surface-container)));border:1px solid rgb(var(--md-outline-variant));border-radius:var(--r-sm);padding:6px"></textarea>
+    </div>
     <div style="height:1px;background:rgb(var(--md-outline-variant));margin:14px 0"></div>
     <button class="cp-link-btn" style="width:100%;text-align:left" onclick="window._tourRestart()">↺ Replay Onboarding Tour</button>
   </div>
@@ -222,7 +246,7 @@ tailwind.config = {
         <div class="vp-controls">
           <span class="vp-info-pill">Drag to orbit &nbsp;·&nbsp; Scroll to zoom &nbsp;·&nbsp; Right-click to pan</span>
           <div class="vp-ctrl-sep"></div>
-          <button class="vp-ctrl-btn" onclick="sph.r=Math.max(.5,sph.r*.82);camUpdate()">
+          <button class="vp-ctrl-btn" onclick="zoomStep(.82)">
             <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="11" y1="8" x2="11" y2="14"/><line x1="8" y1="11" x2="14" y2="11"/></svg>
             Zoom In
           </button>

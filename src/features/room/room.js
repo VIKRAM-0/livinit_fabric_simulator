@@ -23,6 +23,8 @@ export function toggleRoomView() {
   // staged room, not one focused piece.
   const spinBtn = document.getElementById('btn-spin-360');
   if(spinBtn) spinBtn.style.display = appStore.getState().roomMode ? 'none' : '';
+  // Keep the Settings → Viewpoint state label in sync with room/product mode.
+  window.refreshViewpointUI?.();
 
   // Tool-panel tabs own body visibility: room mode → Room tab, product → Fabrics.
   // (Room controls now live inside the Room tab — the floating canvas tray is gone.)
@@ -61,6 +63,9 @@ export function toggleRoomView() {
     E.sph = {theta: 0.4, phi: 1.15, r: 2.2};
     E.tgt.set(0, 0, 0);
     window.camUpdate();
+    // Re-apply any locked viewpoint (overrides the default pose + restores the
+    // zoom-in floor that was relaxed to 0.3 while in room mode).
+    window.applyLockedViewpoint?.(appStore.getState().currentModelKey);
     // Re-apply environment to restore correct lighting after room session
     if (E.pmremGen) {
       E.scene.environment = E.pmremGen.fromScene(new THREE.RoomEnvironment(), 1.0).texture;

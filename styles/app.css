@@ -101,6 +101,10 @@ body{background:var(--bg);color:var(--text);font-family:var(--font-b);font-size:
 .vp-ctrl-btn:disabled:hover{background:transparent;color:rgb(var(--md-on-surface))}
 .vp-ctrl-btn.spinning svg{animation:vpSpinIcon 1s linear infinite}
 @keyframes vpSpinIcon{to{transform:rotate(360deg)}}
+/* Settings → Viewpoint Lock / Unlock buttons (small, side-by-side). */
+.vp-btn{display:inline-flex;align-items:center;justify-content:center;gap:5px;padding:7px 10px;border:1px solid rgb(var(--md-outline-variant));background:rgb(var(--md-surface-container-high,var(--md-surface-container)));color:rgb(var(--md-on-surface));font:600 11px var(--font-sans);border-radius:var(--r-sm);cursor:pointer;transition:all var(--dur-fast) var(--ease-motion)}
+.vp-btn:hover{background:rgb(var(--md-primary) / .10);color:rgb(var(--md-primary));border-color:rgb(var(--md-primary) / .40)}
+.vp-btn svg{opacity:.8}
 .v-hint{display:none!important}
 .v-hint span{display:flex;align-items:center;gap:5px}
 .vp-info-pill{font-size:var(--fs-2xs);font-weight:500;color:var(--text-muted);letter-spacing:.03em;padding:0 10px 0 2px;white-space:nowrap}

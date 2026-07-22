@@ -31,6 +31,16 @@ document.addEventListener('keydown', e => {
   if (e.key==='Escape') window.closeFabricFinder();
 });
 
+// Dismiss the Settings popover on any click outside it. The gear button keeps
+// its own toggle (excluded here so opening it doesn't immediately re-close);
+// clicks INSIDE the popover (sliders, Lock/Unlock, snippet) are ignored.
+document.addEventListener('click', e => {
+  const pop = document.getElementById('settings-popover');
+  if (!pop || pop.style.display === 'none') return;
+  if (pop.contains(e.target) || e.target.closest('#nav-settings')) return;
+  pop.style.display = 'none';
+});
+
 window.loadScripts([
   'https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/DRACOLoader.js',
   'https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js',
@@ -70,6 +80,10 @@ window.loadScripts([
   window.buildLibrary();
   window.loadModel(CHAIR_GLB);
   window.updateProductInfo();
+  // Pull the shared per-product locked viewpoints from S3 and apply to whatever
+  // is showing. Owner sets these via the lock icon (admin); everyone else just
+  // inherits the framed pose + zoom-in floor.
+  window.loadLockedViewpoints?.();
 
   // Background preload — furniture models cached so every tab switch is instant
   [

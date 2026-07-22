@@ -19,6 +19,10 @@ export const E = {
   ghostImg: document.getElementById('drag-ghost-img'),
   renderer: null, scene: null, camera: null, pmremGen: null, gltfLoader: null,
   sph: { theta: 0.4, phi: 1.15, r: 2.2 }, tgt: new THREE.Vector3(),
+  // Closest allowed orbit radius. Default 0.3; raised to a product's locked
+  // viewpoint radius when an admin has locked it (see viewport.js) so visitors
+  // can't zoom in past the framed shot. Reset to 0.3 in room mode.
+  minZoomR: 0.3,
   modelMaterialSnapshots: { chair: null, accent_chair: null, sofa: null },
   _curtainRoughTex: null,
 };

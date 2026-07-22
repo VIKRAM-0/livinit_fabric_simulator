@@ -387,6 +387,9 @@ export function processGLTF(gltf) {
       const baseR = 2.2;
       const r = appStore.getState().currentModelKey === 'chair' ? baseR * 1.1 : baseR;
       E.sph={theta:0.4,phi:1.15,r}; E.tgt.set(0,0,0); window.camUpdate();
+      // Keep the default framing on load; only set the zoom-in floor from the
+      // published/default viewpoint (can't zoom closer than it). No lock → 0.3.
+      window.applyLockedViewpoint?.(appStore.getState().currentModelKey);
     }
     // Room mode: E.camera stays, _placeFurnitureInRoom sets positions
     // Restore previously saved material snapshot for this model key

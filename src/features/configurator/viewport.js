@@ -2,6 +2,7 @@ import { E, markDirty, showToast, roomFurnitureModels, raycaster, mouse } from '
 import { appStore } from '../../lib/store.js';
 import { getHitEntry, entryGroup } from './materials.js';
 import { groupEntriesByName } from './model.js';
+import { PRODUCT_VIEWPOINTS } from '../../lib/catalog.js';
 // Product info, zone overlay, Three.js init, script loader, GLB upload
 // Classic script (not a module): top-level let/const/function share the
 // global scope across all src/*.js files, preserving original semantics.
@@ -33,6 +34,8 @@ export function _updateZoneCountBadge() {
 export function toggleSettingsPanel() {
   const el = document.getElementById('settings-popover');
   if (el) el.style.display = el.style.display === 'none' ? 'block' : 'none';
+  // Sync the Viewpoint state label + live readout when the popover opens.
+  if (el && el.style.display !== 'none') refreshViewpointUI();
 }
 export function updateEnvBrightness(val) {
   if (E.renderer) E.renderer.toneMappingExposure = +val;
@@ -147,6 +150,165 @@ export function updateZoneLabelPositions() {
 }
 
 
+// ── Locked viewpoints ───────────────────────────────────────────────────────
+// A per-product "framed shot": the camera snaps to it on load, and its radius
+// becomes the closest allowed zoom (can't zoom in past it; orbit + zoom-out stay
+// free). Controlled from the Settings popover (Lock / Unlock).
+//
+// Resolution order, most-specific first:
+//   1. S3 lock          — the live viewpoint, published by whoever holds the key
+//                         (api/viewpoints.ts, keyed by process.env.ADMIN_KEY)
+//   2. PRODUCT_VIEWPOINTS — the baked-in default that ships with the app
+//   3. none             — free framing, zoom floor 0.3
+//
+// Anyone with the admin key can Lock (publish) a new viewpoint from Settings; it
+// lands in S3 and every visitor picks it up on their next load. Unlock clears the
+// S3 entry and reverts to the baked-in default. The key is validated server-side
+// against process.env.ADMIN_KEY (a Vercel env var) — never stored in S3.
+const VIEWPOINTS_API = '/api/viewpoints';
+let _s3Locks = {};
+
+// The effective viewpoint for a product (S3 published → shipped default).
+function _resolveViewpoint(key) {
+  return _s3Locks[key] || PRODUCT_VIEWPOINTS[key] || null;
+}
+// Where did the current viewpoint come from? (drives the state label)
+function _lockSource(key) {
+  if (_s3Locks[key]) return 'published';
+  if (PRODUCT_VIEWPOINTS[key]) return 'default';
+  return 'none';
+}
+export function hasLock(key) { return _lockSource(key) !== 'none'; }
+
+// The admin key: cached in localStorage, prompted for once. Returns null if the
+// user declines the prompt.
+function _getAdminKey(promptMsg) {
+  let k = null;
+  try { k = localStorage.getItem('livinit_admin_key'); } catch (e) {}
+  if (!k) {
+    k = window.prompt(promptMsg || 'Enter the viewpoint admin key:');
+    if (!k) return null;
+    try { localStorage.setItem('livinit_admin_key', k); } catch (e) {}
+  }
+  return k;
+}
+
+// Fetch the live (published) viewpoints from S3, then apply to whatever product
+// is showing. Safe to call anytime; failures fall back to the baked default.
+export async function loadLockedViewpoints() {
+  try {
+    const res = await fetch(VIEWPOINTS_API, { cache: 'no-store' });
+    if (res.ok) _s3Locks = await res.json() || {};
+  } catch (e) { /* offline / not configured — fall back to shipped default */ }
+  applyLockedViewpoint(appStore.getState().currentModelKey);
+  refreshViewpointUI();
+}
+
+// Set product `key`'s zoom-in floor from its published/default viewpoint. This
+// does NOT move the camera — the initial framing stays at the normal default;
+// the lock only limits how far you can zoom IN (closest allowed radius = vp.r).
+// Called from processGLTF right after default framing, and on load.
+export function applyLockedViewpoint(key) {
+  if (appStore.getState().roomMode) { E.minZoomR = 0.3; refreshViewpointUI(); return; }
+  const vp = _resolveViewpoint(key);
+  E.minZoomR = vp ? vp.r : 0.3;
+  // Only nudge zoom if the normal framing happens to sit CLOSER than the floor
+  // (i.e. a lock tighter than the default). Never changes the orbit angle.
+  if (E.camera && E.sph.r < E.minZoomR) { E.sph.r = E.minZoomR; camUpdate(); }
+  refreshViewpointUI();
+}
+
+function _snippetFor(key, vp) {
+  const n = x => Math.round(x * 1000) / 1000;
+  return `  ${key}: { theta: ${n(vp.theta)}, phi: ${n(vp.phi)}, r: ${n(vp.r)}, tgt: [${n(vp.tgt[0])}, ${n(vp.tgt[1])}, ${n(vp.tgt[2])}] },`;
+}
+
+// Lock: publish the current pose as this product's viewpoint for EVERY visitor.
+// Requires the admin key (prompted once, cached). On success it lands in S3 and
+// the next visitor's load picks it up. Also shows a matching PRODUCT_VIEWPOINTS
+// snippet so the shipped default can be kept in sync.
+export async function lockCurrentViewpoint() {
+  const key = appStore.getState().currentModelKey;
+  const adminKey = _getAdminKey('Enter the viewpoint admin key to publish this shot to all visitors:');
+  if (!adminKey) return;
+  const viewpoint = { theta: E.sph.theta, phi: E.sph.phi, r: E.sph.r, tgt: [E.tgt.x, E.tgt.y, E.tgt.z] };
+  const btn = document.getElementById('btn-vp-lock');
+  if (btn) btn.disabled = true;
+  try {
+    const res = await fetch(VIEWPOINTS_API, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'x-admin-key': adminKey },
+      body: JSON.stringify({ product: key, viewpoint }),
+    });
+    if (res.status === 401) {
+      try { localStorage.removeItem('livinit_admin_key'); } catch (e) {}
+      showToast('Admin key rejected — try again'); return;
+    }
+    if (res.status === 503) { showToast('Publishing disabled — ADMIN_KEY not set on server'); return; }
+    if (!res.ok) { showToast('Could not publish viewpoint'); return; }
+    const data = await res.json();
+    _s3Locks = data.viewpoints || _s3Locks;
+    E.minZoomR = viewpoint.r;
+    const snippet = _snippetFor(key, viewpoint);
+    const ta = document.getElementById('vp-snippet');
+    if (ta) { ta.value = snippet; ta.style.display = 'block'; }
+    try { navigator.clipboard?.writeText(snippet); } catch (e) {}
+    refreshViewpointUI();
+    showToast('Viewpoint published for ' + key.replace('_', ' ') + ' — applies to everyone');
+  } catch (e) { showToast('Could not publish viewpoint'); }
+  finally { if (btn) btn.disabled = false; }
+}
+
+// Unlock: clear this product's published viewpoint (requires the key) and revert
+// to the shipped default.
+export async function unlockCurrentViewpoint() {
+  const key = appStore.getState().currentModelKey;
+  if (!_s3Locks[key]) { showToast('No published viewpoint to clear for ' + key.replace('_', ' ')); return; }
+  const adminKey = _getAdminKey('Enter the viewpoint admin key to clear this published shot:');
+  if (!adminKey) return;
+  const btn = document.getElementById('btn-vp-unlock');
+  if (btn) btn.disabled = true;
+  try {
+    const res = await fetch(`${VIEWPOINTS_API}?product=${key}&adminKey=${encodeURIComponent(adminKey)}`, { method: 'DELETE' });
+    if (res.status === 401) { try { localStorage.removeItem('livinit_admin_key'); } catch (e) {} showToast('Admin key rejected — try again'); return; }
+    if (!res.ok) { showToast('Could not clear viewpoint'); return; }
+    const data = await res.json();
+    _s3Locks = data.viewpoints || {};
+    const ta = document.getElementById('vp-snippet');
+    if (ta) { ta.value = ''; ta.style.display = 'none'; }
+    applyLockedViewpoint(key);   // re-resolve to shipped default + reset floor
+    showToast('Published viewpoint cleared for ' + key.replace('_', ' ') + ' — back to default');
+  } catch (e) { showToast('Could not clear viewpoint'); }
+  finally { if (btn) btn.disabled = false; }
+}
+
+// Reflect the current lock state in the Settings popover.
+export function refreshViewpointUI() {
+  const label = document.getElementById('vp-state-label');
+  if (!label) return;
+  const key = appStore.getState().currentModelKey;
+  const src = _lockSource(key);
+  const vp = _resolveViewpoint(key);
+  const base = { published: 'Published to all', default: 'Using shipped default', none: 'No zoom limit set' }[src];
+  label.textContent = vp ? `${base} · zoom-in min ${vp.r.toFixed(2)}` : base;
+  _updateViewpointReadout();
+}
+
+// Live theta/phi/r readout — updated as the camera moves while Settings is open.
+export function _updateViewpointReadout() {
+  const el = document.getElementById('vp-live-readout');
+  const pop = document.getElementById('settings-popover');
+  if (!el || !pop || pop.style.display === 'none') return;
+  el.textContent = `r ${E.sph.r.toFixed(2)}`;
+}
+
+// Zoom that respects the locked floor (used by the "Zoom In" control too).
+export function zoomStep(factor) {
+  const minR = appStore.getState().roomMode ? 0.3 : (E.minZoomR || 0.3);
+  E.sph.r = Math.max(minR, Math.min(30, E.sph.r * factor));
+  camUpdate();
+}
+
 // ── Three.js Init ─────────────────────────────────────────────────────────
 export function camUpdate() {
   E.camera.position.set(
@@ -155,6 +317,7 @@ export function camUpdate() {
     E.tgt.z + E.sph.r*Math.sin(E.sph.phi)*Math.cos(E.sph.theta)
   );
   E.camera.lookAt(E.tgt);
+  _updateViewpointReadout();   // no-op unless the Settings popover is open
   markDirty();
 }
 
@@ -345,7 +508,12 @@ export function initThree() {
   });
 
   canvas.addEventListener('contextmenu',e=>e.preventDefault());
-  canvas.addEventListener('wheel',e=>{E.sph.r=Math.max(0.3,Math.min(30,E.sph.r+e.deltaY*0.004));camUpdate();e.preventDefault();},{passive:false});
+  canvas.addEventListener('wheel',e=>{
+    // Closest allowed radius is the locked viewpoint's r (product view) so the
+    // owner-framed shot is the tightest zoom; unrestricted (0.3) in room mode.
+    const minR = appStore.getState().roomMode ? 0.3 : (E.minZoomR || 0.3);
+    E.sph.r=Math.max(minR,Math.min(30,E.sph.r+e.deltaY*0.004));camUpdate();e.preventDefault();
+  },{passive:false});
 
   // ── Hover-to-zoom fabric preview ─────────────────────────────────────────
   // Dwell on a part for HOVER_ZOOM_DELAY ms → show a magnified lens of the
