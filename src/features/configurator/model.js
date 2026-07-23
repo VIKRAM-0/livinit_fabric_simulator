@@ -491,6 +491,8 @@ export function switchModel(key) {
   }
 
   const prevKey = appStore.getState().currentModelKey;
+  E._uploadedModel = false;
+  window._historyClear?.();   // design-edit history never crosses products (spec §2)
   setModelKey(key);
   document.getElementById('tab-chair').classList.toggle('active', key === 'chair');
   document.getElementById('tab-accent_chair').classList.toggle('active', key === 'accent_chair');

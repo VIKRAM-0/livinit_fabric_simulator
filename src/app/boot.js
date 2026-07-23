@@ -8,6 +8,8 @@ import { appStore } from '../lib/store.js';
 import { CHAIR_GLB, ACCENT_CHAIR_GLB, SOFA_GLB, getGLBUrl } from '../lib/catalog.js';
 import { getSession, initAuthUI, hideGate, showDraftGate, signOut } from '../lib/auth.js';
 import { loadTenantCatalog, applyTenantToUI, spendRenderCredit } from '../lib/tenant.js';
+import { createHistory } from '../lib/history.js';
+import { captureDesignState, applyDesignState, fingerprintDesignState, defaultDesignState } from '../lib/design-state-live.js';
 import * as configurator from '../features/configurator/index.js';
 import * as library from '../features/library/index.js';
 import * as room from '../features/room/index.js';
@@ -29,8 +31,47 @@ Object.assign(window, configurator, library, room, render, finder,
 window.appStore = appStore;
 Object.defineProperty(window, 'sph', { get: () => E.sph, configurable: true });
 
+// ── Design history (undo/redo/reset — spec §3.3, §5) ─────────────────────
+const designHistory = createHistory({
+  capture: captureDesignState,
+  apply: (s) => applyDesignState(s, { silent: true, fast: true }),
+  fingerprint: fingerprintDesignState,
+  onChange: (h) => {
+    const u = document.getElementById('btn-undo'), r = document.getElementById('btn-redo');
+    if (u) u.disabled = h.busy || !h.canUndo();
+    if (r) r.disabled = h.busy || !h.canRedo();
+  },
+});
+window._historyRecord = () => { if (!window.__replayingDesign) designHistory.record(); };
+window._historyClear = () => designHistory.clear();
+window._historySeed = () => designHistory.seed();
+window._historyOnModelReady = () => designHistory.seed();
+window.undoDesign = () => designHistory.undo();
+window.redoDesign = () => designHistory.redo();
+window.resetDesign = async () => {
+  const names = [...new Set(E.meshEntries.filter(e => !e._isCurtain).map(e => e.name))];
+  await applyDesignState(defaultDesignState(appStore.getState().currentModelKey, names), { silent: true });
+  window._historyRecord();
+  showToast('Design reset');
+};
+
+// Slider commits: 'change' fires on release — drags coalesce to one record.
+// s-env-brightness is scene lighting, not part of DesignState — exclude it
+// explicitly rather than leaning on fingerprint dedupe.
+document.addEventListener('change', (e) => {
+  const t = e.target;
+  if (t instanceof HTMLInputElement && t.type === 'range' && t.id !== 's-env-brightness') window._historyRecord();
+});
+
 document.addEventListener('keydown', e => {
   if (e.key==='Escape') window.closeFabricFinder();
+  const mod = e.metaKey || e.ctrlKey;
+  if (!mod) return;
+  const a = document.activeElement;
+  if (a && (a.tagName === 'INPUT' || a.tagName === 'TEXTAREA' || a.isContentEditable)) return;
+  const k = e.key.toLowerCase();
+  if (k === 'z' && !e.shiftKey) { e.preventDefault(); window.undoDesign(); }
+  else if ((k === 'z' && e.shiftKey) || k === 'y') { e.preventDefault(); window.redoDesign(); }
 });
 
 // Dismiss the Settings popover on any click outside it. The gear button keeps
