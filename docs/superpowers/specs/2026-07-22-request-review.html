@@ -1,0 +1,221 @@
+<style>
+  :root{
+    --bg:#FAFBFD; --surface:#FFFFFF; --surface-2:#F3F5F9; --surface-3:#ECEFF6;
+    --border:#E4E7F0; --border-strong:#CFD4E3;
+    --text:#181B24; --muted:#565C70; --faint:#868CA1;
+    --accent:#4A5CC4; --accent-soft:#7A91EE; --accent-wash:#EBEEFC; --accent-line:#C3CDF6;
+    --good:#1C9160; --good-wash:#E1F3E9;
+    --warn:#B37320; --warn-wash:#F8EEDA;
+    --crit:#C4443C; --crit-wash:#FBE6E4;
+    --shadow:0 1px 2px rgba(24,27,36,.04), 0 10px 28px -16px rgba(24,27,36,.16);
+    --mono:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,monospace;
+    --sans:system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+  }
+  @media (prefers-color-scheme:dark){:root{
+    --bg:#0C0D12; --surface:#14161E; --surface-2:#1A1D28; --surface-3:#212433;
+    --border:#262A38; --border-strong:#363B4D;
+    --text:#ECEEF4; --muted:#9BA1B5; --faint:#6C7286;
+    --accent:#8CA0F2; --accent-soft:#7A91EE; --accent-wash:#1B2138; --accent-line:#38406A;
+    --good:#4CC38A; --good-wash:#132420; --warn:#E0A94A; --warn-wash:#282011;
+    --crit:#E9736A; --crit-wash:#2A1615;
+    --shadow:0 1px 2px rgba(0,0,0,.35), 0 14px 34px -18px rgba(0,0,0,.72);
+  }}
+  :root[data-theme="light"]{--bg:#FAFBFD;--surface:#FFFFFF;--surface-2:#F3F5F9;--surface-3:#ECEFF6;--border:#E4E7F0;--border-strong:#CFD4E3;--text:#181B24;--muted:#565C70;--faint:#868CA1;--accent:#4A5CC4;--accent-soft:#7A91EE;--accent-wash:#EBEEFC;--accent-line:#C3CDF6;--good:#1C9160;--good-wash:#E1F3E9;--warn:#B37320;--warn-wash:#F8EEDA;--crit:#C4443C;--crit-wash:#FBE6E4;--shadow:0 1px 2px rgba(24,27,36,.04),0 10px 28px -16px rgba(24,27,36,.16);}
+  :root[data-theme="dark"]{--bg:#0C0D12;--surface:#14161E;--surface-2:#1A1D28;--surface-3:#212433;--border:#262A38;--border-strong:#363B4D;--text:#ECEEF4;--muted:#9BA1B5;--faint:#6C7286;--accent:#8CA0F2;--accent-soft:#7A91EE;--accent-wash:#1B2138;--accent-line:#38406A;--good:#4CC38A;--good-wash:#132420;--warn:#E0A94A;--warn-wash:#282011;--crit:#E9736A;--crit-wash:#2A1615;--shadow:0 1px 2px rgba(0,0,0,.35),0 14px 34px -18px rgba(0,0,0,.72);}
+
+  *{box-sizing:border-box;}
+  body{margin:0;background:var(--bg);color:var(--text);font-family:var(--sans);line-height:1.56;-webkit-font-smoothing:antialiased;}
+  .wrap{max-width:980px;margin:0 auto;padding:clamp(26px,5vw,56px) clamp(16px,4vw,40px) 100px;}
+  code{font-family:var(--mono);font-size:.85em;background:var(--surface-2);padding:1px 5px;border-radius:5px;color:var(--text);}
+
+  .mast{border:1px solid var(--border);border-radius:18px;background:linear-gradient(180deg,var(--surface),var(--surface-2));box-shadow:var(--shadow);padding:clamp(22px,4vw,32px);}
+  .eyebrow{font-size:.7rem;letter-spacing:.16em;text-transform:uppercase;color:var(--accent);font-weight:660;margin:0 0 12px;}
+  h1{font-size:clamp(1.6rem,3.6vw,2.3rem);line-height:1.1;margin:0 0 12px;letter-spacing:-.02em;text-wrap:balance;font-weight:730;}
+  .mast p{margin:0;color:var(--muted);font-size:1rem;max-width:66ch;}
+  .verdict{margin-top:18px;padding:14px 18px;border-radius:12px;background:var(--accent-wash);border:1px solid var(--accent-line);font-size:.9rem;color:var(--text);}
+  .verdict b{color:var(--accent);}
+
+  section{margin-top:clamp(36px,5vw,52px);}
+  .sh{display:flex;align-items:center;gap:11px;margin:0 0 4px;flex-wrap:wrap;}
+  .sh .tn{font-family:var(--mono);font-size:.78rem;color:var(--accent);border:1px solid var(--accent-line);border-radius:7px;padding:2px 8px;font-weight:600;}
+  h2{font-size:1.24rem;margin:0;font-weight:700;letter-spacing:-.01em;}
+  .slead{color:var(--muted);margin:8px 0 16px;font-size:.92rem;max-width:72ch;}
+
+  .fig{margin:14px 0 6px;border:1px solid var(--border-strong);border-radius:14px;background:#F6F7FB;box-shadow:var(--shadow);padding:20px 16px 12px;overflow-x:auto;}
+  .fig .mermaid{display:flex;justify-content:center;min-width:0;font-family:var(--sans);}
+  .figcap{text-align:center;font-size:.77rem;color:#7C8296;margin:8px 0 0;}
+  .legend{display:flex;flex-wrap:wrap;gap:8px 16px;margin:12px 0 0;font-size:.77rem;color:var(--muted);justify-content:center;}
+  .legend .li{display:inline-flex;align-items:center;gap:7px;}
+  .sw{width:11px;height:11px;border-radius:3px;flex:none;border:1px solid rgba(0,0,0,.12);}
+  .sw.good{background:#E1F3E9;border-color:#1C9160;}.sw.warn{background:#F8EEDA;border-color:#B37320;}.sw.app{background:#EBEEFC;border-color:#4A5CC4;}
+
+  .tscroll{overflow-x:auto;border:1px solid var(--border);border-radius:13px;box-shadow:var(--shadow);}
+  table{border-collapse:collapse;width:100%;font-size:.86rem;min-width:560px;background:var(--surface);}
+  thead th{text-align:left;font-size:.67rem;text-transform:uppercase;letter-spacing:.07em;color:var(--faint);font-weight:670;padding:11px 14px;border-bottom:1px solid var(--border);background:var(--surface-2);}
+  tbody td{padding:11px 14px;border-bottom:1px solid var(--border);vertical-align:top;color:var(--muted);}
+  tbody tr:last-child td{border-bottom:none;}
+  tbody td:first-child{color:var(--text);font-weight:560;}
+  .loc{font-family:var(--mono);font-size:.76rem;color:var(--accent);}
+  .m{font-family:var(--mono);font-size:.74rem;color:var(--accent);}
+  .tag{font-size:.62rem;font-weight:720;text-transform:uppercase;letter-spacing:.04em;padding:2px 6px;border-radius:5px;white-space:nowrap;}
+  .tag.prox{background:var(--good-wash);color:var(--good);}
+  .tag.dir{background:var(--warn-wash);color:var(--warn);}
+
+  h3{font-size:1.02rem;margin:22px 0 10px;font-weight:640;}
+  .find{display:flex;gap:14px;padding:14px 0;border-top:1px solid var(--border);}
+  .find:first-of-type{border-top:none;}
+  .find .stripe{flex:none;width:4px;border-radius:3px;}
+  .find.good .stripe{background:var(--good);}
+  .find.crit .stripe{background:var(--crit);}
+  .find.warn .stripe{background:var(--warn);}
+  .find .fb b{display:block;margin-bottom:3px;font-size:.94rem;}
+  .find .fb p{margin:0;color:var(--muted);font-size:.87rem;}
+  .find .fb .ev{font-family:var(--mono);font-size:.73rem;color:var(--faint);}
+  .sev{font-size:.6rem;font-weight:730;text-transform:uppercase;letter-spacing:.04em;padding:2px 7px;border-radius:5px;margin-left:8px;vertical-align:middle;}
+  .sev.good{background:var(--good-wash);color:var(--good);}
+  .sev.crit{background:var(--crit-wash);color:var(--crit);}
+  .sev.warn{background:var(--warn-wash);color:var(--warn);}
+
+  .arw{color:var(--accent);}
+  .foot{margin-top:48px;padding-top:20px;border-top:1px solid var(--border);color:var(--faint);font-size:.8rem;}
+</style>
+
+<div class="wrap">
+
+  <div class="mast">
+    <p class="eyebrow">Code Review &middot; Request Layer &middot; 22 Jul 2026</p>
+    <h1>Existing project review — through the lens of requests</h1>
+    <p>What the current Fabric Simulator actually calls over the network, read from the code, and what each request means for the multi-tenant migration. Every finding is anchored to a file and line.</p>
+    <div class="verdict"><b>Verdict:</b> better-positioned than a typical demo — every asset already funnels through one proxy, and the AI endpoints are clean. But the request layer has <b>zero identity</b> and <b>one runtime dependency (PolyHaven)</b> that specifically hurts live consultations. This is a <b>wrap-and-scope job, not a rebuild.</b></div>
+  </div>
+
+  <!-- 1 REQUEST MAP -->
+  <section>
+    <div class="sh"><span class="tn">01</span><h2>The request map today</h2></div>
+    <p class="slead">Two kinds of outbound request: same-origin calls through our own <code>/api/*</code> proxy (green — one place to secure), and direct browser calls to external hosts (amber — outside our control).</p>
+    <div class="fig">
+      <pre class="mermaid">
+%%{init: {"theme":"base","themeVariables":{"fontFamily":"system-ui","fontSize":"12.5px","lineColor":"#5364C9","primaryColor":"#EBEEFC","primaryTextColor":"#181B24","primaryBorderColor":"#4A5CC4","clusterBkg":"#FFFFFF","clusterBorder":"#CFD4E3","titleColor":"#4A5CC4","edgeLabelBackground":"#F6F7FB","textColor":"#181B24"}}}%%
+flowchart LR
+  APP["Browser SPA · Three.js r128"]:::app
+
+  subgraph PROXY["Same-origin /api/* · single choke point"]
+    direction TB
+    S3["GET /api/s3proxy — ALL GLBs + textures"]:::good
+    GEN["POST /api/generate — renders"]:::good
+    ROOM["POST /api/gemini-room"]:::good
+    FIND["POST /api/find-fabric"]:::good
+    ENH["POST /api/enhance-texture"]:::good
+  end
+
+  subgraph DIRECT["Direct browser to external · NOT proxied"]
+    direction TB
+    PH["api.polyhaven.com — PBR maps"]:::warn
+    CDN["cdn.jsdelivr.net x5 — Three addons"]:::warn
+    GS["gstatic.com — DRACO decoder"]:::warn
+  end
+
+  APP --> S3
+  APP --> GEN
+  APP --> ROOM
+  APP --> FIND
+  APP --> ENH
+  APP -.direct.-> PH
+  APP -.direct.-> CDN
+  APP -.direct.-> GS
+
+  classDef app fill:#EBEEFC,stroke:#4A5CC4,color:#181B24;
+  classDef good fill:#E1F3E9,stroke:#1C9160,color:#181B24;
+  classDef warn fill:#F8EEDA,stroke:#B37320,color:#181B24;
+      </pre>
+      <div class="legend">
+        <span class="li"><span class="sw app"></span>The app</span>
+        <span class="li"><span class="sw good"></span>Proxied — securable in one place</span>
+        <span class="li"><span class="sw warn"></span>Direct external — outside our control</span>
+      </div>
+      <p class="figcap">Figure 1 — Not one request carries an <code>Authorization</code> header today (verified across <code>src/</code>).</p>
+    </div>
+  </section>
+
+  <!-- 2 INVENTORY -->
+  <section>
+    <div class="sh"><span class="tn">02</span><h2>Request inventory</h2></div>
+    <div class="tscroll"><table>
+      <thead><tr><th style="width:220px">Request</th><th style="width:190px">Where in code</th><th>Purpose</th><th style="width:96px">Route</th></tr></thead>
+      <tbody>
+        <tr><td><span class="m">GET /api/s3proxy</span></td><td><span class="loc">catalog.js:13</span> + loaders</td><td>Every GLB + texture the app loads</td><td><span class="tag prox">proxied</span></td></tr>
+        <tr><td><span class="m">POST /api/generate</span></td><td><span class="loc">render.js:257–662</span></td><td>Photoreal renders (+ HEAD probe)</td><td><span class="tag prox">proxied</span></td></tr>
+        <tr><td><span class="m">POST /api/gemini-room</span></td><td><span class="loc">render.js:688</span></td><td>View-in-my-room composite</td><td><span class="tag prox">proxied</span></td></tr>
+        <tr><td><span class="m">POST /api/find-fabric</span></td><td><span class="loc">finder.js:170</span></td><td>Fabric photo → PBR (+ HEAD probe)</td><td><span class="tag prox">proxied</span></td></tr>
+        <tr><td><span class="m">POST /api/enhance-texture</span></td><td><span class="loc">materials.js:54</span></td><td>Texture cleanup</td><td><span class="tag prox">proxied</span></td></tr>
+        <tr><td><span class="m">api.polyhaven.com</span></td><td><span class="loc">engine.js:233</span></td><td>PBR map metadata + textures</td><td><span class="tag dir">direct</span></td></tr>
+        <tr><td><span class="m">cdn.jsdelivr.net ×5</span></td><td><span class="loc">boot.js</span></td><td>Three.js addon scripts at boot</td><td><span class="tag dir">direct</span></td></tr>
+        <tr><td><span class="m">gstatic.com</span></td><td><span class="loc">viewport.js:458</span></td><td>DRACO decoder</td><td><span class="tag dir">direct</span></td></tr>
+      </tbody>
+    </table></div>
+  </section>
+
+  <!-- 3 FINDINGS -->
+  <section>
+    <div class="sh"><span class="tn">03</span><h2>Review findings</h2></div>
+
+    <h3>Strengths — these de-risk the migration</h3>
+    <div class="find good">
+      <div class="stripe"></div>
+      <div class="fb"><b>Single asset choke point <span class="sev good">strong</span></b><p>Every GLB and texture routes through <code>/api/s3proxy</code>. Tenant-scoping is a one-place change, not a scattered hunt — the biggest structural advantage the code has.</p><span class="ev">catalog.js:13 · all three.js loaders</span></div>
+    </div>
+    <div class="find good">
+      <div class="stripe"></div>
+      <div class="fb"><b>AI endpoints already cleanly isolated <span class="sev good">strong</span></b><p>Four Gemini calls sit behind tidy <code>/api/</code> handlers with clear request/response. Adding auth + metering is a wrapper, not a rewrite.</p></div>
+    </div>
+    <div class="find good">
+      <div class="stripe"></div>
+      <div class="fb"><b>Payload &amp; degradation handled maturely <span class="sev good">strong</span></b><p>Already compresses images under Vercel's 4.5MB limit and HEAD-probes endpoints for graceful fallback. Not demo-grade sloppiness.</p><span class="ev">render.js:449 _vimrCompressImage · finder.js:289 _checkEndpoint</span></div>
+    </div>
+
+    <h3>Risks — ranked</h3>
+    <div class="find crit">
+      <div class="stripe"></div>
+      <div class="fb"><b>Zero authentication on any request <span class="sev crit">critical</span></b><p>No <code>Authorization</code> header anywhere in <code>src/</code> (verified). Multi-tenant means adding the session token to all five request families and verifying server-side — bounded, but it touches every <code>fetch</code> site.</p></div>
+    </div>
+    <div class="find crit">
+      <div class="stripe"></div>
+      <div class="fb"><b>The catalog is not a request <span class="sev crit">critical</span></b><p>Products/fabrics are a compile-time <code>import</code> from <code>catalog.js</code>, not fetched. The one request that unlocks multi-tenancy — <code>GET /api/catalog</code> — doesn't exist. Its exact insertion point is the hardcoded <code>loadModel(CHAIR_GLB)</code> call in boot.</p><span class="ev">boot.js · loadModel(CHAIR_GLB)</span></div>
+    </div>
+    <div class="find warn">
+      <div class="stripe"></div>
+      <div class="fb"><b>PolyHaven is a live consultation dependency <span class="sev warn">high</span></b><p>Direct browser call to <code>api.polyhaven.com</code>. Bypasses the tenant boundary, degrades the demo if PolyHaven is slow/down, and can't be cached. Fix: bake resolved PBR maps into the tenant's S3 at onboarding; drop the runtime call.</p><span class="ev">engine.js:233 getPolyMaps</span></div>
+    </div>
+    <div class="find warn">
+      <div class="stripe"></div>
+      <div class="fb"><b>Nine silent asset failures <span class="sev warn">high</span></b><p><code>.catch(() =&gt; null)</code> swallows load errors (7 in materials.js, 2 in room.js). A fabric that fails becomes a blank grey mesh with no signal — embarrassing in front of a customer. Surface with a placeholder + toast.</p><span class="ev">materials.js ×7 · room.js ×2</span></div>
+    </div>
+    <div class="find warn">
+      <div class="stripe"></div>
+      <div class="fb"><b>Boot depends on 5 public CDN scripts <span class="sev warn">medium</span></b><p>Three.js addons (jsdelivr) + DRACO decoder (gstatic) load at boot. For a dedicated hosted client experience, self-host them so a CDN hiccup can't blank the app mid-consultation.</p><span class="ev">boot.js · viewport.js:458</span></div>
+    </div>
+  </section>
+
+  <!-- 4 CHANGE MAP -->
+  <section>
+    <div class="sh"><span class="tn">04</span><h2>Per-request change map</h2></div>
+    <p class="slead">Exactly what happens to each request under the multi-tenant design.</p>
+    <div class="tscroll"><table>
+      <thead><tr><th style="width:270px">Request</th><th>Change</th></tr></thead>
+      <tbody>
+        <tr><td><span class="m">GET /api/s3proxy</span></td><td>+ verify session, enforce <code>tenants/{id}/</code> prefix</td></tr>
+        <tr><td><span class="m">POST generate · gemini-room · enhance-texture</span></td><td>+ auth, + <code>billing/consume</code> before the paid call</td></tr>
+        <tr><td><span class="m">POST find-fabric</span></td><td>+ auth (authoring path)</td></tr>
+        <tr><td><span class="m">api.polyhaven.com</span></td><td><b>Remove at runtime</b> — resolve to tenant S3 at onboarding</td></tr>
+        <tr><td><span class="m">CDN addon scripts</span></td><td>Self-host for reliability</td></tr>
+        <tr><td><span class="m">GET /api/catalog</span></td><td><span class="arw">NEW</span> — replaces the <code>catalog.js</code> import; runs at boot before <code>loadModel</code></td></tr>
+        <tr><td><span class="m">GET /api/me</span></td><td><span class="arw">NEW</span> — gate the shell on <code>status = active</code></td></tr>
+      </tbody>
+    </table></div>
+  </section>
+
+  <p class="foot">
+    Reviewed against <code>VIKRAM-0/livinit_fabric_simulator @ main</code>. Request sites and line numbers read directly from <code>src/</code>. "Zero auth" confirmed by an <code>Authorization|bearer|token</code> search returning no request headers.
+  </p>
+
+</div>

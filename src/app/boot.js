@@ -5,7 +5,9 @@
 import '../components/ui/panels.js';   // side-effect: injects slider/applied markup
 import { E, markDirty, showToast, _gltfSceneCache, roomFurnitureModels } from '../lib/engine.js';
 import { appStore } from '../lib/store.js';
-import { CHAIR_GLB, ACCENT_CHAIR_GLB, SOFA_GLB } from '../lib/catalog.js';
+import { CHAIR_GLB, ACCENT_CHAIR_GLB, SOFA_GLB, getGLBUrl } from '../lib/catalog.js';
+import { getSession, initAuthUI, hideGate, showDraftGate, signOut } from '../lib/auth.js';
+import { loadTenantCatalog, applyTenantToUI, spendRenderCredit } from '../lib/tenant.js';
 import * as configurator from '../features/configurator/index.js';
 import * as library from '../features/library/index.js';
 import * as room from '../features/room/index.js';
@@ -41,6 +43,10 @@ document.addEventListener('click', e => {
   pop.style.display = 'none';
 });
 
+// App bootstrap — runs only after a session exists and the tenant catalog is
+// applied (multi-tenant gate at the bottom of this file). `allowed` is the
+// tenant's product-key list; the initial load + preload respect it.
+function startApp(allowed){
 window.loadScripts([
   'https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/DRACOLoader.js',
   'https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js',
@@ -78,18 +84,20 @@ window.loadScripts([
 
   window.initDragDrop();
   window.buildLibrary();
-  window.loadModel(CHAIR_GLB);
+  // First model = the tenant's first allowed product (falls back to chair).
+  window.loadModel(getGLBUrl(allowed[0]) || CHAIR_GLB);
   window.updateProductInfo();
   // Pull the shared per-product locked viewpoints from S3 and apply to whatever
   // is showing. Owner sets these via the lock icon (admin); everyone else just
   // inherits the framed pose + zoom-in floor.
   window.loadLockedViewpoints?.();
 
-  // Background preload — furniture models cached so every tab switch is instant
+  // Background preload — only the tenant's own models, cached so every tab
+  // switch is instant. Other tenants' products are never fetched.
   [
     { url: ACCENT_CHAIR_GLB, roomKey: 'accent_chair' },
     { url: SOFA_GLB,         roomKey: 'sofa' },
-  ].forEach(({ url, roomKey }) => {
+  ].filter(({ roomKey }) => allowed.includes(roomKey)).forEach(({ url, roomKey }) => {
     E.gltfLoader.load(url, gltf => {
       if (!_gltfSceneCache[url]) _gltfSceneCache[url] = gltf.scene;
       if (roomKey && !roomFurnitureModels[roomKey]) {
@@ -103,6 +111,40 @@ window.loadScripts([
     }, undefined, () => { /* silent fail — user can still load on demand */ });
   });
 }).catch(e=>{console.error('Script load failed',e);showToast('Failed to load Three.js loaders');});
+}
+
+// ── Multi-tenant gate ─────────────────────────────────────────────────────
+// No session → login screen. Draft tenant → "being set up". Live tenant →
+// scope the UI to their catalog, wire the account chrome, then boot.
+async function bootWithSession(session){
+  hideGate();
+  const tenant = await loadTenantCatalog(session);
+  if (tenant.status === 'draft') { showDraftGate(tenant); return; }
+  const first = applyTenantToUI(tenant, session) || 'chair';
+  _wireTenantMenu(session, tenant);
+  startApp(tenant.products.length ? tenant.products : ['chair']);
+  // Demo credit meter: count each render against the badge. Real counter
+  // comes from GET /api/billing once the credits contract is wired.
+  const _render = window.renderScene;
+  window.renderScene = (...a) => { spendRenderCredit(); return _render(...a); };
+  void first;
+}
+
+function _wireTenantMenu(session, tenant){
+  const av = document.getElementById('tenant-avatar');
+  const menu = document.getElementById('tenant-menu');
+  if (!av || !menu) return;
+  document.getElementById('tenant-menu-user').textContent =
+    `${session.user.name} · ${tenant.name}`;
+  av.addEventListener('click', e => { e.stopPropagation(); menu.classList.toggle('open'); });
+  document.addEventListener('click', () => menu.classList.remove('open'));
+  document.getElementById('tenant-signout')?.addEventListener('click', signOut);
+}
+
+{
+  const s = getSession();
+  if (s) bootWithSession(s); else initAuthUI(bootWithSession);
+}
 
 // Narrow-window sidebar drawer toggle (floating "Fabrics" pill; no-op >=1024px)
 function toggleSidebar(){ document.getElementById('right-panel')?.classList.toggle('open'); }

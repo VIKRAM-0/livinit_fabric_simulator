@@ -1,0 +1,528 @@
+<style>
+  :root{
+    --bg:#FAFBFD; --surface:#FFFFFF; --surface-2:#F3F5F9; --surface-3:#ECEFF6;
+    --border:#E4E7F0; --border-strong:#CFD4E3;
+    --text:#181B24; --muted:#565C70; --faint:#868CA1;
+    --accent:#4A5CC4; --accent-soft:#7A91EE; --accent-wash:#EBEEFC; --accent-line:#C3CDF6;
+    --good:#1C9160; --good-wash:#E1F3E9;
+    --hard:#B37320; --hard-wash:#F8EEDA;
+    --keep:#5A6072; --keep-wash:#EBEDF3;
+    --ext:#7A5AA8; --ext-wash:#F0EAF8;
+    --crit:#C4443C; --crit-wash:#FBE6E4;
+    --shadow:0 1px 2px rgba(24,27,36,.04), 0 10px 28px -16px rgba(24,27,36,.16);
+    --mono:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,monospace;
+    --sans:system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+  }
+  @media (prefers-color-scheme:dark){:root{
+    --bg:#0C0D12; --surface:#14161E; --surface-2:#1A1D28; --surface-3:#212433;
+    --border:#262A38; --border-strong:#363B4D;
+    --text:#ECEEF4; --muted:#9BA1B5; --faint:#6C7286;
+    --accent:#8CA0F2; --accent-soft:#7A91EE; --accent-wash:#1B2138; --accent-line:#38406A;
+    --good:#4CC38A; --good-wash:#132420; --hard:#E0A94A; --hard-wash:#282011;
+    --keep:#9BA1B5; --keep-wash:#1E212C; --ext:#B79AE0; --ext-wash:#221B31;
+    --crit:#E9736A; --crit-wash:#2A1615;
+    --shadow:0 1px 2px rgba(0,0,0,.35), 0 14px 34px -18px rgba(0,0,0,.72);
+  }}
+  :root[data-theme="light"]{--bg:#FAFBFD;--surface:#FFFFFF;--surface-2:#F3F5F9;--surface-3:#ECEFF6;--border:#E4E7F0;--border-strong:#CFD4E3;--text:#181B24;--muted:#565C70;--faint:#868CA1;--accent:#4A5CC4;--accent-soft:#7A91EE;--accent-wash:#EBEEFC;--accent-line:#C3CDF6;--good:#1C9160;--good-wash:#E1F3E9;--hard:#B37320;--hard-wash:#F8EEDA;--keep:#5A6072;--keep-wash:#EBEDF3;--ext:#7A5AA8;--ext-wash:#F0EAF8;--crit:#C4443C;--crit-wash:#FBE6E4;--shadow:0 1px 2px rgba(24,27,36,.04),0 10px 28px -16px rgba(24,27,36,.16);}
+  :root[data-theme="dark"]{--bg:#0C0D12;--surface:#14161E;--surface-2:#1A1D28;--surface-3:#212433;--border:#262A38;--border-strong:#363B4D;--text:#ECEEF4;--muted:#9BA1B5;--faint:#6C7286;--accent:#8CA0F2;--accent-soft:#7A91EE;--accent-wash:#1B2138;--accent-line:#38406A;--good:#4CC38A;--good-wash:#132420;--hard:#E0A94A;--hard-wash:#282011;--keep:#9BA1B5;--keep-wash:#1E212C;--ext:#B79AE0;--ext-wash:#221B31;--crit:#E9736A;--crit-wash:#2A1615;--shadow:0 1px 2px rgba(0,0,0,.35),0 14px 34px -18px rgba(0,0,0,.72);}
+
+  *{box-sizing:border-box;}
+  body{margin:0;background:var(--bg);color:var(--text);font-family:var(--sans);line-height:1.58;-webkit-font-smoothing:antialiased;}
+  .wrap{max-width:1000px;margin:0 auto;padding:clamp(26px,5vw,56px) clamp(16px,4vw,40px) 100px;}
+  code{font-family:var(--mono);font-size:.86em;background:var(--surface-2);padding:1px 5px;border-radius:5px;color:var(--text);}
+  a{color:var(--accent);text-decoration:none;}
+
+  .mast{border:1px solid var(--border);border-radius:18px;background:linear-gradient(180deg,var(--surface),var(--surface-2));box-shadow:var(--shadow);padding:clamp(22px,4vw,34px);}
+  .eyebrow{font-size:.7rem;letter-spacing:.16em;text-transform:uppercase;color:var(--accent);font-weight:660;margin:0 0 12px;}
+  h1{font-size:clamp(1.7rem,4vw,2.5rem);line-height:1.08;margin:0 0 12px;letter-spacing:-.022em;text-wrap:balance;font-weight:730;}
+  .mast p{margin:0;color:var(--muted);font-size:1.02rem;max-width:66ch;}
+  .mast .facts{display:flex;flex-wrap:wrap;gap:8px;margin-top:20px;}
+  .fact{display:inline-flex;gap:7px;align-items:center;font-size:.78rem;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:6px 11px;color:var(--muted);}
+  .fact b{color:var(--text);font-weight:600;}
+
+  .toc{display:grid;grid-template-columns:repeat(3,1fr);gap:2px 20px;margin:26px 0 6px;padding:16px 20px;border:1px solid var(--border);border-radius:12px;background:var(--surface);box-shadow:var(--shadow);}
+  @media(max-width:680px){.toc{grid-template-columns:1fr 1fr;}}
+  @media(max-width:440px){.toc{grid-template-columns:1fr;}}
+  .toc a{font-size:.83rem;color:var(--muted);padding:5px 0;display:flex;gap:9px;}
+  .toc a:hover{color:var(--accent);}
+  .toc a .tn{font-family:var(--mono);color:var(--faint);font-size:.76rem;min-width:20px;}
+
+  section{margin-top:clamp(40px,6vw,58px);scroll-margin-top:20px;}
+  .sh{display:flex;align-items:baseline;gap:12px;margin:0 0 6px;}
+  .sh .tn{font-family:var(--mono);font-size:.82rem;color:var(--accent);border:1px solid var(--accent-line);border-radius:7px;padding:2px 8px;font-weight:600;flex:none;}
+  h2{font-size:1.4rem;margin:0;font-weight:700;letter-spacing:-.014em;}
+  .lead{color:var(--muted);margin:8px 0 20px;max-width:70ch;font-size:.96rem;}
+  h3{font-size:1.02rem;margin:24px 0 10px;font-weight:640;}
+
+  /* figure = mermaid on a fixed light panel (crisp in both themes) */
+  .fig{margin:16px 0 6px;border:1px solid var(--border-strong);border-radius:14px;background:#F6F7FB;box-shadow:var(--shadow);padding:20px 16px 14px;overflow-x:auto;}
+  .fig .mermaid{display:flex;justify-content:center;min-width:0;font-family:var(--sans);}
+  .figcap{text-align:center;font-size:.77rem;color:#7C8296;margin:8px 0 0;}
+  .legend{display:flex;flex-wrap:wrap;gap:8px 16px;margin:14px 0 0;font-size:.77rem;color:var(--muted);justify-content:center;}
+  .legend .li{display:inline-flex;align-items:center;gap:7px;}
+  .sw{width:11px;height:11px;border-radius:3px;flex:none;border:1px solid rgba(0,0,0,.12);}
+  .sw.new{background:#EBEEFC;border-color:#4A5CC4;}.sw.hard{background:#F8EEDA;border-color:#B37320;}
+  .sw.keep{background:#EBEDF3;border-color:#5A6072;}.sw.ext{background:#F0EAF8;border-color:#7A5AA8;}
+
+  .tscroll{overflow-x:auto;border:1px solid var(--border);border-radius:13px;box-shadow:var(--shadow);}
+  table{border-collapse:collapse;width:100%;font-size:.87rem;min-width:560px;background:var(--surface);}
+  thead th{text-align:left;font-size:.68rem;text-transform:uppercase;letter-spacing:.07em;color:var(--faint);font-weight:670;padding:12px 15px;border-bottom:1px solid var(--border);background:var(--surface-2);}
+  tbody td{padding:12px 15px;border-bottom:1px solid var(--border);vertical-align:top;color:var(--muted);}
+  tbody tr:last-child td{border-bottom:none;}
+  tbody td:first-child{color:var(--text);font-weight:560;}
+  .mono{font-family:var(--mono);font-size:.8rem;color:var(--accent);}
+
+  .grid{display:grid;gap:11px;}
+  .g2{grid-template-columns:repeat(2,1fr);}.g3{grid-template-columns:repeat(3,1fr);}.g4{grid-template-columns:repeat(4,1fr);}
+  @media(max-width:760px){.g4,.g3{grid-template-columns:repeat(2,1fr);}}
+  @media(max-width:480px){.g2,.g3,.g4{grid-template-columns:1fr;}}
+  .box{border:1px solid var(--border-strong);border-radius:10px;background:var(--surface-2);padding:12px 13px;}
+  .box .bt{font-weight:630;font-size:.88rem;margin:0 0 3px;}
+  .box .bd{margin:0;font-size:.77rem;color:var(--muted);line-height:1.45;}
+  .box code{font-size:.72rem;}
+
+  .callout{border-left:3px solid var(--accent-soft);background:var(--accent-wash);border-radius:0 12px 12px 0;padding:15px 19px;margin:20px 0;}
+  .callout.crit{border-left-color:var(--crit);background:var(--crit-wash);}
+  .callout.good{border-left-color:var(--good);background:var(--good-wash);}
+  .callout h4{margin:0 0 5px;font-size:.94rem;color:var(--text);}
+  .callout p{margin:0;color:var(--muted);font-size:.88rem;}
+  .callout p+p{margin-top:7px;}
+
+  .pipe{margin:0;padding:0;list-style:none;}
+  .pipe li{display:flex;gap:16px;padding:13px 0;border-top:1px solid var(--border);}
+  .pipe li:first-child{border-top:none;}
+  .pipe .pn{flex:none;width:30px;height:30px;border-radius:9px;display:grid;place-items:center;font-weight:730;font-size:.85rem;background:var(--accent-wash);color:var(--accent);border:1px solid var(--accent-line);}
+  .pipe .pc b{display:block;font-size:.92rem;margin-bottom:2px;}
+  .pipe .pc p{margin:0;font-size:.84rem;color:var(--muted);}
+  .actor{font-size:.63rem;text-transform:uppercase;letter-spacing:.05em;font-weight:670;padding:2px 7px;border-radius:5px;margin-left:8px;vertical-align:middle;}
+  .actor.client{background:var(--keep-wash);color:var(--keep);}
+  .actor.ops{background:var(--hard-wash);color:var(--hard);}
+  .actor.sys{background:var(--accent-wash);color:var(--accent);}
+
+  .kvlist{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;}
+  @media(max-width:600px){.kvlist{grid-template-columns:1fr;}}
+  .kv{border:1px solid var(--border);border-radius:11px;background:var(--surface);box-shadow:var(--shadow);padding:13px 15px;}
+  .kv b{font-size:.86rem;}.kv p{margin:4px 0 0;font-size:.8rem;color:var(--muted);}
+
+  .foot{margin-top:56px;padding-top:20px;border-top:1px solid var(--border);color:var(--faint);font-size:.8rem;}
+</style>
+
+<div class="wrap">
+
+  <div class="mast">
+    <p class="eyebrow">System Architecture &middot; v1 &middot; 22 Jul 2026</p>
+    <h1>Livinit Fabric Simulator — Multi&#8209;Tenant Platform Architecture</h1>
+    <p>The complete top-down system design to evolve the current single-tenant configurator into a per-client web experience — each client logs in and sees only their own furniture and fabrics, used live during customer consultations at <code>web.simulator.livinit.ai</code>.</p>
+    <div class="facts">
+      <span class="fact"><b>Prepared for</b> Anviksha (Founder)</span>
+      <span class="fact"><b>Frontend</b> Vanilla JS + Three.js r128</span>
+      <span class="fact"><b>Backend</b> Vercel serverless + Supabase</span>
+      <span class="fact"><b>Tenant model</b> Simulator-owned (RLS)</span>
+    </div>
+  </div>
+
+  <nav class="toc">
+    <a href="#s1"><span class="tn">01</span> Top-level hierarchy</a>
+    <a href="#s2"><span class="tn">02</span> Current state</a>
+    <a href="#s3"><span class="tn">03</span> Components</a>
+    <a href="#s4"><span class="tn">04</span> Data model</a>
+    <a href="#s5"><span class="tn">05</span> Tenant isolation</a>
+    <a href="#s6"><span class="tn">06</span> Onboarding pipeline</a>
+    <a href="#s7"><span class="tn">07</span> Runtime flows</a>
+    <a href="#s8"><span class="tn">08</span> Storage &amp; delivery</a>
+    <a href="#s9"><span class="tn">09</span> Security</a>
+    <a href="#s10"><span class="tn">10</span> Deployment &amp; stack</a>
+  </nav>
+
+  <!-- 01 TOP HIERARCHY -->
+  <section id="s1">
+    <div class="sh"><span class="tn">01</span><h2>Top-level system hierarchy</h2></div>
+    <p class="lead">The whole platform in one view, top to bottom: people sign in, the web app is gated by identity, every request is authorized against the signed-in client, and each client's assets sit behind two independent locks. Colour marks what is newly built vs. hardened vs. kept as-is vs. reused.</p>
+    <div class="fig">
+      <pre class="mermaid">
+%%{init: {"theme":"base","themeVariables":{"fontFamily":"system-ui","fontSize":"13px","lineColor":"#5364C9","primaryColor":"#EBEEFC","primaryTextColor":"#181B24","primaryBorderColor":"#4A5CC4","clusterBkg":"#FFFFFF","clusterBorder":"#CFD4E3","titleColor":"#4A5CC4","edgeLabelBackground":"#F6F7FB","textColor":"#181B24"}}}%%
+flowchart TD
+  U1["👤 Client consultant"]:::keep
+  U2["🛠️ Livinit staff"]:::keep
+
+  subgraph APP["APPLICATION TIER · web.simulator.livinit.ai"]
+    direction LR
+    AG["Auth gate"]:::new
+    CFG["3D configurator engine"]:::keep
+    CL["Catalog loader"]:::new
+    SC["Staff console"]:::new
+  end
+
+  subgraph API["SERVICE TIER · Vercel serverless"]
+    direction LR
+    AM["auth middleware"]:::new
+    CAT["GET /catalog"]:::new
+    ADM["POST /admin/*"]:::new
+    PX["GET /s3proxy · prefix check"]:::hard
+    AI["AI gateway · gated + metered"]:::hard
+  end
+
+  subgraph DATA["DATA + STORAGE TIER · own Supabase — isolation boundary"]
+    direction LR
+    PG["Postgres + RLS"]:::new
+    S3["S3 · tenants/ID/"]:::hard
+  end
+
+  subgraph EXT["IDENTITY + EXTERNAL · reused"]
+    direction LR
+    AU["Supabase Auth"]:::ext
+    CR["Livinit Stripe credits"]:::ext
+    GM["Google Gemini"]:::ext
+    PH["PolyHaven"]:::ext
+  end
+
+  U1 --> APP
+  U2 --> APP
+  APP -->|"session token"| API
+  AG -.verify.-> AU
+  CAT --> PG
+  PX --> S3
+  ADM --> PG
+  ADM --> S3
+  AI --> CR
+  AI --> GM
+  CFG -.textures.-> PH
+
+  classDef new fill:#EBEEFC,stroke:#4A5CC4,color:#181B24,stroke-width:1px;
+  classDef hard fill:#F8EEDA,stroke:#B37320,color:#181B24,stroke-width:1px;
+  classDef keep fill:#EBEDF3,stroke:#5A6072,color:#181B24,stroke-width:1px;
+  classDef ext fill:#F0EAF8,stroke:#7A5AA8,color:#181B24,stroke-width:1px;
+      </pre>
+      <div class="legend">
+        <span class="li"><span class="sw new"></span>New — we build</span>
+        <span class="li"><span class="sw hard"></span>Hardened — locked down</span>
+        <span class="li"><span class="sw keep"></span>Kept — 3D engine</span>
+        <span class="li"><span class="sw ext"></span>External / reused</span>
+      </div>
+      <p class="figcap">Figure 1 — Top-down system hierarchy across five tiers.</p>
+    </div>
+  </section>
+
+  <!-- 02 CURRENT -->
+  <section id="s2">
+    <div class="sh"><span class="tn">02</span><h2>Current state — as built today</h2></div>
+    <p class="lead">Read from the codebase so the design is grounded, not generic. The app is a strong demo but has none of the platform layer multi-tenancy needs.</p>
+    <div class="fig">
+      <pre class="mermaid">
+%%{init: {"theme":"base","themeVariables":{"fontFamily":"system-ui","fontSize":"13px","lineColor":"#5364C9","primaryColor":"#EBEEFC","primaryTextColor":"#181B24","primaryBorderColor":"#4A5CC4","edgeLabelBackground":"#F6F7FB","textColor":"#181B24"}}}%%
+flowchart TD
+  B["Browser SPA · Three.js r128 · 23 ES modules"]:::keep
+  C["catalog.js — HARDCODED assets"]:::gap
+  V["Vercel serverless · 5 functions · NO AUTH"]:::gap
+  S["Single S3 bucket · shared, unscoped"]:::gap
+  G["Gemini · PolyHaven — unmetered"]:::ext
+  B --> C
+  B --> V
+  V --> S
+  V --> G
+  classDef keep fill:#EBEDF3,stroke:#5A6072,color:#181B24;
+  classDef gap fill:#FBE6E4,stroke:#C4443C,color:#181B24;
+  classDef ext fill:#F0EAF8,stroke:#7A5AA8,color:#181B24;
+      </pre>
+      <p class="figcap">Figure 2 — Today: no identity, no data layer, no isolation (red = the three gaps).</p>
+    </div>
+    <div class="callout crit">
+      <h4>The three gaps that define this project</h4>
+      <p><b>No identity</b> — no login, user or client concept anywhere. <b>No data layer</b> — the catalog is compiled into JavaScript, not stored per client. <b>No isolation</b> — the asset proxy and every paid AI endpoint are open to anyone with the URL.</p>
+    </div>
+  </section>
+
+  <!-- 03 COMPONENTS -->
+  <section id="s3">
+    <div class="sh"><span class="tn">03</span><h2>Component responsibilities</h2></div>
+    <p class="lead">Each node in Figure 1, and exactly what it owns.</p>
+    <div class="tscroll">
+      <table>
+        <thead><tr><th style="width:170px">Component</th><th>Responsibility</th><th style="width:96px">State</th></tr></thead>
+        <tbody>
+          <tr><td>Auth gate</td><td>Blocks the app until a Supabase session exists; exposes tenant + role to the UI; redirects the logged-out to login.</td><td><span class="mono">new</span></td></tr>
+          <tr><td>3D configurator</td><td>The unchanged Three.js engine: model load, per-part fabric apply, PBR sliders, room staging, AI-render triggers, GLB export.</td><td><span class="mono">keep</span></td></tr>
+          <tr><td>Catalog loader</td><td>On boot, fetches <code>/api/catalog</code> and populates the product switcher, fabric library and material maps at runtime — removes the hardcoding.</td><td><span class="mono">new</span></td></tr>
+          <tr><td>Staff console</td><td>Create tenant + client login, upload product GLBs, author the customizable-part map, register fabrics with PBR maps.</td><td><span class="mono">new</span></td></tr>
+          <tr><td>Auth middleware</td><td>Single server helper that verifies the JWT and returns <code>{userId, tenantId, role}</code>; every protected endpoint calls it first.</td><td><span class="mono">new</span></td></tr>
+          <tr><td>Catalog API</td><td>Reads <code>tenant_id</code> from the verified token (never the client), returns only that tenant's products + fabrics.</td><td><span class="mono">new</span></td></tr>
+          <tr><td>Asset proxy</td><td>Streams GLBs/textures from S3, enforcing the <code>tenants/&lt;id&gt;/</code> prefix against the caller's tenant. Keeps AWS keys server-side.</td><td><span class="mono">hardened</span></td></tr>
+          <tr><td>AI gateway</td><td>The four Gemini endpoints — now authenticated, attributed to a tenant, and quota-checked before the paid call.</td><td><span class="mono">hardened</span></td></tr>
+          <tr><td>Admin API</td><td>Service-role writes for onboarding, guarded by a <code>role = staff</code> check; issues presigned S3 uploads.</td><td><span class="mono">new</span></td></tr>
+          <tr><td>Postgres + RLS</td><td>System of record for tenants, memberships, products, fabrics, usage. Row-level security is the primary isolation guarantee.</td><td><span class="mono">new</span></td></tr>
+          <tr><td>Object storage</td><td>Holds the binary assets (GLBs, texture maps, thumbnails), namespaced per tenant.</td><td><span class="mono">hardened</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- 04 DATA MODEL -->
+  <section id="s4">
+    <div class="sh"><span class="tn">04</span><h2>Data model</h2></div>
+    <p class="lead">Five tables in the simulator's own Postgres. Every tenant-scoped row carries <code>tenant_id</code> — the column RLS filters on. Binary assets live in S3; the tables hold their keys, not the bytes.</p>
+    <div class="fig">
+      <pre class="mermaid">
+%%{init: {"theme":"base","themeVariables":{"fontFamily":"system-ui","fontSize":"12.5px","lineColor":"#5364C9","primaryColor":"#EBEEFC","primaryTextColor":"#181B24","primaryBorderColor":"#4A5CC4","textColor":"#181B24"}}}%%
+erDiagram
+  TENANTS ||--o{ MEMBERSHIPS : has
+  AUTH_USERS ||--o{ MEMBERSHIPS : joins
+  TENANTS ||--o{ PRODUCTS : owns
+  TENANTS ||--o{ FABRICS : owns
+  TENANTS ||--o{ USAGE_EVENTS : logs
+  TENANTS {
+    uuid id PK
+    text name
+    text slug
+    text status
+    jsonb branding
+  }
+  MEMBERSHIPS {
+    uuid user_id FK
+    uuid tenant_id FK
+    text role
+  }
+  PRODUCTS {
+    uuid id PK
+    uuid tenant_id FK
+    text name
+    text glb_key
+    jsonb part_map
+    text status
+  }
+  FABRICS {
+    uuid id PK
+    uuid tenant_id FK
+    text name
+    text type
+    text diffuse_key
+    jsonb pbr_defaults
+  }
+  USAGE_EVENTS {
+    uuid tenant_id FK
+    text kind
+    int cost_units
+    timestamp created_at
+  }
+      </pre>
+      <p class="figcap">Figure 3 — Entity relationships. Every business table hangs off <code>tenants</code>.</p>
+    </div>
+    <div class="callout">
+      <h4>The two fields that carry the product's intelligence</h4>
+      <p><code>products.part_map</code> — the authored mesh&#8209;node&nbsp;→&nbsp;customizable&#8209;part mapping. This is where "our team segments the sections" is captured, because arbitrary client furniture cannot be auto-classified reliably. <code>fabrics.pbr_defaults</code> — per-fabric roughness/sheen/scale so each finish renders true to material.</p>
+      <p style="margin-top:7px"><em>Note:</em> <code>usage_events</code> is a thin local log; billing &amp; caps ride Livinit's existing Stripe credits contract, not a bespoke meter.</p>
+    </div>
+  </section>
+
+  <!-- 05 ISOLATION -->
+  <section id="s5">
+    <div class="sh"><span class="tn">05</span><h2>Tenant isolation — the core guarantee</h2></div>
+    <p class="lead">"Each account sees only its own assets" is enforced by <b>two independent, server-side locks</b>, both keyed on the <code>tenant_id</code> claim inside the signed-in token. Neither depends on the UI; either alone would stop a leak, and they never share a failure mode.</p>
+    <div class="fig">
+      <pre class="mermaid">
+%%{init: {"theme":"base","themeVariables":{"fontFamily":"system-ui","fontSize":"13px","lineColor":"#5364C9","primaryColor":"#EBEEFC","primaryTextColor":"#181B24","primaryBorderColor":"#4A5CC4","edgeLabelBackground":"#F6F7FB","textColor":"#181B24"}}}%%
+flowchart LR
+  T["Signed-in token · tenant_id = A"]:::tok
+  T --> Q1["DB query for another tenant's rows"]
+  Q1 --> L1["LOCK 1 · RLS filter tenant_id = A"]:::lock
+  L1 --> Z1["0 rows returned"]:::deny
+  T --> Q2["Asset request for tenants/B/sofa.glb"]
+  Q2 --> L2["LOCK 2 · proxy prefix check A ≠ B"]:::lock
+  L2 --> Z2["403 · S3 never touched"]:::deny
+  classDef tok fill:#EBEEFC,stroke:#4A5CC4,color:#181B24;
+  classDef lock fill:#F8EEDA,stroke:#B37320,color:#181B24;
+  classDef deny fill:#FBE6E4,stroke:#C4443C,color:#181B24;
+      </pre>
+      <p class="figcap">Figure 4 — The same <code>tenant_id</code> claim guards both the database and the files.</p>
+    </div>
+    <div class="callout good">
+      <h4>The claim is set once, server-side, and never trusted from the browser</h4>
+      <p>On sign-in, a Supabase hook stamps <code>tenant_id</code> + <code>role</code> into the JWT from the <code>memberships</code> table. Every endpoint re-derives these from the verified token — the client cannot assert which tenant it is. Hiding items in the UI is <em>not</em> part of the security model; it is only convenience.</p>
+    </div>
+  </section>
+
+  <!-- 06 ONBOARDING -->
+  <section id="s6">
+    <div class="sh"><span class="tn">06</span><h2>Onboarding pipeline</h2></div>
+    <p class="lead">How a new client goes from "here are our products" to "our consultants are using it live." The 3D conversion is a deliberate human step by Livinit's team — the client never touches modelling.</p>
+    <div class="fig">
+      <pre class="mermaid">
+%%{init: {"theme":"base","themeVariables":{"fontFamily":"system-ui","fontSize":"12.5px","lineColor":"#5364C9","primaryColor":"#EBEEFC","primaryTextColor":"#181B24","primaryBorderColor":"#4A5CC4","textColor":"#181B24"}}}%%
+flowchart TD
+  P1["1 · Intake — 2D images + fabric list"]:::client
+  P2["2 · Create tenant + client login"]:::ops
+  P3["3 · 3D modelling — 2D to GLB"]:::ops
+  P4["4 · Segmentation — author part_map"]:::ops
+  P5["5 · Fabric setup — PBR maps"]:::ops
+  P6["6 · Upload + register to tenant"]:::sys
+  P7["7 · QA preview as tenant"]:::ops
+  P8["8 · Go live — status active"]:::sys
+  P1 --> P2 --> P3 --> P4 --> P5 --> P6 --> P7 --> P8
+  classDef client fill:#EBEDF3,stroke:#5A6072,color:#181B24;
+  classDef ops fill:#F8EEDA,stroke:#B37320,color:#181B24;
+  classDef sys fill:#EBEEFC,stroke:#4A5CC4,color:#181B24;
+      </pre>
+      <div class="legend">
+        <span class="li"><span class="sw keep"></span>Client</span>
+        <span class="li"><span class="sw hard"></span>Livinit team</span>
+        <span class="li"><span class="sw new"></span>System</span>
+      </div>
+      <p class="figcap">Figure 5 — The eight-step onboarding pipeline.</p>
+    </div>
+    <ol class="pipe">
+      <li><span class="pn">1</span><div class="pc"><b>Intake <span class="actor client">client</span></b><p>The client submits <b>2D images</b> of the furniture to include, and a <b>list of fabrics &amp; finishes</b> they want available.</p></div></li>
+      <li><span class="pn">2</span><div class="pc"><b>Account creation <span class="actor ops">livinit team</span></b><p>Staff create the tenant and the first client login in the staff console. Tenant starts in <code>draft</code>.</p></div></li>
+      <li><span class="pn">3</span><div class="pc"><b>3D modelling <span class="actor ops">livinit team</span></b><p>Each 2D product is converted into a clean 3D GLB model, sized to real-world scale.</p></div></li>
+      <li><span class="pn">4</span><div class="pc"><b>Segmentation <span class="actor ops">livinit team</span></b><p>Each customizable section (seat, back, arms, legs…) is written as the product's <code>part_map</code> — what makes "change this cushion's fabric" possible.</p></div></li>
+      <li><span class="pn">5</span><div class="pc"><b>Fabric setup <span class="actor ops">livinit team</span></b><p>For each finish, PBR maps are prepared or generated (the fabric-vision tool can seed values from a photo) and stored with type/hex/defaults.</p></div></li>
+      <li><span class="pn">6</span><div class="pc"><b>Upload &amp; register <span class="actor sys">system</span></b><p>GLBs and maps upload to <code>tenants/&lt;id&gt;/</code>; product &amp; fabric rows are written via the admin API.</p></div></li>
+      <li><span class="pn">7</span><div class="pc"><b>QA preview <span class="actor ops">livinit team</span></b><p>Staff preview as the tenant: every part accepts fabric, every finish renders true; fix the map if not.</p></div></li>
+      <li><span class="pn">8</span><div class="pc"><b>Go live <span class="actor sys">system</span></b><p>Tenant flips to <code>active</code>. Consultants log in and see exactly their catalog.</p></div></li>
+    </ol>
+  </section>
+
+  <!-- 07 FLOWS -->
+  <section id="s7">
+    <div class="sh"><span class="tn">07</span><h2>Key runtime flows</h2></div>
+    <p class="lead">The request paths the whole architecture exists to serve, as sequence diagrams.</p>
+
+    <h3>A · Consultant runs a consultation</h3>
+    <div class="fig">
+      <pre class="mermaid">
+%%{init: {"theme":"base","themeVariables":{"fontFamily":"system-ui","fontSize":"12.5px","actorBkg":"#EBEEFC","actorBorder":"#4A5CC4","actorTextColor":"#181B24","signalColor":"#5364C9","signalTextColor":"#181B24","noteBkgColor":"#F8EEDA","noteBorderColor":"#B37320","noteTextColor":"#181B24","sequenceNumberColor":"#FFFFFF","lineColor":"#5364C9","textColor":"#181B24"}}}%%
+sequenceDiagram
+  autonumber
+  actor C as Consultant
+  participant A as Web app
+  participant Au as Supabase Auth
+  participant Cat as Catalog API
+  participant Px as S3 proxy
+  participant Ai as AI gateway
+  participant Gm as Gemini
+  C->>A: Open simulator
+  A->>Au: Sign in
+  Au-->>A: Session (tenant_id, role)
+  A->>Cat: GET /catalog (token)
+  Cat-->>A: Only this tenant's products + fabrics
+  A->>Px: GET /s3proxy key=tenants/ID/model.glb
+  Px-->>A: GLB + textures (prefix OK)
+  Note over A: Apply fabrics, stage room
+  C->>A: Render
+  A->>Ai: POST /generate (token)
+  Ai->>Gm: Generate (metered to credits)
+  Gm-->>A: Photorealistic image
+      </pre>
+      <p class="figcap">Figure 6 — A live consultation, sign-in to render.</p>
+    </div>
+
+    <h3>B · Staff onboards a client (system portion)</h3>
+    <div class="fig">
+      <pre class="mermaid">
+%%{init: {"theme":"base","themeVariables":{"fontFamily":"system-ui","fontSize":"12.5px","actorBkg":"#F8EEDA","actorBorder":"#B37320","actorTextColor":"#181B24","signalColor":"#5364C9","signalTextColor":"#181B24","noteBkgColor":"#EBEEFC","noteBorderColor":"#4A5CC4","noteTextColor":"#181B24","sequenceNumberColor":"#FFFFFF","lineColor":"#5364C9","textColor":"#181B24"}}}%%
+sequenceDiagram
+  autonumber
+  actor S as Livinit staff
+  participant Con as Staff console
+  participant Adm as Admin API
+  participant St as S3
+  participant DB as Postgres
+  S->>Con: Create tenant + login
+  Con->>Adm: POST /admin/tenant
+  Adm->>DB: Insert tenant + membership
+  S->>Con: Upload product GLB
+  Con->>St: Presigned PUT tenants/ID/glbs
+  S->>Con: Author part_map + fabrics
+  Con->>Adm: POST /admin/product, /admin/fabric
+  Adm->>DB: Insert products + fabrics
+  S->>Con: Activate tenant
+  Con->>DB: status = live
+      </pre>
+      <p class="figcap">Figure 7 — Onboarding writes, staff console to database.</p>
+    </div>
+  </section>
+
+  <!-- 08 STORAGE -->
+  <section id="s8">
+    <div class="sh"><span class="tn">08</span><h2>Asset storage &amp; delivery</h2></div>
+    <p class="lead">Binary assets stay in S3, reached only through the authenticated proxy so AWS credentials never leave the server and every byte is tenant-checked. Namespacing is the physical side of isolation.</p>
+    <div class="fig" style="background:#F6F7FB;">
+      <pre style="margin:0;font-family:var(--mono);font-size:.82rem;line-height:1.85;color:#2A2E3C;white-space:pre;background:none;padding:0;">s3://livinit-simulator/
+  <b style="color:#4A5CC4">shared/</b>                       # room shells, wood textures — any authed tenant
+    glbs/room.glb
+  <b style="color:#4A5CC4">tenants/&lt;tenant_id&gt;/</b>          # gated: prefix MUST equal the caller's tenant_id
+    glbs/&lt;product&gt;.glb
+    fabric_maps/&lt;series&gt;/{diffuse,normal,roughness}.jpg
+    thumbnails/&lt;product&gt;.jpg</pre>
+      <p class="figcap">Figure 8 — Bucket layout: shared read-only prefix + per-tenant private prefix.</p>
+    </div>
+    <div class="grid g3" style="margin-top:8px">
+      <div class="box"><p class="bt">Access</p><p class="bd">All reads via <code>/s3proxy</code>; prefix enforced per request. No public bucket URLs.</p></div>
+      <div class="box"><p class="bt">Caching</p><p class="bd">Vercel CDN edge-caches proxied assets; immutable keys per product version.</p></div>
+      <div class="box"><p class="bt">Uploads</p><p class="bd">Onboarding writes via short-lived presigned PUTs into the tenant prefix.</p></div>
+    </div>
+  </section>
+
+  <!-- 09 SECURITY -->
+  <section id="s9">
+    <div class="sh"><span class="tn">09</span><h2>Security model</h2></div>
+    <p class="lead">Beyond tenant isolation, the platform closes the two gaps the demo left open: unauthenticated endpoints and uncapped AI spend.</p>
+    <div class="tscroll">
+      <table>
+        <thead><tr><th style="width:150px">Concern</th><th>Control</th></tr></thead>
+        <tbody>
+          <tr><td>Authentication</td><td>Supabase Auth; no route serves data without a valid session. Boot itself is gated.</td></tr>
+          <tr><td>Tenant isolation</td><td>RLS on every table + prefix check on every asset — both from the verified <code>tenant_id</code> claim.</td></tr>
+          <tr><td>Privilege separation</td><td>Onboarding writes require <code>role = staff</code>; the service-role key is server-only, never shipped to the browser.</td></tr>
+          <tr><td>AI cost &amp; abuse</td><td>Every Gemini call is authenticated, attributed to a tenant, and quota-checked via the credits contract before the paid request runs.</td></tr>
+          <tr><td>Secret handling</td><td>AWS, Gemini and service-role keys live only in server env vars. The frontend holds only the Supabase anon key + session.</td></tr>
+          <tr><td>Transport</td><td>HTTPS end-to-end; short-lived presigned URLs for uploads; session tokens auto-refresh.</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- 10 DEPLOYMENT & STACK -->
+  <section id="s10">
+    <div class="sh"><span class="tn">10</span><h2>Deployment, stack &amp; roadmap</h2></div>
+    <p class="lead">Shipped as a dedicated Vercel project on its own domain, backed by a dedicated Supabase project — clean separation from Livinit's consumer apps.</p>
+    <div class="kvlist" style="margin-bottom:22px">
+      <div class="kv"><b>Hosting</b><p>Vercel project → <code>web.simulator.livinit.ai</code>. Static SPA + serverless functions, CDN edge.</p></div>
+      <div class="kv"><b>Identity &amp; data</b><p>Dedicated Supabase project (Auth + Postgres + RLS). Own user pool — separate from consumer users.</p></div>
+      <div class="kv"><b>Environments</b><p>Preview (per-branch) → Production. Supabase redirect URLs whitelisted per environment.</p></div>
+      <div class="kv"><b>Server env vars</b><p><code>SUPABASE_URL</code>, <code>SUPABASE_ANON_KEY</code>, <code>SUPABASE_SERVICE_ROLE_KEY</code>, <code>AWS_*</code>, <code>S3_BUCKET</code>, <code>GEMINI_API_KEY</code>.</p></div>
+    </div>
+    <div class="grid g2" style="align-items:start">
+      <div>
+        <h3 style="margin-top:0">Stack</h3>
+        <div class="tscroll">
+          <table style="min-width:0">
+            <tbody>
+              <tr><td>Frontend</td><td>Vanilla JS ES modules, Three.js r128, Tailwind (CDN)</td></tr>
+              <tr><td>Hosting</td><td>Vercel (static + serverless, TypeScript)</td></tr>
+              <tr><td>Identity</td><td>Supabase Auth (email · Google · Apple)</td></tr>
+              <tr><td>Database</td><td>Supabase Postgres + Row-Level Security</td></tr>
+              <tr><td>Storage</td><td>AWS S3, tenant-namespaced, proxied</td></tr>
+              <tr><td>AI</td><td>Google Gemini (renders + vision)</td></tr>
+              <tr><td>Billing</td><td>Reused Livinit Stripe credits</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <div>
+        <h3 style="margin-top:0">Build roadmap</h3>
+        <ol class="pipe" style="margin-top:2px">
+          <li><span class="pn">1</span><div class="pc"><b>Data &amp; tenancy</b><p>Schema, RLS, claims hook.</p></div></li>
+          <li><span class="pn">2</span><div class="pc"><b>Auth &amp; gated shell</b><p>Login, boot guard.</p></div></li>
+          <li><span class="pn">3</span><div class="pc"><b>Secure the proxies</b><p>Asset + AI locks.</p></div></li>
+          <li><span class="pn">4</span><div class="pc"><b>Tenant catalog</b><p>Runtime loader, dynamic UI.</p></div></li>
+          <li><span class="pn">5</span><div class="pc"><b>Staff onboarding</b><p>Console + admin API.</p></div></li>
+          <li><span class="pn">6</span><div class="pc"><b>Deploy</b><p>Domain, env, prod smoke.</p></div></li>
+        </ol>
+      </div>
+    </div>
+  </section>
+
+  <p class="foot">
+    Grounded in the codebase at <code>VIKRAM-0/livinit_fabric_simulator @ main</code>. Tenant model is simulator-owned (Option A): its own Supabase, RLS-enforced, zero blast radius on the core Livinit backend; promotable to a shared primitive later as a bounded migration. Diagrams rendered with Mermaid.
+  </p>
+
+</div>

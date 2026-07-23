@@ -1,0 +1,534 @@
+<style>
+  :root{
+    --bg:#FAFBFD; --surface:#FFFFFF; --surface-2:#F3F5F9; --surface-3:#ECEFF6;
+    --border:#E4E7F0; --border-strong:#CFD4E3;
+    --text:#181B24; --muted:#565C70; --faint:#868CA1;
+    --accent:#4A5CC4; --accent-soft:#7A91EE; --accent-wash:#EBEEFC; --accent-line:#C3CDF6;
+    --get:#1C7F9B; --get-wash:#E0F0F4;
+    --post:#1C9160; --post-wash:#E1F3E9;
+    --patch:#B37320; --patch-wash:#F8EEDA;
+    --del:#C4443C; --del-wash:#FBE6E4;
+    --new:#4A5CC4; --new-wash:#EBEEFC;
+    --hard:#B37320; --hard-wash:#F8EEDA;
+    --reuse:#7A5AA8; --reuse-wash:#F0EAF8;
+    --sb:#2E8B7A; --sb-wash:#DEF1EC;
+    --shadow:0 1px 2px rgba(24,27,36,.04), 0 10px 28px -16px rgba(24,27,36,.16);
+    --mono:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,monospace;
+    --sans:system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+  }
+  @media (prefers-color-scheme:dark){:root{
+    --bg:#0C0D12; --surface:#14161E; --surface-2:#1A1D28; --surface-3:#212433;
+    --border:#262A38; --border-strong:#363B4D;
+    --text:#ECEEF4; --muted:#9BA1B5; --faint:#6C7286;
+    --accent:#8CA0F2; --accent-soft:#7A91EE; --accent-wash:#1B2138; --accent-line:#38406A;
+    --get:#57B6CE; --get-wash:#122730; --post:#4CC38A; --post-wash:#132420;
+    --patch:#E0A94A; --patch-wash:#282011; --del:#E9736A; --del-wash:#2A1615;
+    --new:#8CA0F2; --new-wash:#1B2138; --hard:#E0A94A; --hard-wash:#282011;
+    --reuse:#B79AE0; --reuse-wash:#221B31; --sb:#5BC9B2; --sb-wash:#0F2621;
+    --shadow:0 1px 2px rgba(0,0,0,.35), 0 14px 34px -18px rgba(0,0,0,.72);
+  }}
+  :root[data-theme="light"]{--bg:#FAFBFD;--surface:#FFFFFF;--surface-2:#F3F5F9;--surface-3:#ECEFF6;--border:#E4E7F0;--border-strong:#CFD4E3;--text:#181B24;--muted:#565C70;--faint:#868CA1;--accent:#4A5CC4;--accent-soft:#7A91EE;--accent-wash:#EBEEFC;--accent-line:#C3CDF6;--get:#1C7F9B;--get-wash:#E0F0F4;--post:#1C9160;--post-wash:#E1F3E9;--patch:#B37320;--patch-wash:#F8EEDA;--del:#C4443C;--del-wash:#FBE6E4;--new:#4A5CC4;--new-wash:#EBEEFC;--hard:#B37320;--hard-wash:#F8EEDA;--reuse:#7A5AA8;--reuse-wash:#F0EAF8;--sb:#2E8B7A;--sb-wash:#DEF1EC;--shadow:0 1px 2px rgba(24,27,36,.04),0 10px 28px -16px rgba(24,27,36,.16);}
+  :root[data-theme="dark"]{--bg:#0C0D12;--surface:#14161E;--surface-2:#1A1D28;--surface-3:#212433;--border:#262A38;--border-strong:#363B4D;--text:#ECEEF4;--muted:#9BA1B5;--faint:#6C7286;--accent:#8CA0F2;--accent-soft:#7A91EE;--accent-wash:#1B2138;--accent-line:#38406A;--get:#57B6CE;--get-wash:#122730;--post:#4CC38A;--post-wash:#132420;--patch:#E0A94A;--patch-wash:#282011;--del:#E9736A;--del-wash:#2A1615;--new:#8CA0F2;--new-wash:#1B2138;--hard:#E0A94A;--hard-wash:#282011;--reuse:#B79AE0;--reuse-wash:#221B31;--sb:#5BC9B2;--sb-wash:#0F2621;--shadow:0 1px 2px rgba(0,0,0,.35),0 14px 34px -18px rgba(0,0,0,.72);}
+
+  *{box-sizing:border-box;}
+  body{margin:0;background:var(--bg);color:var(--text);font-family:var(--sans);line-height:1.55;-webkit-font-smoothing:antialiased;}
+  .wrap{max-width:1000px;margin:0 auto;padding:clamp(26px,5vw,56px) clamp(16px,4vw,40px) 100px;}
+  code{font-family:var(--mono);font-size:.85em;background:var(--surface-2);padding:1px 5px;border-radius:5px;color:var(--text);}
+
+  .mast{border:1px solid var(--border);border-radius:18px;background:linear-gradient(180deg,var(--surface),var(--surface-2));box-shadow:var(--shadow);padding:clamp(22px,4vw,32px);}
+  .eyebrow{font-size:.7rem;letter-spacing:.16em;text-transform:uppercase;color:var(--accent);font-weight:660;margin:0 0 12px;}
+  h1{font-size:clamp(1.6rem,3.6vw,2.3rem);line-height:1.1;margin:0 0 12px;letter-spacing:-.02em;text-wrap:balance;font-weight:730;}
+  .mast p{margin:0;color:var(--muted);font-size:1rem;max-width:66ch;}
+
+  .counts{display:grid;grid-template-columns:repeat(5,1fr);gap:11px;margin:22px 0 0;}
+  @media(max-width:720px){.counts{grid-template-columns:repeat(2,1fr);}}
+  @media(max-width:420px){.counts{grid-template-columns:1fr;}}
+  .cbox{border:1px solid var(--border);border-radius:13px;background:var(--surface);box-shadow:var(--shadow);padding:14px 15px;}
+  .cbox .num{font-size:1.8rem;font-weight:760;letter-spacing:-.03em;line-height:1;font-variant-numeric:tabular-nums;}
+  .cbox .lbl{font-size:.73rem;color:var(--muted);margin-top:6px;font-weight:560;}
+  .cbox.total .num{color:var(--text);}.cbox.new .num{color:var(--new);}.cbox.hard .num{color:var(--hard);}
+  .cbox.reuse .num{color:var(--reuse);}.cbox.sb .num{color:var(--sb);}
+
+  .note{color:var(--muted);font-size:.86rem;margin:18px 0 0;padding:13px 16px;border:1px solid var(--border);border-left:3px solid var(--accent-soft);border-radius:0 11px 11px 0;background:var(--accent-wash);}
+  .note b{color:var(--text);}
+
+  .controls{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin:26px 0 0;}
+  .btn{font:inherit;font-size:.82rem;font-weight:600;padding:8px 14px;border-radius:9px;border:1px solid var(--border-strong);background:var(--surface);color:var(--text);cursor:pointer;box-shadow:var(--shadow);}
+  .btn:hover{border-color:var(--accent);color:var(--accent);}
+  .btn:focus-visible{outline:2px solid var(--accent);outline-offset:2px;}
+  .hint{font-size:.78rem;color:var(--faint);}
+
+  section{margin-top:clamp(30px,4vw,42px);}
+  .sh{display:flex;align-items:center;gap:11px;margin:0 0 4px;flex-wrap:wrap;}
+  .sh .tn{font-family:var(--mono);font-size:.78rem;color:var(--accent);border:1px solid var(--accent-line);border-radius:7px;padding:2px 8px;font-weight:600;}
+  h2{font-size:1.22rem;margin:0;font-weight:700;letter-spacing:-.01em;}
+  .badge{font-size:.62rem;font-weight:730;letter-spacing:.05em;text-transform:uppercase;padding:3px 8px;border-radius:6px;}
+  .badge.new{background:var(--new-wash);color:var(--new);}.badge.hard{background:var(--hard-wash);color:var(--hard);}
+  .badge.reuse{background:var(--reuse-wash);color:var(--reuse);}.badge.sb{background:var(--sb-wash);color:var(--sb);}
+  .slead{color:var(--muted);margin:8px 0 14px;font-size:.88rem;max-width:74ch;}
+
+  .acc-group{display:flex;flex-direction:column;gap:8px;}
+  details.ep{border:1px solid var(--border);border-radius:12px;background:var(--surface);box-shadow:var(--shadow);overflow:hidden;}
+  details.ep[open]{border-color:var(--accent-line);}
+  details.ep>summary{list-style:none;cursor:pointer;display:flex;align-items:center;gap:11px;padding:13px 15px;user-select:none;}
+  details.ep>summary::-webkit-details-marker{display:none;}
+  details.ep>summary:focus-visible{outline:2px solid var(--accent);outline-offset:-2px;border-radius:12px;}
+  summary .m{font-size:.6rem;font-weight:770;letter-spacing:.03em;padding:3px 7px;border-radius:5px;flex:none;font-family:var(--mono);}
+  summary .m.get{background:var(--get-wash);color:var(--get);}
+  summary .m.post{background:var(--post-wash);color:var(--post);}
+  summary .m.patch{background:var(--patch-wash);color:var(--patch);}
+  summary .m.del{background:var(--del-wash);color:var(--del);}
+  summary .m.sdk{background:var(--sb-wash);color:var(--sb);}
+  summary .path{font-family:var(--mono);font-size:.85rem;color:var(--text);font-weight:600;}
+  summary .sp{color:var(--muted);font-size:.8rem;margin-left:auto;text-align:right;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:38%;}
+  @media(max-width:560px){summary .sp{display:none;}}
+  summary .chev{flex:none;color:var(--faint);font-size:1rem;transition:transform .18s ease;line-height:1;}
+  details.ep[open]>summary .chev{transform:rotate(90deg);}
+
+  .body{padding:2px 15px 16px;border-top:1px solid var(--border);}
+  .meta-row{display:flex;flex-wrap:wrap;gap:8px 16px;margin:12px 0 2px;font-size:.78rem;}
+  .meta-row .k{color:var(--faint);}
+  .meta-row .v{color:var(--text);font-weight:560;}
+  .acc-c{color:var(--accent);}.acc-s{color:var(--patch);}.acc-i{color:var(--faint);}
+  .desc{color:var(--muted);font-size:.85rem;margin:10px 0 12px;}
+  .pl{margin:11px 0;}
+  .pl-h{font-size:.64rem;text-transform:uppercase;letter-spacing:.07em;color:var(--faint);font-weight:680;margin-bottom:6px;display:flex;align-items:center;gap:8px;}
+  .st{font-size:.6rem;font-weight:730;padding:2px 6px;border-radius:4px;font-family:var(--mono);}
+  .st.ok{background:var(--post-wash);color:var(--post);}
+  .st.err{background:var(--del-wash);color:var(--del);}
+  .pl pre{margin:0;background:var(--surface-2);border:1px solid var(--border);border-radius:9px;padding:13px 15px;overflow-x:auto;font-family:var(--mono);font-size:.775rem;line-height:1.65;color:var(--text);white-space:pre;}
+
+  .foot{margin-top:48px;padding-top:20px;border-top:1px solid var(--border);color:var(--faint);font-size:.8rem;}
+</style>
+
+<div class="wrap">
+
+  <div class="mast">
+    <p class="eyebrow">API Specification &middot; Payloads &middot; 22 Jul 2026</p>
+    <h1>Fabric Simulator — API surface, with payloads</h1>
+    <p>Every endpoint the multi-tenant platform needs. Click any row to open its full <b>request &amp; response payload</b>. Existing contracts (assets, AI) are read straight from the codebase; new ones are the proposed shapes.</p>
+    <div class="counts">
+      <div class="cbox total"><div class="num">~17</div><div class="lbl">Custom endpoints we own</div></div>
+      <div class="cbox new"><div class="num">11</div><div class="lbl">New to build</div></div>
+      <div class="cbox hard"><div class="num">5</div><div class="lbl">Existing → hardened</div></div>
+      <div class="cbox reuse"><div class="num">2</div><div class="lbl">Reused (billing)</div></div>
+      <div class="cbox sb"><div class="num">5</div><div class="lbl">Supabase-handled</div></div>
+    </div>
+    <p class="note"><b>One rule for all custom endpoints:</b> the handler's first line calls <code>_lib/auth</code> — verifies the session token, derives <code>tenant_id</code> + <code>role</code>. Browser-supplied tenant ids are never trusted. No session → <code>401</code>; wrong tenant/role → <code>403</code>. All requests send <code>Authorization: Bearer &lt;token&gt;</code>.</p>
+    <div class="controls">
+      <button class="btn" id="expand-all">Expand all</button>
+      <button class="btn" id="collapse-all">Collapse all</button>
+      <span class="hint">Click any endpoint to see its payload.</span>
+    </div>
+  </div>
+
+  <!-- A. IDENTITY -->
+  <section>
+    <div class="sh"><span class="tn">A</span><h2>Identity &amp; session</h2><span class="badge sb">Supabase — no build</span></div>
+    <p class="slead">Handled by Supabase Auth via its SDK — we configure, not build. The claims hook is what makes every later request tenant-aware.</p>
+    <div class="acc-group">
+
+      <details class="ep">
+        <summary><span class="m sdk">SDK</span><span class="path">auth.signInWithPassword</span><span class="sp">Log in a user</span><span class="chev">›</span></summary>
+        <div class="body">
+          <div class="meta-row"><span class="k">Access</span><span class="v">public</span><span class="k">Handled by</span><span class="v">Supabase</span></div>
+          <p class="desc">Consultant or staff signs in. Google/Apple use <code>signInWithOAuth</code> instead. Returns a session; the app stores it and reads the claims.</p>
+          <div class="pl"><div class="pl-h">Request (SDK)</div><pre>{
+  "email": "priya@acme.com",
+  "password": "••••••••"
+}</pre></div>
+          <div class="pl"><div class="pl-h">Response <span class="st ok">session</span></div><pre>{
+  "access_token": "eyJhbGciOi...",   // JWT
+  "refresh_token": "v1.Mx...",
+  "expires_in": 3600,
+  "user": { "id": "9f2c...", "email": "priya@acme.com" }
+}</pre></div>
+        </div>
+      </details>
+
+      <details class="ep">
+        <summary><span class="m sdk">HOOK</span><span class="path">custom access-token claims</span><span class="sp">Stamp tenant_id + role</span><span class="chev">›</span></summary>
+        <div class="body">
+          <div class="meta-row"><span class="k">Access</span><span class="v acc-i">infra</span><span class="k">Runs</span><span class="v">on every token issue</span></div>
+          <p class="desc">A Supabase hook reads the user's row in <code>memberships</code> and writes two claims into the JWT. Every custom endpoint reads these — this is the backbone of tenant isolation.</p>
+          <div class="pl"><div class="pl-h">Resulting JWT claims</div><pre>{
+  "sub": "9f2c...",              // user id
+  "email": "priya@acme.com",
+  "tenant_id": "ac001-...-uuid", // which client
+  "role": "client",             // client | staff
+  "exp": 1753142400
+}</pre></div>
+        </div>
+      </details>
+
+    </div>
+  </section>
+
+  <!-- B. CLIENT -->
+  <section>
+    <div class="sh"><span class="tn">B</span><h2>Client — catalog &amp; session</h2><span class="badge new">new</span></div>
+    <p class="slead">What the simulator calls right after login to know who it is and what to show.</p>
+    <div class="acc-group">
+
+      <details class="ep">
+        <summary><span class="m get">GET</span><span class="path">/api/me</span><span class="sp">Who am I + my tenant</span><span class="chev">›</span></summary>
+        <div class="body">
+          <div class="meta-row"><span class="k">Access</span><span class="v acc-c">client</span><span class="k">Body</span><span class="v">none</span></div>
+          <p class="desc">Drives the gated shell — the app shows the simulator only if <code>status = active</code>, otherwise a "being set up" screen.</p>
+          <div class="pl"><div class="pl-h">Response <span class="st ok">200</span></div><pre>{
+  "user":   { "id": "9f2c...", "name": "Priya", "email": "priya@acme.com" },
+  "tenant": { "id": "ac001-...", "name": "Acme Furniture", "slug": "acme", "status": "active" },
+  "role":   "client"
+}</pre></div>
+          <div class="pl"><div class="pl-h">Errors</div><pre>401  { "error": "no session" }</pre></div>
+        </div>
+      </details>
+
+      <details class="ep">
+        <summary><span class="m get">GET</span><span class="path">/api/catalog</span><span class="sp">This tenant's products + fabrics</span><span class="chev">›</span></summary>
+        <div class="body">
+          <div class="meta-row"><span class="k">Access</span><span class="v acc-c">client</span><span class="k">Body</span><span class="v">none</span><span class="k">Replaces</span><span class="v">hardcoded catalog.js</span></div>
+          <p class="desc">The core call. Returns only rows where <code>tenant_id</code> matches the token (RLS-enforced). Asset URLs already point at the gated proxy.</p>
+          <div class="pl"><div class="pl-h">Response <span class="st ok">200</span></div><pre>{
+  "products": [
+    {
+      "id": "prd_01",
+      "name": "Sierra Chair",
+      "glbUrl": "/api/s3proxy?key=tenants/ac001/glbs/sierra_chair.glb",
+      "thumbnailUrl": "/api/s3proxy?key=tenants/ac001/thumbnails/sierra.jpg",
+      "partMap": {
+        "seat_cushion": "Seat",
+        "backrest": "Backrest",
+        "arm_left": "Left Arm",
+        "arm_right": "Right Arm",
+        "legs": "Legs / Base"
+      },
+      "status": "live"
+    }
+  ],
+  "fabrics": [
+    {
+      "id": "fab_01",
+      "name": "Natural Linen",
+      "type": "fabric",
+      "hex": "#c8c0b8",
+      "swatchUrl": "/api/s3proxy?key=tenants/ac001/fabric_maps/linen/diffuse.jpg",
+      "maps": {
+        "diffuse":   "/api/s3proxy?key=tenants/ac001/fabric_maps/linen/diffuse.jpg",
+        "normal":    "/api/s3proxy?key=tenants/ac001/fabric_maps/linen/normal.jpg",
+        "roughness": "/api/s3proxy?key=tenants/ac001/fabric_maps/linen/roughness.jpg"
+      },
+      "pbr": { "roughness": 0.8, "sheen": 0.1, "metalness": 0, "scale": 10, "norm": 1 }
+    }
+  ]
+}</pre></div>
+        </div>
+      </details>
+
+      <details class="ep">
+        <summary><span class="m get">GET</span><span class="path">/api/products/:id</span><span class="sp">One product detail</span><span class="chev">›</span></summary>
+        <div class="body">
+          <div class="meta-row"><span class="k">Access</span><span class="v acc-c">client</span><span class="k">Note</span><span class="v">optional — may inline into /catalog</span></div>
+          <p class="desc">Single product with its full <code>partMap</code>. Useful if the catalog list stays lightweight.</p>
+          <div class="pl"><div class="pl-h">Response <span class="st ok">200</span></div><pre>{
+  "product": {
+    "id": "prd_01",
+    "name": "Sierra Chair",
+    "glbUrl": "/api/s3proxy?key=tenants/ac001/glbs/sierra_chair.glb",
+    "partMap": { "seat_cushion": "Seat", "backrest": "Backrest" },
+    "status": "live"
+  }
+}</pre></div>
+          <div class="pl"><div class="pl-h">Errors</div><pre>404  { "error": "product not found" }   // also returned if it belongs to another tenant</pre></div>
+        </div>
+      </details>
+
+    </div>
+  </section>
+
+  <!-- C. ASSETS -->
+  <section>
+    <div class="sh"><span class="tn">C</span><h2>Asset delivery</h2><span class="badge hard">existing → hardened</span></div>
+    <p class="slead">Already in the repo. The change: verify the session and enforce the tenant prefix.</p>
+    <div class="acc-group">
+      <details class="ep">
+        <summary><span class="m get">GET</span><span class="path">/api/s3proxy</span><span class="sp">Stream a GLB / texture</span><span class="chev">›</span></summary>
+        <div class="body">
+          <div class="meta-row"><span class="k">Access</span><span class="v acc-c">client</span><span class="k">Input</span><span class="v">query ?key=</span></div>
+          <p class="desc">Streams a file from S3, keeping AWS keys server-side. New guard: the key must be under <code>tenants/{tenant_id}/</code> or <code>shared/</code>.</p>
+          <div class="pl"><div class="pl-h">Request</div><pre>GET /api/s3proxy?key=tenants/ac001/glbs/sierra_chair.glb
+Authorization: Bearer eyJhbGci...</pre></div>
+          <div class="pl"><div class="pl-h">Response <span class="st ok">200</span></div><pre>Content-Type: model/gltf-binary
+Cache-Control: public, max-age=3600
+
+‹binary GLB / image stream›</pre></div>
+          <div class="pl"><div class="pl-h">Errors</div><pre>400  { "error": "missing key" }
+403  { "error": "forbidden: key outside tenant scope" }   // NEW guard</pre></div>
+        </div>
+      </details>
+    </div>
+  </section>
+
+  <!-- D. AI -->
+  <section>
+    <div class="sh"><span class="tn">D</span><h2>AI gateway</h2><span class="badge hard">existing → hardened</span></div>
+    <p class="slead">Contracts below are read from the code. The change: add auth + per-tenant credit metering before the paid Gemini call.</p>
+    <div class="acc-group">
+
+      <details class="ep">
+        <summary><span class="m post">POST</span><span class="path">/api/generate</span><span class="sp">Photoreal render</span><span class="chev">›</span></summary>
+        <div class="body">
+          <div class="meta-row"><span class="k">Access</span><span class="v acc-c">client</span><span class="k">Meters</span><span class="v">1 render credit</span></div>
+          <p class="desc">Product / room / furniture hero shot. <code>mode</code> selects the prompt + Gemini model.</p>
+          <div class="pl"><div class="pl-h">Request</div><pre>{
+  "imageData": "data:image/jpeg;base64,/9j/4AAQSkZJRg...",
+  "mode": "product"          // "product" | "room" | "furniture"
+}</pre></div>
+          <div class="pl"><div class="pl-h">Response <span class="st ok">200</span></div><pre>{ "imageUrl": "data:image/png;base64,iVBORw0KGgoAAAANS..." }</pre></div>
+          <div class="pl"><div class="pl-h">Errors</div><pre>400  { "error": "Missing imageData" }
+402  { "error": "insufficient credits" }   // NEW metering guard
+405  { "error": "Method not allowed" }</pre></div>
+        </div>
+      </details>
+
+      <details class="ep">
+        <summary><span class="m post">POST</span><span class="path">/api/gemini-room</span><span class="sp">View in my room</span><span class="chev">›</span></summary>
+        <div class="body">
+          <div class="meta-row"><span class="k">Access</span><span class="v acc-c">client</span><span class="k">Meters</span><span class="v">1 render credit</span></div>
+          <p class="desc">Composites the configured furniture onto a real customer room photo. Takes 2–3 images.</p>
+          <div class="pl"><div class="pl-h">Request</div><pre>{
+  "roomPhoto":       "data:image/jpeg;base64,...",   // customer's room
+  "furnitureRender": "data:image/png;base64,...",    // step-1 render
+  "assetLabel":      "Sierra Chair",
+  "singleAsset":     true,
+  "curtainText":     "",                              // optional
+  "curtainImage":    null                             // optional reference
+}</pre></div>
+          <div class="pl"><div class="pl-h">Response <span class="st ok">200</span></div><pre>{ "imageUrl": "data:image/png;base64,iVBORw0KGgo..." }</pre></div>
+          <div class="pl"><div class="pl-h">Errors</div><pre>400  { "error": "Missing roomPhoto or furnitureRender" }</pre></div>
+        </div>
+      </details>
+
+      <details class="ep">
+        <summary><span class="m post">POST</span><span class="path">/api/find-fabric</span><span class="sp">Fabric photo → PBR</span><span class="chev">›</span></summary>
+        <div class="body">
+          <div class="meta-row"><span class="k">Access</span><span class="v acc-c">client</span><span class="k">Also</span><span class="v">HEAD = probe</span></div>
+          <p class="desc">Analyses an uploaded fabric photo and returns material properties the engine can apply directly.</p>
+          <div class="pl"><div class="pl-h">Request</div><pre>{ "imageData": "data:image/jpeg;base64,/9j/4AAQ..." }</pre></div>
+          <div class="pl"><div class="pl-h">Response <span class="st ok">200</span></div><pre>{
+  "name": "Woven Linen",
+  "type": "fabric",
+  "roughness": 0.78,
+  "sheen": 0.12,
+  "metalness": 0,
+  "scale": 10,
+  "norm": 1,
+  "hex": "#cfc7ba",
+  "description": "Natural loose-weave linen, matte."
+}</pre></div>
+        </div>
+      </details>
+
+      <details class="ep">
+        <summary><span class="m post">POST</span><span class="path">/api/enhance-texture</span><span class="sp">Clean a texture</span><span class="chev">›</span></summary>
+        <div class="body">
+          <div class="meta-row"><span class="k">Access</span><span class="v acc-c">client</span><span class="k">Meters</span><span class="v">1 vision credit</span></div>
+          <p class="desc">Cleans an uploaded diffuse texture — seamless edges, neutral lighting, exact colour preserved.</p>
+          <div class="pl"><div class="pl-h">Request</div><pre>{ "imageData": "data:image/jpeg;base64,/9j/4AAQ..." }</pre></div>
+          <div class="pl"><div class="pl-h">Response <span class="st ok">200</span></div><pre>{ "imageData": "data:image/png;base64,iVBORw0KGgo..." }</pre></div>
+        </div>
+      </details>
+
+    </div>
+  </section>
+
+  <!-- E. BILLING -->
+  <section>
+    <div class="sh"><span class="tn">E</span><h2>Billing &amp; usage</h2><span class="badge reuse">reused</span></div>
+    <p class="slead">Rides Livinit's existing Stripe credits contract. The AI gateway calls <code>consume</code> internally before each render.</p>
+    <div class="acc-group">
+
+      <details class="ep">
+        <summary><span class="m get">GET</span><span class="path">/api/billing</span><span class="sp">Credit snapshot</span><span class="chev">›</span></summary>
+        <div class="body">
+          <div class="meta-row"><span class="k">Access</span><span class="v acc-c">client</span></div>
+          <p class="desc">The tenant's balance and plan; surfaces the render counter in the header.</p>
+          <div class="pl"><div class="pl-h">Response <span class="st ok">200</span> — BillingSnapshot</div><pre>{
+  "tenantId": "ac001-...",
+  "plan": "pro",
+  "credits": { "balance": 480, "included": 500 },
+  "renderCount": 20,
+  "renewsAt": "2026-08-01"
+}</pre></div>
+        </div>
+      </details>
+
+      <details class="ep">
+        <summary><span class="m post">POST</span><span class="path">/api/billing/consume</span><span class="sp">Deduct a credit</span><span class="chev">›</span></summary>
+        <div class="body">
+          <div class="meta-row"><span class="k">Access</span><span class="v acc-i">internal</span><span class="k">Called by</span><span class="v">AI gateway, not the browser</span></div>
+          <p class="desc">Deducts credits for a render / vision call and returns the updated snapshot. If the balance is 0, the AI call is refused with 402.</p>
+          <div class="pl"><div class="pl-h">Request</div><pre>{
+  "tenantId": "ac001-...",
+  "kind": "render",     // "render" | "vision"
+  "units": 1
+}</pre></div>
+          <div class="pl"><div class="pl-h">Response <span class="st ok">200</span></div><pre>{ "credits": { "balance": 479, "included": 500 }, "ok": true }</pre></div>
+        </div>
+      </details>
+
+    </div>
+  </section>
+
+  <!-- F. ADMIN -->
+  <section>
+    <div class="sh"><span class="tn">F</span><h2>Admin &amp; onboarding</h2><span class="badge new">new · staff only</span></div>
+    <p class="slead">The staff console's backend. Every endpoint requires <code>role = staff</code> and writes via the service role.</p>
+    <div class="acc-group">
+
+      <details class="ep">
+        <summary><span class="m get">GET</span><span class="path">/api/admin/tenants</span><span class="sp">List all clients</span><span class="chev">›</span></summary>
+        <div class="body">
+          <div class="meta-row"><span class="k">Access</span><span class="v acc-s">staff</span></div>
+          <p class="desc">All client tenants with status and asset counts, for the console's home list.</p>
+          <div class="pl"><div class="pl-h">Response <span class="st ok">200</span></div><pre>{
+  "tenants": [
+    { "id": "ac001-...", "name": "Acme Furniture", "slug": "acme",
+      "status": "active", "productCount": 8, "fabricCount": 24, "createdAt": "2026-07-10" },
+    { "id": "bh002-...", "name": "Bhavya Interiors", "slug": "bhavya",
+      "status": "draft", "productCount": 0, "fabricCount": 0, "createdAt": "2026-07-21" }
+  ]
+}</pre></div>
+        </div>
+      </details>
+
+      <details class="ep">
+        <summary><span class="m post">POST</span><span class="path">/api/admin/tenants</span><span class="sp">Create a client</span><span class="chev">›</span></summary>
+        <div class="body">
+          <div class="meta-row"><span class="k">Access</span><span class="v acc-s">staff</span></div>
+          <p class="desc">Creates a new tenant in <code>draft</code>.</p>
+          <div class="pl"><div class="pl-h">Request</div><pre>{ "name": "Bhavya Interiors", "slug": "bhavya" }</pre></div>
+          <div class="pl"><div class="pl-h">Response <span class="st ok">201</span></div><pre>{ "tenant": { "id": "bh002-...", "name": "Bhavya Interiors", "slug": "bhavya", "status": "draft" } }</pre></div>
+          <div class="pl"><div class="pl-h">Errors</div><pre>409  { "error": "slug already taken" }</pre></div>
+        </div>
+      </details>
+
+      <details class="ep">
+        <summary><span class="m post">POST</span><span class="path">/api/admin/tenants/:id/members</span><span class="sp">Create the client login</span><span class="chev">›</span></summary>
+        <div class="body">
+          <div class="meta-row"><span class="k">Access</span><span class="v acc-s">staff</span></div>
+          <p class="desc">Invites / creates the client's login as a <code>client</code> membership on that tenant.</p>
+          <div class="pl"><div class="pl-h">Request</div><pre>{ "email": "buyer@bhavya.com", "role": "client" }</pre></div>
+          <div class="pl"><div class="pl-h">Response <span class="st ok">201</span></div><pre>{
+  "membership": { "userId": "u_77...", "tenantId": "bh002-...", "role": "client" },
+  "inviteSent": true
+}</pre></div>
+        </div>
+      </details>
+
+      <details class="ep">
+        <summary><span class="m post">POST</span><span class="path">/api/admin/uploads</span><span class="sp">Presigned S3 upload</span><span class="chev">›</span></summary>
+        <div class="body">
+          <div class="meta-row"><span class="k">Access</span><span class="v acc-s">staff</span><span class="k">Expiry</span><span class="v">short-lived</span></div>
+          <p class="desc">Returns a one-time signed URL to PUT a GLB / map / thumbnail directly into the tenant prefix, plus the key to store on the row.</p>
+          <div class="pl"><div class="pl-h">Request</div><pre>{
+  "tenantId": "bh002-...",
+  "kind": "glb",                     // "glb" | "map" | "thumbnail"
+  "filename": "sofa_haven.glb",
+  "contentType": "model/gltf-binary"
+}</pre></div>
+          <div class="pl"><div class="pl-h">Response <span class="st ok">200</span></div><pre>{
+  "uploadUrl": "https://s3.amazonaws.com/livinit-simulator/...&X-Amz-Signature=...",
+  "key": "tenants/bh002/glbs/sofa_haven.glb",
+  "expiresIn": 300
+}</pre></div>
+        </div>
+      </details>
+
+      <details class="ep">
+        <summary><span class="m post">POST</span><span class="path">/api/admin/products</span><span class="sp">Register a product</span><span class="chev">›</span></summary>
+        <div class="body">
+          <div class="meta-row"><span class="k">Access</span><span class="v acc-s">staff</span></div>
+          <p class="desc">Saves a product with its uploaded GLB key and the authored <code>partMap</code> (the segmentation).</p>
+          <div class="pl"><div class="pl-h">Request</div><pre>{
+  "tenantId": "bh002-...",
+  "name": "Haven Sofa",
+  "glbKey": "tenants/bh002/glbs/sofa_haven.glb",
+  "thumbnailKey": "tenants/bh002/thumbnails/haven.jpg",
+  "partMap": {
+    "seat_cushion": "Seat",
+    "back_cushion": "Back",
+    "arm_left": "Left Arm",
+    "arm_right": "Right Arm",
+    "base": "Base"
+  },
+  "status": "draft"
+}</pre></div>
+          <div class="pl"><div class="pl-h">Response <span class="st ok">201</span></div><pre>{ "product": { "id": "prd_09", "tenantId": "bh002-...", "name": "Haven Sofa", "status": "draft" } }</pre></div>
+        </div>
+      </details>
+
+      <details class="ep">
+        <summary><span class="m patch">PATCH</span><span class="path">/api/admin/products/:id</span><span class="sp">Fix parts / go live</span><span class="chev">›</span></summary>
+        <div class="body">
+          <div class="meta-row"><span class="k">Access</span><span class="v acc-s">staff</span></div>
+          <p class="desc">Edit the <code>partMap</code> or flip status after QA. Partial body — send only what changes.</p>
+          <div class="pl"><div class="pl-h">Request</div><pre>{
+  "partMap": { "seat_cushion": "Seat Cushion", "back_cushion": "Backrest" },
+  "status": "live"
+}</pre></div>
+          <div class="pl"><div class="pl-h">Response <span class="st ok">200</span></div><pre>{ "product": { "id": "prd_09", "status": "live" } }</pre></div>
+        </div>
+      </details>
+
+      <details class="ep">
+        <summary><span class="m post">POST</span><span class="path">/api/admin/fabrics</span><span class="sp">Register a fabric</span><span class="chev">›</span></summary>
+        <div class="body">
+          <div class="meta-row"><span class="k">Access</span><span class="v acc-s">staff</span></div>
+          <p class="desc">Saves a fabric with its map keys and PBR defaults (can be seeded from <code>find-fabric</code>).</p>
+          <div class="pl"><div class="pl-h">Request</div><pre>{
+  "tenantId": "bh002-...",
+  "name": "Charcoal Velvet",
+  "type": "fabric",
+  "hex": "#3a3a40",
+  "diffuseKey":   "tenants/bh002/fabric_maps/charcoal_velvet/diffuse.jpg",
+  "normalKey":    "tenants/bh002/fabric_maps/charcoal_velvet/normal.jpg",
+  "roughnessKey": "tenants/bh002/fabric_maps/charcoal_velvet/roughness.jpg",
+  "pbrDefaults": { "roughness": 0.55, "sheen": 0.6, "metalness": 0, "scale": 8, "norm": 1 }
+}</pre></div>
+          <div class="pl"><div class="pl-h">Response <span class="st ok">201</span></div><pre>{ "fabric": { "id": "fab_31", "tenantId": "bh002-...", "name": "Charcoal Velvet" } }</pre></div>
+        </div>
+      </details>
+
+      <details class="ep">
+        <summary><span class="m post">POST</span><span class="path">/api/admin/tenants/:id/activate</span><span class="sp">Go live</span><span class="chev">›</span></summary>
+        <div class="body">
+          <div class="meta-row"><span class="k">Access</span><span class="v acc-s">staff</span></div>
+          <p class="desc">Flips the tenant to <code>active</code> after QA. From here the client can log in and use it.</p>
+          <div class="pl"><div class="pl-h">Request</div><pre>{}   // no body</pre></div>
+          <div class="pl"><div class="pl-h">Response <span class="st ok">200</span></div><pre>{ "tenant": { "id": "bh002-...", "status": "active" } }</pre></div>
+          <div class="pl"><div class="pl-h">Errors</div><pre>422  { "error": "tenant has no live products yet" }</pre></div>
+        </div>
+      </details>
+
+    </div>
+  </section>
+
+  <p class="foot">
+    Existing endpoints (C &amp; D) and their contracts read from <code>VIKRAM-0/livinit_fabric_simulator @ main</code> — <code>api/{generate,gemini-room,find-fabric,enhance-texture,s3proxy}.ts</code>. Groups B, E, F are proposed shapes; exact field names may shift during build. Placeholder ids (<code>ac001</code>, <code>prd_01</code>) are illustrative.
+  </p>
+
+</div>
+
+<script>
+  (function(){
+    var ea = document.getElementById('expand-all');
+    var ca = document.getElementById('collapse-all');
+    if (ea) ea.addEventListener('click', function(){
+      document.querySelectorAll('details.ep').forEach(function(d){ d.open = true; });
+    });
+    if (ca) ca.addEventListener('click', function(){
+      document.querySelectorAll('details.ep').forEach(function(d){ d.open = false; });
+    });
+  })();
+</script>

@@ -1,0 +1,659 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Fabric Simulator — Full Specification</title>
+<style>
+  @page { size: A4; margin: 15mm 13mm 16mm; }
+  * { box-sizing: border-box; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  :root{
+    --text:#1A1C24; --muted:#565C70; --faint:#7C8296; --line:#E1E4EE; --line2:#CFD4E3;
+    --bg2:#F4F5F9; --bg3:#ECEFF6;
+    --accent:#4A5CC4; --accent-soft:#7A91EE; --accent-wash:#EBEEFC; --accent-line:#C3CDF6;
+    --get:#1C7F9B; --get-w:#E0F0F4; --post:#1C9160; --post-w:#E1F3E9; --patch:#B37320; --patch-w:#F8EEDA;
+    --good:#1C9160; --good-w:#E1F3E9; --warn:#B37320; --warn-w:#F8EEDA; --crit:#C4443C; --crit-w:#FBE6E4;
+    --new:#4A5CC4; --new-w:#EBEEFC; --hard:#B37320; --hard-w:#F8EEDA; --keep:#5A6072; --keep-w:#EBEDF3;
+    --ext:#7A5AA8; --ext-w:#F0EAF8; --sb:#2E8B7A; --sb-w:#DEF1EC; --reuse:#7A5AA8; --reuse-w:#F0EAF8;
+    --mono:"SF Mono",ui-monospace,Menlo,Consolas,monospace;
+    --sans:-apple-system,system-ui,"Segoe UI",Roboto,Arial,sans-serif;
+  }
+  html,body{margin:0;padding:0;}
+  body{font-family:var(--sans);color:var(--text);font-size:10.5px;line-height:1.5;background:#fff;}
+  code{font-family:var(--mono);font-size:.92em;background:var(--bg2);padding:.5px 4px;border-radius:4px;}
+  h1,h2,h3,h4{margin:0;line-height:1.15;}
+  p{margin:0;}
+
+  /* cover */
+  .cover{height:262mm;display:flex;flex-direction:column;justify-content:center;page-break-after:always;padding:0 6mm;}
+  .cover .kicker{font-size:11px;letter-spacing:.22em;text-transform:uppercase;color:var(--accent);font-weight:700;margin-bottom:16px;}
+  .cover h1{font-size:40px;letter-spacing:-.02em;font-weight:800;line-height:1.04;margin-bottom:16px;}
+  .cover .lede{font-size:14px;color:var(--muted);max-width:120mm;line-height:1.5;}
+  .cover .meta{margin-top:34px;display:flex;flex-wrap:wrap;gap:9px;}
+  .cover .meta span{font-size:11px;border:1px solid var(--line2);border-radius:7px;padding:7px 12px;color:var(--muted);}
+  .cover .meta b{color:var(--text);}
+  .cover .rule{height:4px;width:70px;background:var(--accent);border-radius:2px;margin-bottom:26px;}
+
+  /* part headers */
+  .part{page-break-before:always;}
+  .part-h{display:flex;align-items:center;gap:11px;border-bottom:2px solid var(--accent-line);padding-bottom:9px;margin-bottom:14px;}
+  .part-h .pn{font-family:var(--mono);font-size:11px;color:#fff;background:var(--accent);border-radius:6px;padding:3px 9px;font-weight:700;}
+  .part-h h2{font-size:20px;font-weight:780;letter-spacing:-.01em;}
+  .lead{color:var(--muted);font-size:11px;margin-bottom:14px;max-width:170mm;}
+  h3{font-size:13px;font-weight:680;margin:18px 0 8px;letter-spacing:-.005em;}
+
+  /* generic */
+  .row{display:flex;gap:10px;}
+  .col{flex:1;}
+  .box{border:1px solid var(--line2);border-radius:9px;background:var(--bg2);padding:10px 11px;break-inside:avoid;}
+  .box b{font-size:10.5px;} .box p{font-size:9.5px;color:var(--muted);margin-top:2px;}
+  .grid{display:grid;gap:9px;} .g2{grid-template-columns:1fr 1fr;} .g3{grid-template-columns:1fr 1fr 1fr;} .g4{grid-template-columns:repeat(4,1fr);}
+
+  table{border-collapse:collapse;width:100%;font-size:9.6px;break-inside:auto;margin:2px 0;}
+  th{text-align:left;font-size:8px;text-transform:uppercase;letter-spacing:.05em;color:var(--faint);font-weight:700;padding:6px 9px;border-bottom:1px solid var(--line);background:var(--bg2);}
+  td{padding:6px 9px;border-bottom:1px solid var(--line);vertical-align:top;color:var(--muted);}
+  td:first-child{color:var(--text);font-weight:560;}
+  tr{break-inside:avoid;}
+  .mono{font-family:var(--mono);color:var(--accent);font-size:9px;}
+
+  .vs{display:grid;grid-template-columns:1fr 1fr;gap:11px;}
+  .vs .c{border:1px solid var(--line);border-radius:10px;padding:11px 13px;}
+  .vs .cl{font-size:8.5px;text-transform:uppercase;letter-spacing:.09em;font-weight:700;margin-bottom:8px;}
+  .vs .now .cl{color:var(--crit);} .vs .then .cl{color:var(--good);}
+  .vs ul{margin:0;padding-left:14px;} .vs li{font-size:9.6px;color:var(--muted);margin:3px 0;} .vs li b{color:var(--text);}
+
+  /* tier diagram (CSS, print-safe) */
+  .tier{border:1px solid var(--line2);border-radius:11px;padding:9px 11px 11px;margin-bottom:8px;break-inside:avoid;}
+  .tier .tl{font-size:8px;letter-spacing:.1em;text-transform:uppercase;color:var(--faint);font-weight:700;margin-bottom:8px;}
+  .node{border:1px solid var(--line2);border-radius:8px;padding:8px 9px;font-size:9.4px;}
+  .node b{display:block;font-size:9.8px;margin-bottom:1px;} .node span{color:var(--muted);font-size:8.8px;}
+  .node.new{border-left:3px solid var(--accent-soft);background:var(--new-w);}
+  .node.hard{border-left:3px solid var(--hard);background:var(--hard-w);}
+  .node.keep{border-left:3px solid var(--keep);background:var(--keep-w);}
+  .node.ext{border-left:3px solid var(--ext);background:var(--ext-w);}
+  .down{text-align:center;color:var(--accent-soft);font-size:12px;margin:1px 0 6px;}
+  .legend{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:8.6px;color:var(--muted);margin-top:8px;}
+  .legend i{width:9px;height:9px;border-radius:2px;display:inline-block;margin-right:5px;vertical-align:-1px;}
+
+  /* entity cards */
+  .erd{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;}
+  .ent{border:1px solid var(--line);border-radius:9px;overflow:hidden;break-inside:avoid;}
+  .ent h5{margin:0;font-family:var(--mono);font-size:9px;padding:6px 9px;background:var(--bg3);border-bottom:1px solid var(--line);color:var(--accent);font-weight:700;}
+  .ent ul{list-style:none;margin:0;padding:6px 9px;}
+  .ent li{font-size:8.6px;color:var(--muted);display:flex;justify-content:space-between;gap:8px;padding:1.5px 0;}
+  .ent li span{font-family:var(--mono);color:var(--text);}
+  .ent li.k span{color:var(--accent);}
+
+  .callout{border-left:3px solid var(--accent-soft);background:var(--accent-wash);border-radius:0 8px 8px 0;padding:9px 12px;margin:11px 0;break-inside:avoid;}
+  .callout.good{border-left-color:var(--good);background:var(--good-w);}
+  .callout.crit{border-left-color:var(--crit);background:var(--crit-w);}
+  .callout b{font-size:10px;} .callout p{font-size:9.4px;color:var(--muted);margin-top:2px;}
+
+  .find{display:flex;gap:9px;padding:7px 0;border-top:1px solid var(--line);break-inside:avoid;}
+  .find:first-of-type{border-top:none;}
+  .find .s{width:3px;border-radius:2px;flex:none;}
+  .find.good .s{background:var(--good);} .find.crit .s{background:var(--crit);} .find.warn .s{background:var(--warn);}
+  .find b{font-size:10px;} .find p{font-size:9.2px;color:var(--muted);} .find .ev{font-family:var(--mono);font-size:8px;color:var(--faint);}
+  .sev{font-size:7.5px;font-weight:750;text-transform:uppercase;letter-spacing:.03em;padding:1.5px 5px;border-radius:4px;margin-left:6px;}
+  .sev.good{background:var(--good-w);color:var(--good);} .sev.crit{background:var(--crit-w);color:var(--crit);} .sev.warn{background:var(--warn-w);color:var(--warn);}
+
+  /* pipeline / phases */
+  .pipe{margin:0;padding:0;list-style:none;}
+  .pipe li{display:flex;gap:11px;padding:7px 0;border-top:1px solid var(--line);break-inside:avoid;}
+  .pipe li:first-child{border-top:none;}
+  .pipe .pn{flex:none;width:22px;height:22px;border-radius:6px;display:grid;place-items:center;font-weight:750;font-size:10px;background:var(--accent-wash);color:var(--accent);border:1px solid var(--accent-line);}
+  .pipe b{font-size:10px;} .pipe p{font-size:9.2px;color:var(--muted);} .pipe .gate{font-size:8.8px;color:var(--muted);} .pipe .gate b{color:var(--good);font-size:8.8px;}
+  .actor{font-size:7.5px;text-transform:uppercase;letter-spacing:.04em;font-weight:700;padding:1.5px 5px;border-radius:4px;margin-left:6px;}
+  .actor.client{background:var(--keep-w);color:var(--keep);} .actor.ops{background:var(--hard-w);color:var(--hard);} .actor.sys{background:var(--accent-wash);color:var(--accent);}
+
+  /* ===== API blocks ===== */
+  .api-groups .gh{display:flex;align-items:center;gap:8px;margin:16px 0 9px;break-after:avoid;}
+  .api-groups .gh .lt{font-family:var(--mono);font-size:9px;color:var(--accent);border:1px solid var(--accent-line);border-radius:5px;padding:2px 6px;font-weight:700;}
+  .api-groups .gh h3{margin:0;} .badge{font-size:7.5px;font-weight:750;letter-spacing:.04em;text-transform:uppercase;padding:2px 6px;border-radius:5px;}
+  .badge.new{background:var(--new-w);color:var(--new);} .badge.hard{background:var(--hard-w);color:var(--hard);}
+  .badge.reuse{background:var(--reuse-w);color:var(--reuse);} .badge.sb{background:var(--sb-w);color:var(--sb);}
+
+  .api{border:1px solid var(--line2);border-radius:10px;margin:9px 0;overflow:hidden;break-inside:avoid;}
+  .api-top{display:flex;align-items:center;gap:9px;padding:9px 12px;background:var(--bg2);border-bottom:1px solid var(--line);flex-wrap:wrap;}
+  .mm{font-family:var(--mono);font-size:8px;font-weight:800;padding:2.5px 6px;border-radius:5px;}
+  .mm.get{background:var(--get-w);color:var(--get);} .mm.post{background:var(--post-w);color:var(--post);}
+  .mm.patch{background:var(--patch-w);color:var(--patch);} .mm.sdk{background:var(--sb-w);color:var(--sb);}
+  .api-top .p{font-family:var(--mono);font-size:11px;font-weight:700;color:var(--text);}
+  .api-top .acc{margin-left:auto;font-size:8.5px;font-weight:650;padding:2px 7px;border-radius:5px;}
+  .acc.client{background:var(--accent-wash);color:var(--accent);} .acc.staff{background:var(--patch-w);color:var(--patch);} .acc.int{background:var(--bg3);color:var(--faint);}
+  .api-body{padding:10px 12px;}
+  .api-body .purpose{font-size:10px;color:var(--text);margin-bottom:5px;}
+  .api-body .when{font-size:9.4px;color:var(--muted);margin-bottom:8px;}
+  .api-body .when b{color:var(--accent);font-weight:650;}
+  .lbl{font-size:7.5px;text-transform:uppercase;letter-spacing:.06em;color:var(--faint);font-weight:750;margin:9px 0 4px;}
+  .st{font-size:7.5px;font-weight:750;padding:1.5px 5px;border-radius:4px;margin-left:6px;}
+  .st.ok{background:var(--post-w);color:var(--post);} .st.err{background:var(--crit-w);color:var(--crit);}
+  pre{margin:0;background:#0f1017;color:#e6e8f0;border-radius:7px;padding:9px 11px;font-family:var(--mono);font-size:8.6px;line-height:1.55;white-space:pre-wrap;word-break:break-word;overflow-wrap:anywhere;}
+  pre .c{color:#7c8296;}
+  table.fields td:nth-child(2){font-family:var(--mono);color:var(--accent);font-size:8.8px;white-space:nowrap;}
+  table.fields td:nth-child(3){text-align:center;}
+  .req-y{color:var(--crit);font-weight:700;} .req-n{color:var(--faint);}
+  .note{font-size:9px;color:var(--muted);margin-top:8px;padding:7px 10px;border:1px solid var(--line);border-left:3px solid var(--accent-soft);border-radius:0 7px 7px 0;background:#fafbff;}
+  .note b{color:var(--text);}
+
+  .footer{margin-top:16px;padding-top:9px;border-top:1px solid var(--line);color:var(--faint);font-size:8.5px;}
+</style>
+</head>
+<body>
+
+<!-- COVER -->
+<section class="cover">
+  <div class="rule"></div>
+  <div class="kicker">Multi-Tenant Platform Specification &middot; v1</div>
+  <h1>Fabric Simulator<br>System &amp; API Specification</h1>
+  <p class="lede">The complete design to turn the single-tenant configurator into a per-client web experience — each client logs in and sees only its own furniture and fabrics, used live during customer consultations. Includes the full architecture, a request-layer review of the existing code, and every API documented one by one.</p>
+  <div class="meta">
+    <span><b>Prepared for</b> &nbsp;Anviksha (Founder)</span>
+    <span><b>Date</b> &nbsp;22 July 2026</span>
+    <span><b>Schema</b> &nbsp;simulator</span>
+    <span><b>Host</b> &nbsp;web.simulator.livinit.ai</span>
+  </div>
+</section>
+
+<!-- PART 1 OVERVIEW -->
+<section class="part">
+  <div class="part-h"><span class="pn">01</span><h2>Overview</h2></div>
+  <p class="lead">The simulator is a browser 3D configurator: a client's consultant picks a product, applies real fabrics to individual parts, stages it in a room and generates AI-photoreal renders — live in front of a customer. The v1 goal is to make it multi-tenant: many clients, each with a private library, one shared platform.</p>
+  <div class="grid g4">
+    <div class="box"><b>Private per client</b><p>Each account accesses only its own furniture &amp; fabrics.</p></div>
+    <div class="box"><b>Login-gated</b><p>Consultants sign in; the session drives what they see.</p></div>
+    <div class="box"><b>Team-onboarded</b><p>Clients send 2D images + a fabric list; Livinit builds the 3D assets.</p></div>
+    <div class="box"><b>Dedicated host</b><p>Its own experience at web.simulator.livinit.ai.</p></div>
+  </div>
+  <h3>The gap in one line</h3>
+  <div class="vs">
+    <div class="c now"><div class="cl">Today — single-tenant demo</div><ul><li>One shared, public asset set</li><li><b>No login</b></li><li>Catalog compiled into JavaScript</li><li>Any client could read another's files</li><li>Uncapped AI spend</li></ul></div>
+    <div class="c then"><div class="cl">Target — per-client platform</div><ul><li>Each account sees <b>only its own</b> library</li><li><b>Login required</b></li><li>Catalog served per-tenant from a database</li><li>Isolation in DB <b>and</b> asset proxy</li><li>Per-tenant AI quota</li></ul></div>
+  </div>
+  <div class="callout"><b>Decisions locked</b><p><b>Backend:</b> standalone Supabase (Auth + Postgres + RLS). <b>Tenant model:</b> simulator-owned — its own Supabase, zero blast radius on the core backend (Option A). <b>Onboarding:</b> staff-only admin console. <b>Reuse:</b> auth patterns from web-pipeline + Livinit's existing Stripe credits for AI metering.</p></div>
+</section>
+
+<!-- PART 2 ARCHITECTURE -->
+<section class="part">
+  <div class="part-h"><span class="pn">02</span><h2>Architecture</h2></div>
+  <p class="lead">A layered system: people sign in, the app is gated by identity, every request is authorized against the signed-in client, and each client's assets sit behind two independent locks.</p>
+
+  <h3>Top-level hierarchy</h3>
+  <div class="tier"><div class="tl">Application tier · web.simulator.livinit.ai</div>
+    <div class="grid g4">
+      <div class="node new"><b>Auth gate</b><span>blocks boot until signed in</span></div>
+      <div class="node keep"><b>3D configurator</b><span>the existing engine</span></div>
+      <div class="node new"><b>Catalog loader</b><span>fetches per-tenant data</span></div>
+      <div class="node new"><b>Staff console</b><span>onboarding UI</span></div>
+    </div>
+  </div>
+  <div class="down">&darr; &nbsp; session token on every call &nbsp; &darr;</div>
+  <div class="tier"><div class="tl">Service tier · Vercel serverless</div>
+    <div class="grid g4">
+      <div class="node new"><b>GET /catalog</b><span>tenant's products</span></div>
+      <div class="node new"><b>POST /admin/*</b><span>onboarding</span></div>
+      <div class="node hard"><b>GET /s3proxy</b><span>prefix-checked</span></div>
+      <div class="node hard"><b>AI gateway</b><span>gated + metered</span></div>
+    </div>
+  </div>
+  <div class="down">&darr;</div>
+  <div class="tier" style="border-color:var(--accent-line);background:#f7f8ff;"><div class="tl" style="color:var(--accent)">Data + storage · own Supabase — isolation boundary</div>
+    <div class="grid g2">
+      <div class="node new"><b>Postgres + RLS</b><span>schema simulator · tenants, memberships, products, fabrics, usage</span></div>
+      <div class="node hard"><b>S3 · simulator-assets</b><span>tenants/&lt;id&gt;/ namespaced</span></div>
+    </div>
+  </div>
+  <div class="down">&darr;</div>
+  <div class="tier"><div class="tl">Identity + external · reused</div>
+    <div class="grid g3">
+      <div class="node ext"><b>Supabase Auth</b><span>email · Google · Apple</span></div>
+      <div class="node ext"><b>Livinit credits</b><span>Stripe — AI metering</span></div>
+      <div class="node ext"><b>Gemini</b><span>renders + vision</span></div>
+    </div>
+  </div>
+  <div class="legend"><span><i style="background:#EBEEFC;border:1px solid #4A5CC4"></i>New</span><span><i style="background:#F8EEDA;border:1px solid #B37320"></i>Hardened</span><span><i style="background:#EBEDF3;border:1px solid #5A6072"></i>Kept (engine)</span><span><i style="background:#F0EAF8;border:1px solid #7A5AA8"></i>External/reused</span></div>
+
+  <h3>Data model — Postgres schema <code>simulator</code></h3>
+  <div class="erd">
+    <div class="ent"><h5>simulator.tenants</h5><ul><li class="k"><span>id</span><em>uuid pk</em></li><li><span>name · slug</span><em></em></li><li><span>status</span><em></em></li><li><span>branding</span><em>jsonb</em></li></ul></div>
+    <div class="ent"><h5>simulator.memberships</h5><ul><li class="k"><span>user_id</span><em>fk</em></li><li class="k"><span>tenant_id</span><em>fk</em></li><li><span>role</span><em></em></li></ul></div>
+    <div class="ent"><h5>simulator.products</h5><ul><li class="k"><span>id</span><em>pk</em></li><li class="k"><span>tenant_id</span><em>fk</em></li><li><span>glb_key</span><em></em></li><li><span>part_map</span><em>jsonb</em></li><li><span>status</span><em></em></li></ul></div>
+    <div class="ent"><h5>simulator.fabrics</h5><ul><li class="k"><span>id</span><em>pk</em></li><li class="k"><span>tenant_id</span><em>fk</em></li><li><span>type · hex</span><em></em></li><li><span>*_key</span><em>maps</em></li><li><span>pbr_defaults</span><em>jsonb</em></li></ul></div>
+    <div class="ent"><h5>simulator.usage_events</h5><ul><li class="k"><span>tenant_id</span><em>fk</em></li><li><span>kind</span><em></em></li><li><span>cost_units</span><em></em></li></ul></div>
+  </div>
+
+  <h3>Tenant isolation — two independent locks</h3>
+  <div class="row">
+    <div class="col box"><b>Lock 1 · Database (RLS)</b><p>Every query filtered by <code>tenant_id = token.tenant_id</code> in Postgres. Forget a filter and the DB still returns nothing.</p></div>
+    <div class="col box"><b>Lock 2 · Asset proxy (prefix)</b><p>Every file must sit under <code>tenants/&lt;your id&gt;/</code>. Ask for another's key → 403 before S3 is touched.</p></div>
+  </div>
+  <div class="callout good"><b>The claim is set once, server-side</b><p>On sign-in a Supabase hook stamps <code>tenant_id</code> + <code>role</code> into the JWT from <code>simulator.memberships</code>. Every endpoint re-derives them from the verified token — the browser can never assert which tenant it is.</p></div>
+
+  <h3>Storage — bucket <code>simulator-assets</code></h3>
+  <pre style="background:#0f1017;color:#e6e8f0">s3://simulator-assets/
+  <span class="c">shared/                       # room shells — any authed tenant</span>
+  <span class="c">tenants/&lt;tenant_id&gt;/          # gated: prefix MUST equal caller's tenant_id</span>
+    glbs/&lt;product&gt;.glb
+    fabric_maps/&lt;series&gt;/{diffuse,normal,roughness}.jpg
+    thumbnails/&lt;product&gt;.jpg</pre>
+</section>
+
+<!-- PART 3 REQUEST REVIEW -->
+<section class="part">
+  <div class="part-h"><span class="pn">03</span><h2>Request-layer review of the existing code</h2></div>
+  <p class="lead">The current app reviewed through the lens of network requests, read from source. Verdict: a wrap-and-scope job, not a rebuild.</p>
+  <table>
+    <thead><tr><th style="width:34%">Request</th><th style="width:26%">In code</th><th>Route today</th></tr></thead>
+    <tbody>
+      <tr><td class="mono">GET /api/s3proxy</td><td class="mono">catalog.js:13</td><td>Proxied · every GLB + texture</td></tr>
+      <tr><td class="mono">POST /api/generate</td><td class="mono">render.js:257–662</td><td>Proxied · renders (+HEAD probe)</td></tr>
+      <tr><td class="mono">POST /api/gemini-room</td><td class="mono">render.js:688</td><td>Proxied · view-in-my-room</td></tr>
+      <tr><td class="mono">POST /api/find-fabric</td><td class="mono">finder.js:170</td><td>Proxied · fabric photo → PBR</td></tr>
+      <tr><td class="mono">POST /api/enhance-texture</td><td class="mono">materials.js:54</td><td>Proxied · texture cleanup</td></tr>
+      <tr><td class="mono">api.polyhaven.com</td><td class="mono">engine.js:233</td><td>DIRECT · PBR maps (not proxied)</td></tr>
+      <tr><td class="mono">cdn.jsdelivr / gstatic</td><td class="mono">boot.js</td><td>DIRECT · Three addons + DRACO</td></tr>
+    </tbody>
+  </table>
+  <h3>Findings</h3>
+  <div class="find good"><div class="s"></div><div><b>Single asset choke point <span class="sev good">strong</span></b><p>Every GLB + texture routes through <code>/api/s3proxy</code> — tenant-scoping is a one-place change.</p></div></div>
+  <div class="find good"><div class="s"></div><div><b>AI endpoints cleanly isolated <span class="sev good">strong</span></b><p>Adding auth + metering is a wrapper. Payload limits &amp; graceful degradation already handled.</p></div></div>
+  <div class="find crit"><div class="s"></div><div><b>Zero authentication on any request <span class="sev crit">critical</span></b><p>No Authorization header anywhere in src/. Must be added to all five request families + verified server-side.</p></div></div>
+  <div class="find crit"><div class="s"></div><div><b>The catalog is not a request <span class="sev crit">critical</span></b><p>Products are a compile-time import. The unlocking request GET /api/catalog doesn't exist yet; insertion point is the hardcoded loadModel(CHAIR_GLB) in boot.</p></div></div>
+  <div class="find warn"><div class="s"></div><div><b>PolyHaven is a live consultation dependency <span class="sev warn">high</span></b><p>Direct browser call bypasses the tenant boundary and degrades the demo if PolyHaven is slow. Bake maps into tenant S3 at onboarding.</p></div></div>
+  <div class="find warn"><div class="s"></div><div><b>Nine silent asset failures <span class="sev warn">high</span></b><p><code>.catch(()=&gt;null)</code> turns a failed fabric into a blank grey mesh with no signal (materials.js ×7, room.js ×2).</p></div></div>
+</section>
+
+<!-- PART 4 API REFERENCE -->
+<section class="part api-groups">
+  <div class="part-h"><span class="pn">04</span><h2>API reference — every endpoint</h2></div>
+  <p class="lead">Each endpoint documented individually: purpose, when it is called, request fields, response fields, errors and notes. <b>~17 endpoints we own</b> (11 new · 5 hardened · 2 reused) plus 5 Supabase-handled. Every custom handler first calls <code>_lib/auth</code> — it verifies the token and derives <code>tenant_id</code> + <code>role</code>; a browser-supplied tenant id is never trusted. All requests carry <code>Authorization: Bearer &lt;token&gt;</code>.</p>
+
+  <!-- GROUP A -->
+  <div class="gh"><span class="lt">A</span><h3>Identity &amp; session</h3><span class="badge sb">Supabase — configured, not built</span></div>
+  <div class="api">
+    <div class="api-top"><span class="mm sdk">SDK</span><span class="p">auth.signInWithPassword / signInWithOAuth</span><span class="acc int">public</span></div>
+    <div class="api-body">
+      <div class="purpose">Authenticate a consultant or staff user and start a session.</div>
+      <div class="when"><b>When:</b> the login screen. Google/Apple go through <code>signInWithOAuth</code>. On success the app stores the session and reads its claims.</div>
+      <div class="lbl">Request</div><pre>{ "email": "priya@acme.com", "password": "********" }</pre>
+      <div class="lbl">Response <span class="st ok">session</span></div><pre>{
+  "access_token": "eyJhbGciOi...",   <span class="c">// JWT with the claims below</span>
+  "refresh_token": "v1.Mx...",
+  "expires_in": 3600,
+  "user": { "id": "9f2c...", "email": "priya@acme.com" }
+}</pre>
+      <div class="note"><b>Handled by Supabase</b> — we do not build this. It is listed so the full surface is visible.</div>
+    </div>
+  </div>
+  <div class="api">
+    <div class="api-top"><span class="mm sdk">HOOK</span><span class="p">custom access-token claims</span><span class="acc int">infra</span></div>
+    <div class="api-body">
+      <div class="purpose">Inject <code>tenant_id</code> and <code>role</code> into every issued JWT — the backbone of tenant isolation.</div>
+      <div class="when"><b>When:</b> automatically on every token issue/refresh. Reads the user's row in <code>simulator.memberships</code>.</div>
+      <div class="lbl">Resulting JWT claims</div><pre>{
+  "sub": "9f2c...",
+  "email": "priya@acme.com",
+  "tenant_id": "ac001-...-uuid",   <span class="c">// which client</span>
+  "role": "client",               <span class="c">// client | staff</span>
+  "exp": 1753142400
+}</pre>
+    </div>
+  </div>
+
+  <!-- GROUP B -->
+  <div class="gh"><span class="lt">B</span><h3>Client — catalog &amp; session</h3><span class="badge new">new</span></div>
+
+  <div class="api">
+    <div class="api-top"><span class="mm get">GET</span><span class="p">/api/me</span><span class="acc client">client</span></div>
+    <div class="api-body">
+      <div class="purpose">Return the signed-in user, their tenant, role and tenant status.</div>
+      <div class="when"><b>When:</b> the very first call after login. Drives the gated shell — the simulator loads only when <code>status = active</code>, otherwise a "being set up" screen shows.</div>
+      <div class="lbl">Request</div><pre>GET /api/me           <span class="c">// no body; Bearer token only</span></pre>
+      <div class="lbl">Response fields</div>
+      <table class="fields"><thead><tr><th>Field</th><th>Type</th><th>Req</th><th>Description</th></tr></thead><tbody>
+        <tr><td>user</td><td>object</td><td>y</td><td>id, name, email of the signed-in user</td></tr>
+        <tr><td>tenant</td><td>object</td><td>y</td><td>id, name, slug, status of their client</td></tr>
+        <tr><td>role</td><td>string</td><td>y</td><td><code>client</code> or <code>staff</code></td></tr>
+      </tbody></table>
+      <div class="lbl">Response <span class="st ok">200</span></div><pre>{
+  "user":   { "id": "9f2c...", "name": "Priya", "email": "priya@acme.com" },
+  "tenant": { "id": "ac001-...", "name": "Acme Furniture", "slug": "acme", "status": "active" },
+  "role":   "client"
+}</pre>
+      <div class="lbl">Errors</div><pre>401  { "error": "no session" }</pre>
+    </div>
+  </div>
+
+  <div class="api">
+    <div class="api-top"><span class="mm get">GET</span><span class="p">/api/catalog</span><span class="acc client">client</span></div>
+    <div class="api-body">
+      <div class="purpose">Return this tenant's products and fabrics, with asset URLs pointing at the gated proxy.</div>
+      <div class="when"><b>When:</b> at boot after <code>/api/me</code>, before the first model loads. <b>Replaces the hardcoded <code>catalog.js</code></b> — this is the single change that makes the app per-tenant.</div>
+      <div class="lbl">Response fields</div>
+      <table class="fields"><thead><tr><th>Field</th><th>Type</th><th>Req</th><th>Description</th></tr></thead><tbody>
+        <tr><td>products[]</td><td>array</td><td>y</td><td>id, name, glbUrl, thumbnailUrl, partMap, status</td></tr>
+        <tr><td>products[].partMap</td><td>object</td><td>y</td><td>mesh-node → friendly customizable-part name</td></tr>
+        <tr><td>fabrics[]</td><td>array</td><td>y</td><td>id, name, type, hex, maps{diffuse,normal,roughness}, pbr</td></tr>
+      </tbody></table>
+      <div class="lbl">Response <span class="st ok">200</span></div><pre>{
+  "products": [
+    { "id": "prd_01", "name": "Sierra Chair",
+      "glbUrl": "/api/s3proxy?key=tenants/ac001/glbs/sierra_chair.glb",
+      "thumbnailUrl": "/api/s3proxy?key=tenants/ac001/thumbnails/sierra.jpg",
+      "partMap": { "seat_cushion": "Seat", "backrest": "Backrest",
+                   "arm_left": "Left Arm", "legs": "Legs / Base" },
+      "status": "live" }
+  ],
+  "fabrics": [
+    { "id": "fab_01", "name": "Natural Linen", "type": "fabric", "hex": "#c8c0b8",
+      "maps": { "diffuse": "/api/s3proxy?key=tenants/ac001/fabric_maps/linen/diffuse.jpg",
+                "normal": "...", "roughness": "..." },
+      "pbr": { "roughness": 0.8, "sheen": 0.1, "metalness": 0, "scale": 10, "norm": 1 } }
+  ]
+}</pre>
+      <div class="note"><b>Isolation:</b> RLS returns only rows where <code>tenant_id</code> matches the token — the query cannot leak another tenant's catalog even if the code forgets to filter.</div>
+    </div>
+  </div>
+
+  <div class="api">
+    <div class="api-top"><span class="mm get">GET</span><span class="p">/api/products/:id</span><span class="acc client">client</span></div>
+    <div class="api-body">
+      <div class="purpose">Return a single product with its full <code>partMap</code>.</div>
+      <div class="when"><b>When:</b> optional — used if the catalog list stays lightweight and details are loaded on demand.</div>
+      <div class="lbl">Response <span class="st ok">200</span></div><pre>{ "product": { "id": "prd_01", "name": "Sierra Chair",
+  "glbUrl": "/api/s3proxy?key=tenants/ac001/glbs/sierra_chair.glb",
+  "partMap": { "seat_cushion": "Seat", "backrest": "Backrest" }, "status": "live" } }</pre>
+      <div class="lbl">Errors</div><pre>404  { "error": "product not found" }   <span class="c">// also returned if it belongs to another tenant</span></pre>
+    </div>
+  </div>
+
+  <!-- GROUP C -->
+  <div class="gh"><span class="lt">C</span><h3>Asset delivery</h3><span class="badge hard">existing → hardened</span></div>
+  <div class="api">
+    <div class="api-top"><span class="mm get">GET</span><span class="p">/api/s3proxy</span><span class="acc client">client</span></div>
+    <div class="api-body">
+      <div class="purpose">Stream a GLB or texture from S3, keeping AWS credentials server-side.</div>
+      <div class="when"><b>When:</b> every model and texture load — invoked by the Three.js GLTF/Texture loaders for each catalog asset. Highest-volume request in the app.</div>
+      <div class="lbl">Request fields</div>
+      <table class="fields"><thead><tr><th>Field</th><th>Type</th><th>Req</th><th>Description</th></tr></thead><tbody>
+        <tr><td>key</td><td>query</td><td class="req-y">y</td><td>Full S3 key. <b>New guard:</b> must be under <code>tenants/&lt;tenant_id&gt;/</code> or <code>shared/</code></td></tr>
+      </tbody></table>
+      <div class="lbl">Request</div><pre>GET /api/s3proxy?key=tenants/ac001/glbs/sierra_chair.glb
+Authorization: Bearer eyJhbGci...</pre>
+      <div class="lbl">Response <span class="st ok">200</span></div><pre>Content-Type: model/gltf-binary
+Cache-Control: public, max-age=3600
+
+&lt;binary GLB / image stream&gt;</pre>
+      <div class="lbl">Errors</div><pre>400  { "error": "missing key" }
+403  { "error": "forbidden: key outside tenant scope" }   <span class="c">// NEW guard</span></pre>
+      <div class="note"><b>From code:</b> the streaming handler already exists (<code>api/s3proxy.ts</code>). The migration adds the session check and the prefix comparison — nothing else changes.</div>
+    </div>
+  </div>
+
+  <!-- GROUP D -->
+  <div class="gh"><span class="lt">D</span><h3>AI gateway</h3><span class="badge hard">existing → hardened</span></div>
+
+  <div class="api">
+    <div class="api-top"><span class="mm post">POST</span><span class="p">/api/generate</span><span class="acc client">client</span></div>
+    <div class="api-body">
+      <div class="purpose">Generate a photorealistic render — product hero shot, room scene, or clean furniture cut-out.</div>
+      <div class="when"><b>When:</b> the Render button, and as step 1 of "View in my room" (<code>mode: furniture</code>). Meters 1 render credit.</div>
+      <div class="lbl">Request fields</div>
+      <table class="fields"><thead><tr><th>Field</th><th>Type</th><th>Req</th><th>Description</th></tr></thead><tbody>
+        <tr><td>imageData</td><td>string</td><td class="req-y">y</td><td>Base64 JPEG data URL of the captured canvas</td></tr>
+        <tr><td>mode</td><td>string</td><td class="req-n">n</td><td><code>product</code> (default) · <code>room</code> · <code>furniture</code> — selects prompt + Gemini model</td></tr>
+      </tbody></table>
+      <div class="lbl">Request</div><pre>{ "imageData": "data:image/jpeg;base64,/9j/4AAQSkZJRg...", "mode": "product" }</pre>
+      <div class="lbl">Response <span class="st ok">200</span></div><pre>{ "imageUrl": "data:image/png;base64,iVBORw0KGgoAAAANS..." }</pre>
+      <div class="lbl">Errors</div><pre>400  { "error": "Missing imageData" }
+402  { "error": "insufficient credits" }     <span class="c">// NEW metering guard</span>
+405  { "error": "Method not allowed" }</pre>
+      <div class="note"><b>From code</b> (<code>api/generate.ts</code>): request/response verified. Migration adds auth + a <code>billing/consume</code> call before the paid Gemini request. HEAD requests are supported as a health probe.</div>
+    </div>
+  </div>
+
+  <div class="api">
+    <div class="api-top"><span class="mm post">POST</span><span class="p">/api/gemini-room</span><span class="acc client">client</span></div>
+    <div class="api-body">
+      <div class="purpose">Composite the configured furniture onto a real customer room photo ("View in my room").</div>
+      <div class="when"><b>When:</b> step 2 of the two-step VIMR flow, after <code>/api/generate</code> produces a clean furniture cut-out. Meters 1 render credit.</div>
+      <div class="lbl">Request fields</div>
+      <table class="fields"><thead><tr><th>Field</th><th>Type</th><th>Req</th><th>Description</th></tr></thead><tbody>
+        <tr><td>roomPhoto</td><td>string</td><td class="req-y">y</td><td>Base64 data URL of the customer's room</td></tr>
+        <tr><td>furnitureRender</td><td>string</td><td class="req-y">y</td><td>Base64 data URL of the step-1 furniture render</td></tr>
+        <tr><td>assetLabel</td><td>string</td><td class="req-n">n</td><td>Product name, guides placement</td></tr>
+        <tr><td>singleAsset</td><td>bool</td><td class="req-n">n</td><td>Single piece vs. a full staged scene</td></tr>
+        <tr><td>curtainText / curtainImage</td><td>string</td><td class="req-n">n</td><td>Optional curtain reference</td></tr>
+      </tbody></table>
+      <div class="lbl">Request</div><pre>{ "roomPhoto": "data:image/jpeg;base64,...", "furnitureRender": "data:image/png;base64,...",
+  "assetLabel": "Sierra Chair", "singleAsset": true }</pre>
+      <div class="lbl">Response <span class="st ok">200</span></div><pre>{ "imageUrl": "data:image/png;base64,iVBORw0KGgo..." }</pre>
+      <div class="lbl">Errors</div><pre>400  { "error": "Missing roomPhoto or furnitureRender" }</pre>
+      <div class="note"><b>From code</b> (<code>api/gemini-room.ts</code>). Images are compressed client-side to stay under Vercel's 4.5 MB body limit.</div>
+    </div>
+  </div>
+
+  <div class="api">
+    <div class="api-top"><span class="mm post">POST</span><span class="p">/api/find-fabric</span><span class="acc client">client</span></div>
+    <div class="api-body">
+      <div class="purpose">Analyse an uploaded fabric photo and return material properties the engine can apply directly.</div>
+      <div class="when"><b>When:</b> the Fabric Finder "upload" flow. Also seeds values during fabric onboarding. Answers <code>HEAD</code> as an availability probe.</div>
+      <div class="lbl">Request fields</div>
+      <table class="fields"><thead><tr><th>Field</th><th>Type</th><th>Req</th><th>Description</th></tr></thead><tbody>
+        <tr><td>imageData</td><td>string</td><td class="req-y">y</td><td>Base64 data URL of the fabric photo</td></tr>
+      </tbody></table>
+      <div class="lbl">Response <span class="st ok">200</span></div><pre>{
+  "name": "Woven Linen", "type": "fabric",
+  "roughness": 0.78, "sheen": 0.12, "metalness": 0,
+  "scale": 10, "norm": 1, "hex": "#cfc7ba",
+  "description": "Natural loose-weave linen, matte."
+}</pre>
+      <div class="note"><b>From code</b> (<code>api/find-fabric.ts</code>): returns strict-schema JSON with defensive defaults if the model's reply isn't parseable.</div>
+    </div>
+  </div>
+
+  <div class="api">
+    <div class="api-top"><span class="mm post">POST</span><span class="p">/api/enhance-texture</span><span class="acc client">client</span></div>
+    <div class="api-body">
+      <div class="purpose">Clean an uploaded diffuse texture — seamless edges, neutral lighting, exact colour preserved.</div>
+      <div class="when"><b>When:</b> after a user replaces a part's texture with their own image. Meters 1 vision credit.</div>
+      <div class="lbl">Request → Response</div><pre>{ "imageData": "data:image/jpeg;base64,/9j/4AAQ..." }
+  → { "imageData": "data:image/png;base64,iVBORw0KGgo..." }</pre>
+      <div class="note"><b>From code</b> (<code>api/enhance-texture.ts</code>): Gemini image-to-image; response is cached by content.</div>
+    </div>
+  </div>
+
+  <!-- GROUP E -->
+  <div class="gh"><span class="lt">E</span><h3>Billing &amp; usage</h3><span class="badge reuse">reused</span></div>
+
+  <div class="api">
+    <div class="api-top"><span class="mm get">GET</span><span class="p">/api/billing</span><span class="acc client">client</span></div>
+    <div class="api-body">
+      <div class="purpose">Return the tenant's credit balance and plan.</div>
+      <div class="when"><b>When:</b> app header, to show the render counter and remaining credits.</div>
+      <div class="lbl">Response <span class="st ok">200</span> — BillingSnapshot</div><pre>{ "tenantId": "ac001-...", "plan": "pro",
+  "credits": { "balance": 480, "included": 500 },
+  "renderCount": 20, "renewsAt": "2026-08-01" }</pre>
+      <div class="note"><b>Reused:</b> mirrors Livinit's existing Stripe billing contract; not a new system.</div>
+    </div>
+  </div>
+
+  <div class="api">
+    <div class="api-top"><span class="mm post">POST</span><span class="p">/api/billing/consume</span><span class="acc int">internal</span></div>
+    <div class="api-body">
+      <div class="purpose">Deduct credits for a render / vision call and return the updated balance.</div>
+      <div class="when"><b>When:</b> called by the AI gateway before each paid Gemini request — <b>not by the browser</b>. If the balance is 0, the AI call is refused with 402.</div>
+      <div class="lbl">Request fields</div>
+      <table class="fields"><thead><tr><th>Field</th><th>Type</th><th>Req</th><th>Description</th></tr></thead><tbody>
+        <tr><td>kind</td><td>string</td><td class="req-y">y</td><td><code>render</code> or <code>vision</code></td></tr>
+        <tr><td>units</td><td>int</td><td class="req-y">y</td><td>Credits to deduct (usually 1)</td></tr>
+        <tr><td>tenantId</td><td>uuid</td><td class="req-y">y</td><td>Server-derived from the token, not client input</td></tr>
+      </tbody></table>
+      <div class="lbl">Response <span class="st ok">200</span></div><pre>{ "credits": { "balance": 479, "included": 500 }, "ok": true }</pre>
+    </div>
+  </div>
+
+  <!-- GROUP F -->
+  <div class="gh"><span class="lt">F</span><h3>Admin &amp; onboarding</h3><span class="badge new">new · staff only</span></div>
+
+  <div class="api">
+    <div class="api-top"><span class="mm get">GET</span><span class="p">/api/admin/tenants</span><span class="acc staff">staff</span></div>
+    <div class="api-body">
+      <div class="purpose">List all client tenants with status and asset counts.</div>
+      <div class="when"><b>When:</b> the staff console home screen.</div>
+      <div class="lbl">Response <span class="st ok">200</span></div><pre>{ "tenants": [
+  { "id": "ac001-...", "name": "Acme Furniture", "slug": "acme",
+    "status": "active", "productCount": 8, "fabricCount": 24, "createdAt": "2026-07-10" },
+  { "id": "bh002-...", "name": "Bhavya Interiors", "slug": "bhavya",
+    "status": "draft", "productCount": 0, "fabricCount": 0, "createdAt": "2026-07-21" }
+] }</pre>
+    </div>
+  </div>
+
+  <div class="api">
+    <div class="api-top"><span class="mm post">POST</span><span class="p">/api/admin/tenants</span><span class="acc staff">staff</span></div>
+    <div class="api-body">
+      <div class="purpose">Create a new client tenant in <code>draft</code> state.</div>
+      <div class="when"><b>When:</b> onboarding step 2 — the first thing staff do for a new client.</div>
+      <div class="lbl">Request fields</div>
+      <table class="fields"><thead><tr><th>Field</th><th>Type</th><th>Req</th><th>Description</th></tr></thead><tbody>
+        <tr><td>name</td><td>string</td><td class="req-y">y</td><td>Display name of the client</td></tr>
+        <tr><td>slug</td><td>string</td><td class="req-y">y</td><td>URL-safe unique key</td></tr>
+      </tbody></table>
+      <div class="lbl">Request → Response <span class="st ok">201</span></div><pre>{ "name": "Bhavya Interiors", "slug": "bhavya" }
+  → { "tenant": { "id": "bh002-...", "name": "Bhavya Interiors", "slug": "bhavya", "status": "draft" } }</pre>
+      <div class="lbl">Errors</div><pre>409  { "error": "slug already taken" }</pre>
+    </div>
+  </div>
+
+  <div class="api">
+    <div class="api-top"><span class="mm post">POST</span><span class="p">/api/admin/tenants/:id/members</span><span class="acc staff">staff</span></div>
+    <div class="api-body">
+      <div class="purpose">Create the client's login as a <code>client</code> membership on that tenant.</div>
+      <div class="when"><b>When:</b> onboarding — right after creating the tenant.</div>
+      <div class="lbl">Request fields</div>
+      <table class="fields"><thead><tr><th>Field</th><th>Type</th><th>Req</th><th>Description</th></tr></thead><tbody>
+        <tr><td>email</td><td>string</td><td class="req-y">y</td><td>The client user's email (invite sent)</td></tr>
+        <tr><td>role</td><td>string</td><td class="req-n">n</td><td>Defaults to <code>client</code></td></tr>
+      </tbody></table>
+      <div class="lbl">Request → Response <span class="st ok">201</span></div><pre>{ "email": "buyer@bhavya.com", "role": "client" }
+  → { "membership": { "userId": "u_77...", "tenantId": "bh002-...", "role": "client" }, "inviteSent": true }</pre>
+    </div>
+  </div>
+
+  <div class="api">
+    <div class="api-top"><span class="mm post">POST</span><span class="p">/api/admin/uploads</span><span class="acc staff">staff</span></div>
+    <div class="api-body">
+      <div class="purpose">Issue a short-lived presigned S3 URL to PUT a GLB, map or thumbnail into the tenant prefix.</div>
+      <div class="when"><b>When:</b> onboarding step 6 — before registering a product or fabric, to upload its binary.</div>
+      <div class="lbl">Request fields</div>
+      <table class="fields"><thead><tr><th>Field</th><th>Type</th><th>Req</th><th>Description</th></tr></thead><tbody>
+        <tr><td>tenantId</td><td>uuid</td><td class="req-y">y</td><td>Which tenant's prefix to write into</td></tr>
+        <tr><td>kind</td><td>string</td><td class="req-y">y</td><td><code>glb</code> · <code>map</code> · <code>thumbnail</code></td></tr>
+        <tr><td>filename</td><td>string</td><td class="req-y">y</td><td>Original filename</td></tr>
+        <tr><td>contentType</td><td>string</td><td class="req-n">n</td><td>MIME type</td></tr>
+      </tbody></table>
+      <div class="lbl">Response <span class="st ok">200</span></div><pre>{ "uploadUrl": "https://s3.amazonaws.com/simulator-assets/...&X-Amz-Signature=...",
+  "key": "tenants/bh002/glbs/sofa_haven.glb", "expiresIn": 300 }</pre>
+    </div>
+  </div>
+
+  <div class="api">
+    <div class="api-top"><span class="mm post">POST</span><span class="p">/api/admin/products</span><span class="acc staff">staff</span></div>
+    <div class="api-body">
+      <div class="purpose">Register a product with its uploaded GLB key and the authored <code>partMap</code> (the segmentation).</div>
+      <div class="when"><b>When:</b> onboarding step 6, after the GLB is uploaded and parts are authored.</div>
+      <div class="lbl">Request fields</div>
+      <table class="fields"><thead><tr><th>Field</th><th>Type</th><th>Req</th><th>Description</th></tr></thead><tbody>
+        <tr><td>tenantId</td><td>uuid</td><td class="req-y">y</td><td>Owning tenant</td></tr>
+        <tr><td>name</td><td>string</td><td class="req-y">y</td><td>Product display name</td></tr>
+        <tr><td>glbKey</td><td>string</td><td class="req-y">y</td><td>S3 key from the upload step</td></tr>
+        <tr><td>thumbnailKey</td><td>string</td><td class="req-n">n</td><td>S3 key of the thumbnail</td></tr>
+        <tr><td>partMap</td><td>object</td><td class="req-y">y</td><td>mesh-node → customizable-part name</td></tr>
+        <tr><td>status</td><td>string</td><td class="req-n">n</td><td>Defaults to <code>draft</code></td></tr>
+      </tbody></table>
+      <div class="lbl">Request</div><pre>{ "tenantId": "bh002-...", "name": "Haven Sofa",
+  "glbKey": "tenants/bh002/glbs/sofa_haven.glb",
+  "partMap": { "seat_cushion": "Seat", "back_cushion": "Back", "arm_left": "Left Arm", "base": "Base" },
+  "status": "draft" }</pre>
+      <div class="lbl">Response <span class="st ok">201</span></div><pre>{ "product": { "id": "prd_09", "tenantId": "bh002-...", "name": "Haven Sofa", "status": "draft" } }</pre>
+    </div>
+  </div>
+
+  <div class="api">
+    <div class="api-top"><span class="mm patch">PATCH</span><span class="p">/api/admin/products/:id</span><span class="acc staff">staff</span></div>
+    <div class="api-body">
+      <div class="purpose">Edit a product's <code>partMap</code> or flip its status after QA. Partial — send only what changes.</div>
+      <div class="when"><b>When:</b> onboarding steps 7–8 — fix segmentation found during QA, then set <code>live</code>.</div>
+      <div class="lbl">Request → Response <span class="st ok">200</span></div><pre>{ "partMap": { "seat_cushion": "Seat Cushion", "back_cushion": "Backrest" }, "status": "live" }
+  → { "product": { "id": "prd_09", "status": "live" } }</pre>
+    </div>
+  </div>
+
+  <div class="api">
+    <div class="api-top"><span class="mm post">POST</span><span class="p">/api/admin/fabrics</span><span class="acc staff">staff</span></div>
+    <div class="api-body">
+      <div class="purpose">Register a fabric with its map keys and PBR defaults.</div>
+      <div class="when"><b>When:</b> onboarding step 5–6. Values can be seeded from <code>/api/find-fabric</code>.</div>
+      <div class="lbl">Request fields</div>
+      <table class="fields"><thead><tr><th>Field</th><th>Type</th><th>Req</th><th>Description</th></tr></thead><tbody>
+        <tr><td>tenantId</td><td>uuid</td><td class="req-y">y</td><td>Owning tenant</td></tr>
+        <tr><td>name / type / hex</td><td>string</td><td class="req-y">y</td><td>Label, material class, base colour</td></tr>
+        <tr><td>diffuseKey / normalKey / roughnessKey</td><td>string</td><td class="req-n">n</td><td>S3 keys of the PBR maps</td></tr>
+        <tr><td>pbrDefaults</td><td>object</td><td class="req-y">y</td><td>roughness, sheen, metalness, scale, norm</td></tr>
+      </tbody></table>
+      <div class="lbl">Request</div><pre>{ "tenantId": "bh002-...", "name": "Charcoal Velvet", "type": "fabric", "hex": "#3a3a40",
+  "diffuseKey": "tenants/bh002/fabric_maps/charcoal_velvet/diffuse.jpg",
+  "pbrDefaults": { "roughness": 0.55, "sheen": 0.6, "metalness": 0, "scale": 8, "norm": 1 } }</pre>
+      <div class="lbl">Response <span class="st ok">201</span></div><pre>{ "fabric": { "id": "fab_31", "tenantId": "bh002-...", "name": "Charcoal Velvet" } }</pre>
+    </div>
+  </div>
+
+  <div class="api">
+    <div class="api-top"><span class="mm post">POST</span><span class="p">/api/admin/tenants/:id/activate</span><span class="acc staff">staff</span></div>
+    <div class="api-body">
+      <div class="purpose">Flip the tenant to <code>active</code> after QA — the client can now log in and use it.</div>
+      <div class="when"><b>When:</b> onboarding step 8, the final go-live gate.</div>
+      <div class="lbl">Request → Response <span class="st ok">200</span></div><pre>{}    <span class="c">// no body</span>
+  → { "tenant": { "id": "bh002-...", "status": "active" } }</pre>
+      <div class="lbl">Errors</div><pre>422  { "error": "tenant has no live products yet" }</pre>
+    </div>
+  </div>
+
+</section>
+
+<!-- PART 5 PLAN -->
+<section class="part">
+  <div class="part-h"><span class="pn">05</span><h2>Onboarding &amp; delivery plan</h2></div>
+  <h3>Onboarding pipeline</h3>
+  <p class="lead" style="margin-top:0">Client sends 2D images + a fabric list; Livinit's team does the 3D work.
+    <span class="actor client">client</span> <span class="actor ops">livinit team</span> <span class="actor sys">system</span></p>
+  <ol class="pipe">
+    <li><span class="pn">1</span><div><b>Intake <span class="actor client">client</span></b><p>2D product images + fabric &amp; finish list.</p></div></li>
+    <li><span class="pn">2</span><div><b>Create tenant + login <span class="actor ops">livinit team</span></b><p>Tenant starts in draft.</p></div></li>
+    <li><span class="pn">3</span><div><b>3D modelling <span class="actor ops">livinit team</span></b><p>2D → GLB, real-world scale.</p></div></li>
+    <li><span class="pn">4</span><div><b>Segmentation <span class="actor ops">livinit team</span></b><p>Author the part_map — what makes "change this cushion's fabric" work.</p></div></li>
+    <li><span class="pn">5</span><div><b>Fabric setup <span class="actor ops">livinit team</span></b><p>PBR maps prepared / generated; stored with type/hex/defaults.</p></div></li>
+    <li><span class="pn">6</span><div><b>Upload + register <span class="actor sys">system</span></b><p>Assets to tenants/&lt;id&gt;/; rows via the admin API.</p></div></li>
+    <li><span class="pn">7</span><div><b>QA preview <span class="actor ops">livinit team</span></b><p>Every part accepts fabric, every finish renders true.</p></div></li>
+    <li><span class="pn">8</span><div><b>Go live <span class="actor sys">system</span></b><p>Tenant → active; consultants log in.</p></div></li>
+  </ol>
+  <h3>Delivery phases</h3>
+  <ol class="pipe">
+    <li><span class="pn">1</span><div><b>Data &amp; tenancy</b><p>Schema, RLS, claims hook.</p><span class="gate"><b>Gate:</b> tenant A can't read tenant B's rows.</span></div></li>
+    <li><span class="pn">2</span><div><b>Auth &amp; gated shell</b><p>Login, boot guard (ported from web-pipeline).</p><span class="gate"><b>Gate:</b> no /api/* succeeds pre-login.</span></div></li>
+    <li><span class="pn">3</span><div><b>Secure the proxies</b><p>_lib/auth, s3proxy prefix, AI quota.</p><span class="gate"><b>Gate:</b> cross-tenant key → 403; unauth AI → 401.</span></div></li>
+    <li><span class="pn">4</span><div><b>Tenant catalog</b><p>/api/catalog + runtime loader + dynamic product UI.</p><span class="gate"><b>Gate:</b> two tenants, two libraries; render still works.</span></div></li>
+    <li><span class="pn">5</span><div><b>Staff onboarding</b><p>Console + admin API.</p><span class="gate"><b>Gate:</b> staff onboards Acme; client sees exactly Acme's assets.</span></div></li>
+    <li><span class="pn">6</span><div><b>Deploy</b><p>Domain, env, prod smoke incl. cross-tenant 403.</p></div></li>
+  </ol>
+  <h3>Risks worth naming</h3>
+  <div class="find crit"><div class="s"></div><div><b>Isolation must hold below the UI</b><p>RLS + proxy check are the real guarantee. Phase 3 is ordered early on purpose.</p></div></div>
+  <div class="find crit"><div class="s"></div><div><b>Open AI endpoints are an uncapped bill</b><p>Per-tenant quota is v1 scope, not a nice-to-have.</p></div></div>
+  <div class="find warn"><div class="s"></div><div><b>Segmentation is authored, not inferred</b><p>Each client's quality depends on the hand-authored part_map. Budget onboarding time.</p></div></div>
+  <div class="find warn"><div class="s"></div><div><b>Confirm the base repo</b><p>This clone (VIKRAM-0/main) drifts from its own doc — no bed, missing search endpoints. Lock the canonical snapshot before building.</p></div></div>
+
+  <div class="footer">Fabric Simulator — full specification · schema namespace <b>simulator</b> · grounded in VIKRAM-0/livinit_fabric_simulator @ main. Existing request contracts read from api/ + src/. Prepared 22 July 2026 for Anviksha.</div>
+</section>
+
+</body>
+</html>
