@@ -15,10 +15,11 @@ import * as library from '../features/library/index.js';
 import * as room from '../features/room/index.js';
 import * as render from '../features/render/index.js';
 import * as finder from '../features/finder/index.js';
+import * as saved from '../features/saved/index.js';
 import '../features/tour/tour.js';      // self-wires window._tour*
 
 // Inline onclick= handlers + cross-feature window.* calls resolve here.
-Object.assign(window, configurator, library, room, render, finder,
+Object.assign(window, configurator, library, room, render, finder, saved,
   { showPanelTab, toggleSidebar, focusProductPicker });
 
 // Non-function globals that inline onclick= handlers reference in GLOBAL scope
