@@ -2,6 +2,11 @@
   "name": "furniture-configurator-customer",
   "version": "1.0.0",
   "private": true,
+  "type": "module",
+  "scripts": {
+    "test:unit": "node --test test/history.test.mjs test/design-state.test.mjs test/saved-store.test.mjs",
+    "test:design": "node test/design-check.mjs"
+  },
   "engines": {
     "node": "22.x"
   },
