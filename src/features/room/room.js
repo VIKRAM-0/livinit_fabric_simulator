@@ -422,6 +422,7 @@ export function setCurtainShape(id) {
   const btn = document.getElementById('cshape-' + id);
   if (btn) btn.classList.add('active');
   _applyCurtainMaterial();
+  window._historyRecord?.();
 }
 
 export function setCurtainFabric(id) {
@@ -434,6 +435,7 @@ export function setCurtainFabric(id) {
   document.querySelectorAll('[data-cfab]').forEach(b => b.classList.toggle('active', b.dataset.cfab === id));
   renderCurtainColorGroups(); // refresh recommended-colour highlight for the new fabric
   _applyCurtainMaterial();
+  window._historyRecord?.();
 }
 
 export function setCurtainColor(hex) {
@@ -445,6 +447,7 @@ export function setCurtainColor(hex) {
   // Sync bar color chips
   document.querySelectorAll('[data-cclr]').forEach(b => b.classList.toggle('active', b.dataset.cclr === hex));
   _applyCurtainColor();
+  window._historyRecord?.();
 }
 
 // Scales curtain nodes (width=X, length=Y) and rescales texture repeat so the
@@ -828,6 +831,9 @@ export function _applySnapshotToModel(model, key) {
         arr[idx] = snap[si].matClone.clone();
         arr[idx].needsUpdate = true;
         child.material = arr;
+        // Keep the worn-fabric identity — captureDesignState reads it, and
+        // this path never repopulates entry.appliedFabric (staff review M1).
+        if (snap[si].fabricName) child.userData._fabricName = snap[si].fabricName;
         si++;
       }
     });

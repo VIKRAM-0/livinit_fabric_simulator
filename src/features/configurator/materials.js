@@ -105,8 +105,8 @@ export function _commitEntryMaterial(entry, mat) {
   }
 }
 
-export async function applySwatchToEntries(item, targetEntries) {
-  if(!targetEntries || !targetEntries.length) { showToast('Select a part →'); return; }
+export async function applySwatchToEntries(item, targetEntries, opts = {}) {
+  if(!targetEntries || !targetEntries.length) { if(!opts.silent) showToast('Select a part →'); return; }
 
   // Enforce wood-zone exclusivity (see WOOD_ZONE_NAMES). Wood only lands on the
   // legs/frame; fabric only on upholstered parts. Reject or trim accordingly.
@@ -114,14 +114,14 @@ export async function applySwatchToEntries(item, targetEntries) {
     const woodZones = WOOD_ZONE_NAMES[appStore.getState().currentModelKey] || [];
     const { valid, rejected } = _filterEntriesForItem(item, targetEntries);
     if (!valid.length) {
-      showToast(item.type === 'wood'
+      if(!opts.silent) showToast(item.type === 'wood'
         ? `Wood finish only applies to: ${woodZones.join(', ')}`
         : `${[...new Set(rejected.map(e => e.name))].join(', ')} takes a wood finish only`);
       return;
     }
     if (rejected.length) {
       const skipped = [...new Set(rejected.map(e => e.name))].join(', ');
-      showToast(item.type === 'wood'
+      if(!opts.silent) showToast(item.type === 'wood'
         ? `Wood applies to ${woodZones.join(', ')} only — skipped ${skipped}`
         : `Skipped ${skipped} — wood-only part`);
       targetEntries = valid;
@@ -212,9 +212,10 @@ export async function applySwatchToEntries(item, targetEntries) {
         _commitEntryMaterial(entry, mat);
         entry.mesh.userData._fabricName = item.name;
       });
-      markDirty(); showToast(item.name+' applied!');
+      markDirty(); if(!opts.silent) showToast(item.name+' applied!');
       // Auto-save material snapshot so room view retains changes
       saveMaterialSnapshot();
+      window._historyRecord?.();
       return;
     }
 
@@ -239,7 +240,14 @@ export async function applySwatchToEntries(item, targetEntries) {
     // vendor swatch photos: seamless edges, neutral lighting, sharper weave)
     let diffTex = diffSrc ? await tryLoadTex(diffSrc, true).catch(()=>null) : null;
 
-    if(diffTex && diffSrc) {
+    // Fast replay (undo/redo): reuse the session's enhanced texture if it
+    // exists; never re-run the enhancement pipeline (staff review M2).
+    if (opts.fast && diffSrc && enhanceCache[diffSrc]) {
+      const cachedTex = await tryLoadTex(enhanceCache[diffSrc], true).catch(() => null);
+      if (cachedTex) diffTex = cachedTex;
+    }
+
+    if(diffTex && diffSrc && !opts.fast) {
       document.getElementById('load-txt').textContent = 'Enhancing Texture…';
       try {
         const currentDataUrl = texToDataUrl(diffTex);
@@ -313,9 +321,10 @@ export async function applySwatchToEntries(item, targetEntries) {
       _commitEntryMaterial(entry, mat);
       entry.mesh.userData._fabricName = item.name;
     });
-    markDirty(); showToast(item.name+' applied!');
+    markDirty(); if(!opts.silent) showToast(item.name+' applied!');
     // Auto-save material snapshot so room view retains changes
     saveMaterialSnapshot();
+    window._historyRecord?.();
   } catch(e) {
     console.error(e); showToast('Failed to apply material');
   } finally {
@@ -651,6 +660,7 @@ export async function handleDiffuseUpload(file) {
   markDirty();
   showToast('Seamless texture applied!');
   saveMaterialSnapshot();
+  window._historyRecord?.();
 }
 
 // ── Drag & Drop ────────────────────────────────────────────────────────────
