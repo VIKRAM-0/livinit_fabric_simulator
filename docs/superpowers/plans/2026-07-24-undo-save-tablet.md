@@ -191,11 +191,13 @@ git commit -m "feat: undo/redo history core (pure, injectable)"
 ### Task 2: DesignState pure helpers (`src/lib/design-state.js`)
 
 **Files:**
-- Create: `src/lib/design-state.js`
+- Create: `src/lib/design-constants.js`, `src/lib/design-state.js`
+- Modify: `src/lib/actions.js` (lines 9 and 31: re-export the constants from the new leaf instead of defining them)
 - Test: `test/design-state.test.mjs`
 
 **Interfaces:**
-- Consumes: `SLIDER_DEFAULTS`, `CURTAIN_STATE_DEFAULTS` from `src/lib/actions.js` (already exported).
+- Consumes: `SLIDER_DEFAULTS`, `CURTAIN_STATE_DEFAULTS` from the NEW `src/lib/design-constants.js`.
+- Staff-review B1: `design-state.js` must NOT import `actions.js` — its static graph reaches `catalog.js` → `engine.js`, which executes `THREE.*` and `document.*` at module scope and crashes `node --test`. The constants move to a dependency-free leaf that both `actions.js` and `design-state.js` import; `actions.js` keeps re-exporting them so its existing importers (`materials.js:3` etc.) are untouched.
 - Produces (used by Tasks 3/6/7):
   - `findFabricRef(appliedName, library, customItems)` → `{kind:'custom', item}` | `{kind:'lib', name, group}` | `null`
   - `resolveFabricRef(ref, library, customItems)` → library/custom item object | `null`
@@ -203,21 +205,33 @@ git commit -m "feat: undo/redo history core (pure, injectable)"
   - `defaultDesignState(productKey, partNames)` → DesignState with every part `null`
   - DesignState shape (spec §3.1): `{ v:1, productKey, parts:{[partName]: ref|null}, baseColorHex, sliders, curtain }`
 
+- [ ] **Step 0: Extract the constants leaf**
+
+Create `src/lib/design-constants.js`:
+
+```js
+// src/lib/design-constants.js
+// Factory defaults shared by actions.js (live) and design-state.js (pure).
+// MUST stay dependency-free — design-state.js is unit-tested under node, and
+// any import chain that reaches engine.js executes THREE/DOM at module scope.
+export const SLIDER_DEFAULTS = { brightness: 1.0, roughness: 0.72, metalness: 0, sheen: 0, scale: 10.0, norm: 1.0 };
+export const CURTAIN_STATE_DEFAULTS = { shape:'drape', fabric:'linen', color:'#EDE6D8', widthFactor:1, lengthFactor:1 };
+```
+
+In `src/lib/actions.js`, replace line 9 (`export const SLIDER_DEFAULTS = …`) and line 31 (`export const CURTAIN_STATE_DEFAULTS = …`) with a single re-export near the top:
+
+```js
+export { SLIDER_DEFAULTS, CURTAIN_STATE_DEFAULTS } from './design-constants.js';
+```
+
+(Also add `import { SLIDER_DEFAULTS, CURTAIN_STATE_DEFAULTS } from './design-constants.js';` since `resetSliders`/`restoreCurtainState` use them locally.) Verify no behavior change: `node --check src/lib/actions.js` and `grep -rn "SLIDER_DEFAULTS\|CURTAIN_STATE_DEFAULTS" src` — all existing importers still resolve via `actions.js`.
+
 - [ ] **Step 1: Write the failing test**
 
 ```js
 // test/design-state.test.mjs
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-
-// localStorage shim — actions.js → store.js chain is DOM-free, but keep parity
-// with test/admin-store.test.mjs in case that changes.
-const mem = new Map();
-globalThis.localStorage = {
-  getItem: k => (mem.has(k) ? mem.get(k) : null),
-  setItem: (k, v) => mem.set(k, String(v)),
-  removeItem: k => mem.delete(k),
-};
 
 const ds = await import('../src/lib/design-state.js');
 
@@ -280,8 +294,9 @@ Expected: FAIL — `Cannot find module '../src/lib/design-state.js'`
 // src/lib/design-state.js
 // Canonical serializable design snapshot (spec §3.1) — PURE helpers only.
 // Browser capture/apply live in design-state-live.js; this file must stay
-// importable under node (no Three.js, no DOM) for unit tests.
-import { SLIDER_DEFAULTS, CURTAIN_STATE_DEFAULTS } from './actions.js';
+// importable under node (no Three.js, no DOM) for unit tests — import ONLY
+// from design-constants.js, never actions.js (its chain reaches engine.js).
+import { SLIDER_DEFAULTS, CURTAIN_STATE_DEFAULTS } from './design-constants.js';
 
 export const DESIGN_STATE_V = 1;
 
@@ -341,13 +356,13 @@ export function defaultDesignState(productKey, partNames = []) {
 - [ ] **Step 4: Run test to verify it passes**
 
 Run: `node --test test/design-state.test.mjs`
-Expected: 5 pass, 0 fail. (If the import chain fails under node because `src/lib/catalog.js` touches the DOM at top level, stub with `globalThis.document = { getElementById: () => null }` in the test header — do NOT edit catalog.js for this.)
+Expected: 5 pass, 0 fail — the import must succeed with no stubs; if node still reaches `engine.js`, the constants extraction is wrong (fix the graph, do not shim THREE).
 
 - [ ] **Step 5: Commit**
 
 ```bash
-git add src/lib/design-state.js test/design-state.test.mjs
-git commit -m "feat: serializable DesignState helpers (refs, fingerprint, defaults)"
+git add src/lib/design-constants.js src/lib/design-state.js src/lib/actions.js test/design-state.test.mjs
+git commit -m "feat: serializable DesignState helpers on a dependency-free constants leaf"
 ```
 
 ---
@@ -363,12 +378,12 @@ git commit -m "feat: serializable DesignState helpers (refs, fingerprint, defaul
 **Interfaces:**
 - Consumes: Task 2 helpers; `E`, `markDirty`, `setSliderVal` from `engine.js`; `appStore`; `setBaseColor`, `setCurtain`, `saveCurtainState`, `addCustomFabric`, `SLIDER_DEFAULTS` from `actions.js`/`catalog.js`; `window.applySwatchToEntries`, `window.updateBrightness`, `window.applyProp`, `window.updateTexScale`, `window.updateNormScale`, `window.buildLibrary`, `window.setCurtainShape/Fabric/Color/Size` (window shim).
 - Produces (used by Tasks 4/6/7):
-  - `captureDesignState()` → DesignState
-  - `applyDesignState(state, {silent=true})` → Promise (internally queued; concurrent calls serialize)
+  - `captureDesignState()` → DesignState (reads `appliedFabric?.name ?? userData._fabricName`)
+  - `applyDesignState(state, {silent=true, fast=true})` → Promise (internally queued; concurrent calls serialize; `fast` skips the enhance pipeline for responsive undo/redo)
   - `window.__replayingDesign` — true while a replay runs; `window._historyRecord` (Task 4) checks it
   - `window._historyRecord?.()` called at every design-edit commit site
   - Model-ready hooks: persistent `window._historyOnModelReady?.()` then one-shot `window._onModelReady` (both fired whenever a product model finishes loading, in that order)
-  - `applySwatchToEntries(item, targetEntries, opts?)` — new optional `{silent:true}` suppresses all its toasts
+  - `applySwatchToEntries(item, targetEntries, opts?)` — new optional `{silent, fast}`: silent suppresses its toasts, fast skips the enhance/seamless pipeline (cache-only)
 
 - [ ] **Step 1: Write `src/lib/design-state-live.js`**
 
@@ -393,7 +408,11 @@ export function captureDesignState() {
   const parts = {};
   for (const e of E.meshEntries) {
     if (e._isCurtain || parts[e.name] !== undefined) continue;
-    parts[e.name] = e.appliedFabric ? findFabricRef(e.appliedFabric.name, lib, CUSTOM_FABRIC_ITEMS) : null;
+    // Staff-review M1: after a product-switch round-trip the snapshot restore
+    // paths repopulate userData._fabricName but NOT entry.appliedFabric —
+    // capture must accept either, or Save records blank designs.
+    const worn = e.appliedFabric?.name ?? e.mesh?.userData?._fabricName ?? null;
+    parts[e.name] = worn ? findFabricRef(worn, lib, CUSTOM_FABRIC_ITEMS) : null;
   }
   return {
     v: DESIGN_STATE_V,
@@ -422,13 +441,16 @@ function _restoreFactoryPart(entry) {
 let _chain = Promise.resolve();
 
 // Serialized replay queue — rapid undo presses can't interleave (spec §3.2).
+// opts.fast (staff-review M2): skip the Gemini enhance/seamless pipeline and
+// reuse cached textures — undo/redo must be responsive, not re-run network
+// image work. Saved-design loads pass fast:false for full visual fidelity.
 export function applyDesignState(state, opts = {}) {
   const run = () => _applyNow(state, opts).catch(e => console.error('applyDesignState:', e));
   _chain = _chain.then(run, run);
   return _chain;
 }
 
-async function _applyNow(state, { silent = true } = {}) {
+async function _applyNow(state, { silent = true, fast = true } = {}) {
   if (!state || state.productKey !== appStore.getState().currentModelKey) return false;
   window.__replayingDesign = true;
   try {
@@ -450,7 +472,7 @@ async function _applyNow(state, { silent = true } = {}) {
         addCustomFabric(item);
         window.buildLibrary();
       }
-      await window.applySwatchToEntries(item, entries, { silent: true });
+      await window.applySwatchToEntries(item, entries, { silent: true, fast });
     }
     // 2 · Global sliders + base color → parts wearing fabric.
     //     The slider appliers act on checked/pieceSelected entries, so borrow
@@ -503,6 +525,26 @@ export async function applySwatchToEntries(item, targetEntries, opts = {}) {
 ```
 
 In the wood-zone rejection block (~117–119), wrap the two `showToast(...)` calls: `if(!opts.silent) showToast(...)` (keep the early `return`s).
+
+**Fast replay (staff-review M2):** the fabric path runs a Gemini enhance + seamless pipeline (~materials.js:242–262: `texToDataUrl` → `enhanceTexture` → `matchMeanColor`). Gate it on the new opt — change the guard at ~line 242 from `if(diffTex && diffSrc) {` to:
+
+```js
+    if(diffTex && diffSrc && !opts.fast) {
+```
+
+and immediately before that block add a cache shortcut so a fast replay still shows the enhanced texture whenever this session already produced it:
+
+```js
+    // Fast replay (undo/redo): reuse the session's enhanced texture if it
+    // exists; never re-run the enhancement pipeline (staff review M2).
+    if (opts.fast && diffSrc && enhanceCache[diffSrc]) {
+      const cachedTex = await tryLoadTex(enhanceCache[diffSrc], true).catch(() => null);
+      if (cachedTex) diffTex = cachedTex;
+    }
+```
+
+(`enhanceCache` and `tryLoadTex` are already imported at materials.js:1.) Known accepted consequence: loading a saved design in a *fresh* session with `fast:true` would show the unenhanced swatch — which is why Task 7's load passes `fast:false`.
+
 At the two success sites (~215 `markDirty(); showToast(item.name+' applied!');` and ~316 same), change to:
 
 ```js
@@ -533,6 +575,16 @@ Call it at the three ready points:
 1. In `processGLTF`, immediately after the `_tourOnReady` invocation (~line 421): `_modelReadyHooks();`
 2. In `switchModel`'s room-mode **cached** branch, after `markDirty();` that follows `window._applySnapshotToModel(...)` (~line 503): `_modelReadyHooks();`
 3. In `switchModel`'s room-mode **loader** callback, after the same pair (~line 526): `_modelReadyHooks();`
+
+- [ ] **Step 3b: Restore fabric identity + slider baseline on model ready (staff-review M1/m4)**
+
+In `room.js` `_applySnapshotToModel` (~line 823), after `arr[idx] = snap[si].matClone.clone();` add one line so cached room switches keep the worn-fabric name that capture reads:
+
+```js
+        if (snap[si].fabricName) child.userData._fabricName = snap[si].fabricName;
+```
+
+In `model.js` `processGLTF`, next to the existing `setSliderVal('brightness',1);…` default resets (~line 424), add `resetSliders();` (import it from `../../lib/actions.js` alongside the existing actions imports) so the store matches the DOM defaults the panel shows — otherwise the history baseline captures the previous model's stale slider values. **Only** in the fresh-load path (processGLTF), not in room-mode cached switches (those restore a live design).
 
 - [ ] **Step 4: Curtain record hooks (room.js)**
 
@@ -580,7 +632,7 @@ import { captureDesignState, applyDesignState, fingerprintDesignState, defaultDe
 ```js
 const designHistory = createHistory({
   capture: captureDesignState,
-  apply: (s) => applyDesignState(s, { silent: true }),
+  apply: (s) => applyDesignState(s, { silent: true, fast: true }),
   fingerprint: fingerprintDesignState,
   onChange: (h) => {
     const u = document.getElementById('btn-undo'), r = document.getElementById('btn-redo');
@@ -602,8 +654,11 @@ window.resetDesign = async () => {
 };
 
 // Slider commits: 'change' fires on release — drags coalesce to one record.
+// s-env-brightness is scene lighting, not part of DesignState — exclude it
+// explicitly rather than leaning on fingerprint dedupe (staff review m2).
 document.addEventListener('change', (e) => {
-  if (e.target instanceof HTMLInputElement && e.target.type === 'range') window._historyRecord();
+  const t = e.target;
+  if (t instanceof HTMLInputElement && t.type === 'range' && t.id !== 's-env-brightness') window._historyRecord();
 });
 ```
 
@@ -633,11 +688,12 @@ In `switchModel(key)` (model.js ~470), immediately after `const prevKey = appSto
   window._historyClear?.();   // design-edit history never crosses products (spec §2)
 ```
 
-In `handleGLBUpload(input)` (viewport.js ~472), as the first statement of the function body add:
+In `handleGLBUpload(input)` (viewport.js ~472), add the flag AFTER the validation guards — immediately before the `window.loadModel(window._customGLBUrl);` call (~line 481). A rejected file (no selection / wrong extension) must not wipe history or disable Save (staff review m1):
 
 ```js
   E._uploadedModel = true;    // uploads can't be saved (spec §4.1) and reset history
   window._historyClear?.();
+  window.loadModel(window._customGLBUrl);
 ```
 
 (`processGLTF` fires `_modelReadyHooks()` → fresh seed once the upload finishes loading.)
@@ -1027,7 +1083,9 @@ export async function loadSavedDesign(id) {
   toggleSavedPanel(false);
   const { applyDesignState } = await import('../../lib/design-state-live.js');
   const finish = async () => {
-    await applyDesignState(rec.state, { silent: false });
+    // fast:false — a load may run in a fresh session with cold caches, and it
+    // must reproduce the enhanced texture the design was saved with (M2 note).
+    await applyDesignState(rec.state, { silent: false, fast: false });
     window._historySeed?.();          // loaded design becomes the new baseline
     showToast('“' + rec.name + '” loaded');
   };
@@ -1247,36 +1305,37 @@ try {
     return { name: grp.items[0].name, worn: targets.filter(e => e.appliedFabric).length };
   });
 
+  // Poll worn-part count instead of fixed sleeps — replay is async and its
+  // first uncached traversal can be slow (staff review M2).
+  const wornCount = () => page.evaluate(async () => {
+    const { E } = await import('/src/lib/engine.js');
+    return E.meshEntries.filter(e => !e._isCurtain && e.appliedFabric).length;
+  });
+  const waitWorn = async (pred, ms = 20000) => {
+    const t0 = Date.now();
+    for (;;) {
+      const n = await wornCount();
+      if (pred(n)) return n;
+      if (Date.now() - t0 > ms) return n;
+      await sleep(250);
+    }
+  };
+
   // 1 · apply → undo → redo → reset
   const a = await applied();
   check('fabric applies to parts', a.worn > 0, `${a.worn} entries wear ${a.name}`);
   const canUndo = await page.evaluate(() => !document.getElementById('btn-undo').disabled);
   check('undo enables after apply', canUndo);
   await page.evaluate(() => window.undoDesign());
-  await sleep(800);
-  const afterUndo = await page.evaluate(async () => {
-    const { E } = await import('/src/lib/engine.js');
-    return E.meshEntries.filter(e => !e._isCurtain && e.appliedFabric).length;
-  });
-  check('undo removes the fabric', afterUndo === 0, `${afterUndo} still worn`);
+  check('undo removes the fabric', (await waitWorn(n => n === 0)) === 0);
   await page.evaluate(() => window.redoDesign());
-  await sleep(800);
-  const afterRedo = await page.evaluate(async () => {
-    const { E } = await import('/src/lib/engine.js');
-    return E.meshEntries.filter(e => !e._isCurtain && e.appliedFabric).length;
-  });
-  check('redo restores the fabric', afterRedo > 0);
+  check('redo restores the fabric', (await waitWorn(n => n > 0)) > 0);
   await page.evaluate(() => window.resetDesign());
-  await sleep(800);
-  const afterReset = await page.evaluate(async () => {
-    const { E } = await import('/src/lib/engine.js');
-    return E.meshEntries.filter(e => !e._isCurtain && e.appliedFabric).length;
-  });
-  check('reset returns to factory', afterReset === 0);
+  check('reset returns to factory', (await waitWorn(n => n === 0)) === 0);
 
   // 2 · save → reload → load
   await page.evaluate(() => window.undoDesign());            // back to fabric-applied state
-  await sleep(800);
+  await waitWorn(n => n > 0);
   await page.evaluate(() => {
     window.openSaveDesignDialog();
     document.getElementById('save-name-input').value = 'Smoke Design';
@@ -1292,14 +1351,31 @@ try {
   check('saved panel lists the design after reload', cardCount === 1);
   const recId = await page.evaluate(() => document.querySelector('.saved-card')?.dataset.id);
   await page.evaluate(id => window.loadSavedDesign(id), recId);
-  await sleep(2500);
-  const afterLoad = await page.evaluate(async () => {
-    const { E } = await import('/src/lib/engine.js');
-    return E.meshEntries.filter(e => !e._isCurtain && e.appliedFabric).length;
-  });
-  check('loading the design re-applies fabrics', afterLoad > 0);
+  check('loading the design re-applies fabrics', (await waitWorn(n => n > 0, 45000)) > 0);
 
-  // 3 · tablet layout sweep
+  // 3 · touch tap-to-apply (staff review m5 — click must survive pointerdown+preventDefault)
+  const touchPage = await browser.newPage();
+  await touchPage.emulate({ viewport: { width: 834, height: 1194, hasTouch: true, isMobile: true }, userAgent: await browser.userAgent() });
+  await touchPage.goto(`${BASE}/index.html`, { waitUntil: 'domcontentloaded' });
+  await touchPage.waitForFunction(() => document.getElementById('loading') && !document.getElementById('loading').classList.contains('on'), { timeout: 30000 });
+  await sleep(1200);
+  await touchPage.evaluate(() => { window.selectAll(); });
+  await touchPage.tap('.bar-sw');
+  const tapWorn = await (async () => {
+    const t0 = Date.now();
+    for (;;) {
+      const n = await touchPage.evaluate(async () => {
+        const { E } = await import('/src/lib/engine.js');
+        return E.meshEntries.filter(e => !e._isCurtain && e.appliedFabric).length;
+      });
+      if (n > 0 || Date.now() - t0 > 20000) return n;
+      await sleep(250);
+    }
+  })();
+  check('touch tap on a swatch applies fabric', tapWorn > 0, `${tapWorn} worn`);
+  await touchPage.close();
+
+  // 4 · tablet layout sweep
   for (const [w, h, drawer] of [[768, 1024, true], [834, 1194, true], [1024, 768, false], [1180, 820, false]]) {
     await page.setViewport({ width: w, height: h });
     await sleep(400);
@@ -1367,8 +1443,10 @@ git add CODEBASE_UNDERSTANDING.md
 git commit -m "docs: note design history + saved designs subsystem"
 ```
 
-## Known accepted limitations (from spec §3.2/§8 — do not "fix" in this plan)
+## Known accepted limitations (from spec §3.2/§8 + staff review — do not "fix" in this plan)
 
 - Per-part slider divergence is not captured: DesignState stores one global slider set (matches the store's model). Undoing a slider tweak re-applies globally to fabric-wearing parts.
 - A direct diffuse-upload (Replace-image button) that bypasses `CUSTOM_FABRIC_ITEMS` replays as the previously applied fabric.
 - Designs on uploaded GLBs cannot be saved; room furniture layout is not part of DesignState.
+- Multi-part **solid-color** (no-diffuse) fabrics share one global `baseColorHex`, so a design with two different map-less solids replays both parts in the captured (last-applied) hex (staff review m3). Rare — nearly all catalog items carry a diffuse map.
+- Fast replay (undo/redo) reuses the session's enhanced-texture cache; if the cache is cold it shows the unenhanced swatch. Saved-design loads always run the full pipeline.
