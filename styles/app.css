@@ -667,7 +667,7 @@ input[type=range]::-webkit-slider-thumb{appearance:none;width:13px;height:13px;b
 :focus-visible{outline:2px solid rgb(var(--md-primary) / .6);outline-offset:2px}
 /* narrow-window: sidebar becomes a right slide-over drawer */
 .sidebar-toggle{display:none}
-@media (max-width:1024px){
+@media (max-width:999px){
   .config-panel{position:fixed;top:0;left:72px;right:auto;bottom:0;width:340px;max-width:85vw;z-index:30;box-shadow:var(--elev-3);transform:translateX(-110%);transition:transform var(--dur-base) var(--ease-motion)}
   .config-panel.open{transform:none}
   .sidebar-toggle{position:fixed;right:16px;bottom:16px;z-index:31;display:inline-flex;align-items:center;gap:7px;height:44px;padding:0 18px;border:none;cursor:pointer;font:600 14px/1 var(--font-sans);color:rgb(var(--md-on-surface))}
@@ -737,4 +737,27 @@ input[type=range]::-webkit-slider-thumb{appearance:none;width:13px;height:13px;b
   color:var(--text, #101c2d);background:var(--surface, #fff);
   border-top:1px solid var(--border, rgba(16,28,45,.08));
   white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+}
+
+/* ── Tablet (spec §6) ───────────────────────────────────────────────────── */
+/* iPad landscape (1000–1194px): keep a persistent, narrower panel — the
+   slide-over drawer is for portrait/phone widths only. */
+@media (min-width:1000px) and (max-width:1194px){
+  .config-panel{width:320px}
+}
+/* Touch: no hover affordances — the zoom lens and mouse hints are dead weight. */
+@media (hover:none){
+  #hover-zoom-lens{display:none !important}
+  .vp-controls{display:none}
+}
+/* Coarse pointers: 44px-class targets (WCAG 2.5.5 / Apple HIG). */
+@media (pointer:coarse){
+  .nav-rail-item{min-height:48px}
+  .icon-pill{width:44px;height:44px}
+  .canvas-cta .pill-btn{height:44px}
+  .seg-chip{min-height:40px}
+  .saved-act{height:38px;min-width:38px}
+  .bar-sw{touch-action:none}
+  input[type=range]{height:32px}
+  input[type=range]::-webkit-slider-thumb{width:22px;height:22px}
 }

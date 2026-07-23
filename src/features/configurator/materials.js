@@ -667,7 +667,7 @@ export async function handleDiffuseUpload(file) {
 export function initDragDrop() {
   const vwrap = document.getElementById('viewport-wrap');
 
-  document.addEventListener('mousemove', e => {
+  document.addEventListener('pointermove', e => {
     if(!E.dragActive) return;
     E.ghost.style.left = e.clientX + 'px';
     E.ghost.style.top  = e.clientY + 'px';
@@ -684,7 +684,7 @@ export function initDragDrop() {
     }
   });
 
-  document.addEventListener('mouseup', e => {
+  document.addEventListener('pointerup', e => {
     if(!E.dragActive) return;
     E.dragActive = false;
     E.ghost.style.display = 'none';
