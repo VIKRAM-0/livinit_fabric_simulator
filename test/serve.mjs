@@ -61,9 +61,28 @@ async function readJsonBody(req) {
   try { return JSON.parse(Buffer.concat(chunks).toString('utf8')); } catch { return {}; }
 }
 
+// No local AWS credentials → stream assets from the public prod bucket
+// instead of the in-process s3proxy handler (which needs .env keys). Same
+// fallback the original asset-designer harness used; keys already carry
+// their full fabric_assets/fabric_assets_v2 prefixes.
+const S3_PUBLIC = 'https://livinit-storage-prod.s3.us-east-2.amazonaws.com/';
+const HAS_AWS_CREDS = !!(process.env.AWS_ACCESS_KEY_ID && process.env.AWS_SECRET_ACCESS_KEY && process.env.S3_BUCKET);
+if (!HAS_AWS_CREDS) console.log('no AWS creds in .env — /api/s3proxy falls back to public bucket ' + S3_PUBLIC);
+
 http.createServer(async (req, res) => {
   try {
     const url = new URL(req.url, `http://localhost:${PORT}`);
+    if (url.pathname === '/api/s3proxy' && !HAS_AWS_CREDS) {
+      const key = url.searchParams.get('key');
+      if (!key) { res.writeHead(400); return res.end('missing key'); }
+      const up = await fetch(S3_PUBLIC + key, { headers: req.headers.range ? { range: req.headers.range } : {} });
+      if (!up.ok && up.status !== 206) { res.writeHead(up.status); return res.end(); }
+      res.writeHead(up.status, {
+        'content-type': up.headers.get('content-type') || 'application/octet-stream',
+        'cache-control': 'public, max-age=3600',
+      });
+      return res.end(Buffer.from(await up.arrayBuffer()));
+    }
     if (url.pathname.startsWith('/api/')) {
       const name = url.pathname.slice('/api/'.length);
       let handler;
