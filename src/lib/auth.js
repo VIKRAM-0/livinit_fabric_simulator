@@ -19,13 +19,15 @@ export const DEMO_ACCOUNTS = [
 ];
 
 export function getSession() {
-  // Headless test runs (puppeteer sets navigator.webdriver) auto-login as the
-  // full-catalog tenant so test/smoke.mjs keeps exercising the real boot path.
+  // GUEST MODE — the sign-in gate is disabled for this build (founder call:
+  // ship undo/save/tablet WITHOUT the multi-tenant login). Everyone boots as
+  // a local guest with the full catalog; saved designs key to guest@local.
+  // Headless test runs keep the historical tester identity so the design-check
+  // fixtures (livinit_sim_designs_v1:priya@acme.com) stay valid.
   if (navigator.webdriver) {
     return { user: { name: 'Priya', email: 'priya@acme.com' }, tenantId: 'acme', role: 'client' };
   }
-  try { return JSON.parse(localStorage.getItem(SESSION_KEY)) || null; }
-  catch { return null; }
+  return { user: { name: 'Guest', email: 'guest@local' }, tenantId: 'guest', role: 'client' };
 }
 
 export function signIn(email, pw) {

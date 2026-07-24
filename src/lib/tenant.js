@@ -9,6 +9,8 @@
 // switching accounts changes which products (and therefore which fabric
 // libraries) exist at all.
 const DEMO_TENANTS = {
+  // Guest-mode default (login gate disabled): full catalog, neutral branding.
+  guest:  { name: 'Livinit Simulator', status: 'live', products: ['chair', 'accent_chair', 'sofa'], credits: 480 },
   acme:   { name: 'Acme Furniture', status: 'live',  products: ['chair', 'accent_chair', 'sofa'], credits: 480 },
   cove:   { name: 'Cove & Co.',     status: 'live',  products: ['chair', 'sofa'],                 credits: 120 },
   bhavya: { name: 'Bhavya Interiors', status: 'draft', products: [], credits: 0 },
