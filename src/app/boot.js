@@ -6,7 +6,7 @@ import '../components/ui/panels.js';   // side-effect: injects slider/applied ma
 import { E, markDirty, showToast, _gltfSceneCache, roomFurnitureModels } from '../lib/engine.js';
 import { appStore } from '../lib/store.js';
 import { CHAIR_GLB, ACCENT_CHAIR_GLB, SOFA_GLB, getGLBUrl } from '../lib/catalog.js';
-import { getSession, initAuthUI, hideGate, showDraftGate, signOut } from '../lib/auth.js';
+import { getSession } from '../lib/auth.js';
 import { loadTenantCatalog, applyTenantToUI, spendRenderCredit } from '../lib/tenant.js';
 import { createHistory } from '../lib/history.js';
 import { captureDesignState, applyDesignState, fingerprintDesignState, defaultDesignState } from '../lib/design-state-live.js';
@@ -155,13 +155,10 @@ window.loadScripts([
 }).catch(e=>{console.error('Script load failed',e);showToast('Failed to load Three.js loaders');});
 }
 
-// ── Multi-tenant gate ─────────────────────────────────────────────────────
-// No session → login screen. Draft tenant → "being set up". Live tenant →
-// scope the UI to their catalog, wire the account chrome, then boot.
+// ── Boot (guest mode — the login gate was removed) ────────────────────────
+// Scope the UI to the tenant catalog, wire the account chrome, then boot.
 async function bootWithSession(session){
-  hideGate();
   const tenant = await loadTenantCatalog(session);
-  if (tenant.status === 'draft') { showDraftGate(tenant); return; }
   const first = applyTenantToUI(tenant, session) || 'chair';
   _wireTenantMenu(session, tenant);
   startApp(tenant.products.length ? tenant.products : ['chair']);
@@ -180,13 +177,9 @@ function _wireTenantMenu(session, tenant){
     `${session.user.name} · ${tenant.name}`;
   av.addEventListener('click', e => { e.stopPropagation(); menu.classList.toggle('open'); });
   document.addEventListener('click', () => menu.classList.remove('open'));
-  document.getElementById('tenant-signout')?.addEventListener('click', signOut);
 }
 
-{
-  const s = getSession();
-  if (s) bootWithSession(s); else initAuthUI(bootWithSession);
-}
+bootWithSession(getSession());
 
 // Narrow-window sidebar drawer toggle (floating "Fabrics" pill; no-op >=1024px)
 function toggleSidebar(){ document.getElementById('right-panel')?.classList.toggle('open'); }
