@@ -148,7 +148,7 @@ export function buildLibrary() {
       }
     });
 
-    sw.addEventListener('mousedown', e => { e.preventDefault(); window.startDrag(e, gi, ii); });
+    sw.addEventListener('pointerdown', e => { e.preventDefault(); window.startDrag(e, gi, ii); });
     swatchesEl.appendChild(sw);
   });
 

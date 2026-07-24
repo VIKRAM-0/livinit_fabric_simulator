@@ -1,0 +1,277 @@
+<style>
+  :root {
+    --bg:#FBFBFD; --surface:#FFFFFF; --surface-2:#F4F5F9; --border:#E6E7EF; --border-strong:#D2D5E2;
+    --text:#1A1C24; --muted:#5C6173; --faint:#8A8FA3;
+    --accent:#5364C9; --accent-soft:#7A91EE; --accent-wash:#EEF1FD;
+    --good:#1F9D63; --good-wash:#E4F5EC;
+    --warn:#B9781F; --warn-wash:#FBF0DC;
+    --slate:#5C6173; --slate-wash:#EEF0F4;
+    --shadow:0 1px 2px rgba(26,28,36,.04),0 10px 26px -14px rgba(26,28,36,.16);
+    --mono:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,monospace;
+    --sans:system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+  }
+  @media (prefers-color-scheme:dark){:root{
+    --bg:#0D0E13;--surface:#15171F;--surface-2:#1B1E29;--border:#262A38;--border-strong:#333849;
+    --text:#ECEDF3;--muted:#9CA1B5;--faint:#6E7488;
+    --accent:#8CA0F2;--accent-soft:#7A91EE;--accent-wash:#1B2036;
+    --good:#4CC38A;--good-wash:#14251C;--warn:#E0A94A;--warn-wash:#2A2213;
+    --slate:#9CA1B5;--slate-wash:#1E212B;
+    --shadow:0 1px 2px rgba(0,0,0,.3),0 14px 34px -18px rgba(0,0,0,.7);
+  }}
+  :root[data-theme="light"]{--bg:#FBFBFD;--surface:#FFFFFF;--surface-2:#F4F5F9;--border:#E6E7EF;--border-strong:#D2D5E2;--text:#1A1C24;--muted:#5C6173;--faint:#8A8FA3;--accent:#5364C9;--accent-soft:#7A91EE;--accent-wash:#EEF1FD;--good:#1F9D63;--good-wash:#E4F5EC;--warn:#B9781F;--warn-wash:#FBF0DC;--slate:#5C6173;--slate-wash:#EEF0F4;--shadow:0 1px 2px rgba(26,28,36,.04),0 10px 26px -14px rgba(26,28,36,.16);}
+  :root[data-theme="dark"]{--bg:#0D0E13;--surface:#15171F;--surface-2:#1B1E29;--border:#262A38;--border-strong:#333849;--text:#ECEDF3;--muted:#9CA1B5;--faint:#6E7488;--accent:#8CA0F2;--accent-soft:#7A91EE;--accent-wash:#1B2036;--good:#4CC38A;--good-wash:#14251C;--warn:#E0A94A;--warn-wash:#2A2213;--slate:#9CA1B5;--slate-wash:#1E212B;--shadow:0 1px 2px rgba(0,0,0,.3),0 14px 34px -18px rgba(0,0,0,.7);}
+
+  *{box-sizing:border-box;}
+  body{margin:0;background:var(--bg);color:var(--text);font-family:var(--sans);line-height:1.55;-webkit-font-smoothing:antialiased;}
+  .wrap{max-width:1040px;margin:0 auto;padding:clamp(28px,6vw,64px) clamp(16px,4vw,36px) 90px;}
+
+  .eyebrow{font-size:.72rem;letter-spacing:.14em;text-transform:uppercase;color:var(--accent);font-weight:650;margin:0 0 12px;}
+  h1{font-size:clamp(1.7rem,4vw,2.4rem);line-height:1.1;margin:0 0 14px;letter-spacing:-.02em;text-wrap:balance;font-weight:720;}
+  .lede{font-size:clamp(1rem,1.9vw,1.12rem);color:var(--muted);margin:0 0 26px;max-width:64ch;}
+
+  /* legend */
+  .legend{display:flex;flex-wrap:wrap;gap:10px 18px;padding:14px 18px;background:var(--surface);border:1px solid var(--border);border-radius:12px;box-shadow:var(--shadow);margin-bottom:30px;}
+  .legend .li{display:inline-flex;align-items:center;gap:8px;font-size:.8rem;color:var(--muted);}
+  .legend .sw{width:12px;height:12px;border-radius:4px;flex:none;}
+  .sw.new{background:var(--accent-soft);}
+  .sw.reused{background:var(--good);}
+  .sw.hard{background:var(--warn);}
+  .sw.keep{background:var(--slate);}
+
+  /* diagram */
+  .stack{display:flex;flex-direction:column;gap:0;}
+  .layer{position:relative;background:var(--surface);border:1px solid var(--border);border-radius:16px;box-shadow:var(--shadow);padding:18px 20px 20px;margin-bottom:14px;}
+  .layer-head{display:flex;align-items:baseline;justify-content:space-between;gap:12px;margin-bottom:14px;}
+  .layer-head .lname{font-size:.72rem;letter-spacing:.11em;text-transform:uppercase;color:var(--faint);font-weight:660;}
+  .layer-head .lsub{font-size:.78rem;color:var(--faint);font-family:var(--mono);}
+
+  .row{display:grid;gap:12px;}
+  .row.c2{grid-template-columns:repeat(2,1fr);}
+  .row.c3{grid-template-columns:repeat(3,1fr);}
+  .row.c4{grid-template-columns:repeat(4,1fr);}
+  @media(max-width:760px){.row.c3,.row.c4{grid-template-columns:1fr 1fr;}.row.c2{grid-template-columns:1fr;}}
+  @media(max-width:460px){.row.c3,.row.c4,.row.c2{grid-template-columns:1fr;}}
+
+  .node{border:1px solid var(--border-strong);border-radius:11px;padding:13px 14px;background:var(--surface-2);position:relative;}
+  .node .nt{font-weight:630;font-size:.92rem;margin:0 0 3px;letter-spacing:-.005em;display:flex;align-items:center;gap:7px;}
+  .node .nd{font-size:.79rem;color:var(--muted);margin:0;}
+  .node code{font-family:var(--mono);font-size:.76rem;background:var(--surface);padding:1px 5px;border-radius:4px;color:var(--text);}
+  .node.new{border-left:3px solid var(--accent-soft);}
+  .node.reused{border-left:3px solid var(--good);}
+  .node.hard{border-left:3px solid var(--warn);}
+  .node.keep{border-left:3px solid var(--slate);}
+  .tag{font-size:.62rem;font-weight:700;letter-spacing:.04em;text-transform:uppercase;padding:2px 6px;border-radius:5px;white-space:nowrap;}
+  .tag.new{background:var(--accent-wash);color:var(--accent);}
+  .tag.reused{background:var(--good-wash);color:var(--good);}
+  .tag.hard{background:var(--warn-wash);color:var(--warn);}
+  .tag.keep{background:var(--slate-wash);color:var(--slate);}
+
+  /* connector / boundary */
+  .conn{display:flex;justify-content:center;margin:-6px 0 8px;color:var(--accent-soft);font-size:1.1rem;}
+  .boundary{display:flex;align-items:center;gap:14px;margin:6px 0 16px;padding:11px 18px;border:1px dashed var(--accent-soft);background:var(--accent-wash);border-radius:12px;}
+  .boundary .bicon{font-size:1rem;}
+  .boundary p{margin:0;font-size:.83rem;color:var(--text);}
+  .boundary code{font-family:var(--mono);font-size:.78rem;color:var(--accent);font-weight:600;}
+
+  /* isolation spotlight */
+  section{margin-top:clamp(40px,6vw,60px);}
+  h2{font-size:1.32rem;letter-spacing:-.01em;margin:0 0 6px;font-weight:690;}
+  .snote{color:var(--muted);margin:0 0 20px;max-width:66ch;font-size:.94rem;}
+  .locks{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+  @media(max-width:680px){.locks{grid-template-columns:1fr;}}
+  .lock{border:1px solid var(--border);border-radius:14px;background:var(--surface);box-shadow:var(--shadow);padding:18px 20px;}
+  .lock h4{margin:0 0 6px;font-size:.98rem;display:flex;align-items:center;gap:8px;}
+  .lock .k{font-family:var(--mono);font-size:.74rem;color:var(--accent);background:var(--accent-wash);padding:2px 7px;border-radius:5px;}
+  .lock p{margin:8px 0 0;font-size:.86rem;color:var(--muted);}
+  .lock code{font-family:var(--mono);font-size:.8rem;background:var(--surface-2);padding:1px 5px;border-radius:4px;color:var(--text);}
+
+  /* flows */
+  .flow{border:1px solid var(--border);border-radius:14px;background:var(--surface);box-shadow:var(--shadow);padding:18px 20px;margin-bottom:14px;}
+  .flow h4{margin:0 0 12px;font-size:1rem;display:flex;align-items:center;gap:10px;}
+  .flow h4 .pin{width:24px;height:24px;border-radius:7px;background:var(--accent-wash);color:var(--accent);display:grid;place-items:center;font-size:.78rem;font-weight:700;flex:none;}
+  .steps{display:flex;flex-wrap:wrap;align-items:stretch;gap:8px;}
+  .step{flex:1 1 150px;min-width:140px;border:1px solid var(--border);border-radius:9px;background:var(--surface-2);padding:10px 12px;font-size:.8rem;color:var(--muted);position:relative;}
+  .step b{display:block;color:var(--text);font-size:.82rem;font-weight:620;margin-bottom:2px;}
+  .step code{font-family:var(--mono);font-size:.72rem;color:var(--accent);}
+
+  .foot{margin-top:52px;padding-top:20px;border-top:1px solid var(--border);color:var(--faint);font-size:.82rem;}
+  .foot code{font-size:.82em;}
+</style>
+
+<div class="wrap">
+
+  <p class="eyebrow">System Architecture &middot; 22 Jul 2026</p>
+  <h1>Fabric Simulator — how the multi&#8209;tenant system fits together</h1>
+  <p class="lede">One picture of the whole platform: who logs in, what runs where, and the two independent locks that keep every client's furniture and fabrics private to them. Colour tells you what's new work vs. what Livinit already runs.</p>
+
+  <div class="legend">
+    <span class="li"><span class="sw new"></span>New — we build it</span>
+    <span class="li"><span class="sw hard"></span>Hardened — exists, gets locked down</span>
+    <span class="li"><span class="sw reused"></span>Reused — Livinit already runs it</span>
+    <span class="li"><span class="sw keep"></span>Untouched — the 3D engine, as-is</span>
+  </div>
+
+  <div class="stack">
+
+    <!-- PEOPLE -->
+    <div class="layer">
+      <div class="layer-head"><span class="lname">People</span><span class="lsub">who signs in</span></div>
+      <div class="row c2">
+        <div class="node keep">
+          <p class="nt">Client consultant <span class="tag keep">user</span></p>
+          <p class="nd">A furniture client's staff, using the simulator live in customer consultations. Belongs to one tenant.</p>
+        </div>
+        <div class="node keep">
+          <p class="nt">Livinit staff <span class="tag keep">admin</span></p>
+          <p class="nd">Onboards each client: registers products &amp; fabrics after the 3D models are built.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- AUTH BOUNDARY -->
+    <div class="boundary">
+      <span class="bicon">🔑</span>
+      <p>Everyone signs in first. The session token carries <code>tenant_id</code> + <code>role</code> — read server-side on every request, never trusted from the browser.</p>
+    </div>
+
+    <!-- WEB APP -->
+    <div class="layer">
+      <div class="layer-head"><span class="lname">Web app</span><span class="lsub">web.simulator.livinit.ai · Vercel</span></div>
+      <div class="row c3">
+        <div class="node keep">
+          <p class="nt">3D configurator <span class="tag keep">keep</span></p>
+          <p class="nd">Three.js viewer, fabric apply, room staging, AI renders. The proven engine — unchanged.</p>
+        </div>
+        <div class="node new">
+          <p class="nt">Dynamic catalog UI <span class="tag new">new</span></p>
+          <p class="nd">Products &amp; fabrics load per client at runtime instead of being hardcoded.</p>
+        </div>
+        <div class="node new">
+          <p class="nt">Staff admin UI <span class="tag new">new</span></p>
+          <p class="nd">Create tenant + login, register products &amp; fabrics. Staff only.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="conn">&darr;</div>
+
+    <!-- API -->
+    <div class="layer">
+      <div class="layer-head"><span class="lname">API layer</span><span class="lsub">Vercel serverless · every call verifies the token</span></div>
+      <div class="row c3">
+        <div class="node new">
+          <p class="nt">Auth guard <span class="tag new">new</span></p>
+          <p class="nd"><code>_lib/auth</code> — verifies the token, returns <code>{ userId, tenantId, role }</code> for every endpoint.</p>
+        </div>
+        <div class="node new">
+          <p class="nt">GET /catalog <span class="tag new">new</span></p>
+          <p class="nd">Returns only this tenant's products &amp; fabrics. Replaces the hardcoded catalog file.</p>
+        </div>
+        <div class="node hard">
+          <p class="nt">GET /s3proxy <span class="tag hard">hardened</span></p>
+          <p class="nd">Serves assets — now rejects any key outside <code>tenants/&lt;id&gt;/</code>.</p>
+        </div>
+        <div class="node hard">
+          <p class="nt">AI gateway <span class="tag hard">hardened</span></p>
+          <p class="nd"><code>generate</code> · <code>gemini-room</code> · <code>find-fabric</code> — gated &amp; metered per tenant.</p>
+        </div>
+        <div class="node new">
+          <p class="nt">POST /admin/* <span class="tag new">new</span></p>
+          <p class="nd">Tenant / product / fabric onboarding. Guarded by <code>role = staff</code>.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="conn">&darr;</div>
+
+    <!-- DATA & STORAGE -->
+    <div class="layer" style="border-color:var(--accent-soft);">
+      <div class="layer-head"><span class="lname" style="color:var(--accent);">Data &amp; storage — the isolation boundary</span><span class="lsub">own Supabase (Option A)</span></div>
+      <div class="row c2">
+        <div class="node new">
+          <p class="nt">Supabase Postgres <span class="tag new">new</span></p>
+          <p class="nd"><b>Row-Level Security</b> on <code>tenant_id</code>. Tables: <code>tenants</code>, <code>memberships</code>, <code>products</code>, <code>fabrics</code>. The database itself refuses another tenant's rows.</p>
+        </div>
+        <div class="node hard">
+          <p class="nt">S3 bucket <span class="tag hard">hardened</span></p>
+          <p class="nd">Namespaced <code>tenants/&lt;id&gt;/glbs · fabric_maps</code>, plus a shared <code>shared/</code> for room shells. Prefix is checked against the token.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="conn">&darr;</div>
+
+    <!-- REUSED / EXTERNAL -->
+    <div class="layer">
+      <div class="layer-head"><span class="lname">Reused &amp; external</span><span class="lsub">not rebuilt</span></div>
+      <div class="row c4">
+        <div class="node reused">
+          <p class="nt">Supabase Auth <span class="tag reused">reused</span></p>
+          <p class="nd">Email + Google + Apple login. Patterns ported from web-pipeline.</p>
+        </div>
+        <div class="node reused">
+          <p class="nt">Livinit credits <span class="tag reused">reused</span></p>
+          <p class="nd">Existing Stripe billing/credits — AI renders meter through it.</p>
+        </div>
+        <div class="node keep">
+          <p class="nt">Gemini <span class="tag keep">external</span></p>
+          <p class="nd">Photorealistic renders &amp; fabric photo analysis.</p>
+        </div>
+        <div class="node keep">
+          <p class="nt">PolyHaven <span class="tag keep">external</span></p>
+          <p class="nd">PBR texture maps for fabric realism.</p>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ISOLATION SPOTLIGHT -->
+  <section>
+    <h2>Why one client can never see another's assets</h2>
+    <p class="snote">Isolation isn't the UI hiding things — it's <b>two independent server-side locks</b>, both keyed on the <code>tenant_id</code> in the signed-in token. Even a bug in one is caught by the other.</p>
+    <div class="locks">
+      <div class="lock">
+        <h4>🔒 Lock 1 — the database <span class="k">RLS</span></h4>
+        <p>Every row query is filtered by <code>tenant_id = token.tenant_id</code> inside Postgres. If code forgets to filter, the database still returns nothing. A tenant literally cannot read another tenant's rows.</p>
+      </div>
+      <div class="lock">
+        <h4>🔒 Lock 2 — the asset proxy <span class="k">prefix</span></h4>
+        <p>Every file request must sit under <code>tenants/&lt;your id&gt;/</code>. Ask for another tenant's key and the proxy returns <code>403</code> — before S3 is ever touched.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- FLOWS -->
+  <section>
+    <h2>The two journeys, end to end</h2>
+    <p class="snote">Everything above serves exactly two paths: a client using the simulator, and staff onboarding a new client.</p>
+
+    <div class="flow">
+      <h4><span class="pin">A</span> A consultant runs a session</h4>
+      <div class="steps">
+        <div class="step"><b>Log in</b>session carries <code>tenant_id</code></div>
+        <div class="step"><b>Load catalog</b><code>GET /catalog</code> → only their items</div>
+        <div class="step"><b>Fetch models</b><code>/s3proxy</code> prefix-checked</div>
+        <div class="step"><b>Configure</b>apply fabrics, stage room</div>
+        <div class="step"><b>AI render</b>metered to their credits</div>
+      </div>
+    </div>
+
+    <div class="flow">
+      <h4><span class="pin">B</span> Staff onboards a client</h4>
+      <div class="steps">
+        <div class="step"><b>Create tenant</b>+ first client login</div>
+        <div class="step"><b>Upload product</b>GLB → <code>tenants/&lt;id&gt;/</code></div>
+        <div class="step"><b>Segment parts</b>author the <code>part_map</code></div>
+        <div class="step"><b>Add fabrics</b>maps + PBR values</div>
+        <div class="step"><b>Client logs in</b>sees exactly their library</div>
+      </div>
+    </div>
+  </section>
+
+  <p class="foot">
+    Tenant model is <b>simulator-owned (Option A)</b> — its own Supabase, RLS-enforced, zero blast radius on the core Livinit backend; promotable to a shared primitive later as a bounded migration. Companion docs: plan &amp; delivery phases in <code>2026-07-22-multi-tenant-plan.html</code>, engineering detail in <code>…-simulator-plan.md</code>.
+  </p>
+
+</div>

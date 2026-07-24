@@ -1,0 +1,592 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><title>Fabric Simulator — Screen Designs</title><style>
+  :root{
+    --bg:#F6F7FB; --surface:#FFFFFF; --surface-2:#F2F3F9; --surface-3:#E9EBF4;
+    --border:#E3E5EF; --border-2:#D2D6E3; --text:#171A24; --muted:#5A6076; --faint:#8A8FA3;
+    --pw:#7A91EE; --pw-d:#5364C9; --pw-wash:#EEF1FD; --pw-line:#C7D0F6;
+    --good:#2C9663; --good-wash:#E3F3EA; --warn:#C08A3E; --warn-wash:#F7EEDD;
+    --amber:#E0A94A;
+    --shadow-sm:0 1px 2px rgba(20,22,34,.05);
+    --shadow:0 6px 22px -12px rgba(20,22,34,.22), 0 1px 2px rgba(20,22,34,.05);
+    --shadow-lg:0 30px 60px -28px rgba(20,22,34,.34);
+    --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+    --sans:system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+  }
+  
+  :root[data-theme="light"]{--bg:#F6F7FB;--surface:#FFFFFF;--surface-2:#F2F3F9;--surface-3:#E9EBF4;--border:#E3E5EF;--border-2:#D2D6E3;--text:#171A24;--muted:#5A6076;--faint:#8A8FA3;--pw:#7A91EE;--pw-d:#5364C9;--pw-wash:#EEF1FD;--pw-line:#C7D0F6;--good:#2C9663;--good-wash:#E3F3EA;--warn:#C08A3E;--warn-wash:#F7EEDD;--amber:#E0A94A;--shadow-sm:0 1px 2px rgba(20,22,34,.05);--shadow:0 6px 22px -12px rgba(20,22,34,.22),0 1px 2px rgba(20,22,34,.05);--shadow-lg:0 30px 60px -28px rgba(20,22,34,.34);}
+  
+
+  *{box-sizing:border-box;}
+  body{margin:0;background:var(--bg);color:var(--text);font-family:var(--sans);line-height:1.5;-webkit-font-smoothing:antialiased;}
+  .wrap{max-width:1080px;margin:0 auto;padding:clamp(26px,5vw,56px) clamp(14px,3vw,34px) 100px;}
+  .doc-eyebrow{font-size:.7rem;letter-spacing:.16em;text-transform:uppercase;color:var(--pw-d);font-weight:660;margin:0 0 12px;}
+  h1{font-size:clamp(1.7rem,4vw,2.4rem);letter-spacing:-.02em;margin:0 0 12px;font-weight:740;text-wrap:balance;}
+  .doc-sub{margin:0;color:var(--muted);font-size:1.02rem;max-width:64ch;}
+
+  .divider-h{margin-top:clamp(40px,7vw,66px);padding-bottom:11px;border-bottom:2px solid var(--pw-line);}
+  .divider-h .k{font-size:.7rem;letter-spacing:.15em;text-transform:uppercase;color:var(--pw-d);font-weight:700;}
+  .divider-h h2{font-size:1.5rem;margin:5px 0 0;font-weight:750;letter-spacing:-.01em;}
+  .divider-h p{margin:6px 0 0;color:var(--muted);font-size:.9rem;}
+
+  .screen{margin-top:clamp(30px,4vw,44px);}
+  .screen-label{display:flex;align-items:center;gap:10px;margin-bottom:8px;}
+  .screen-label .n{font-family:var(--mono);font-size:.8rem;color:#fff;background:var(--pw-d);border-radius:6px;padding:2px 8px;font-weight:600;}
+  .screen-label h2{font-size:1.24rem;margin:0;font-weight:700;letter-spacing:-.01em;}
+  .screen-desc{color:var(--muted);font-size:.9rem;margin:0 0 16px;max-width:72ch;}
+
+  .frame{border:1px solid var(--border-2);border-radius:14px;background:var(--surface);box-shadow:var(--shadow-lg);overflow:hidden;}
+  .frame-bar{display:flex;align-items:center;gap:8px;padding:10px 14px;background:var(--surface-2);border-bottom:1px solid var(--border);}
+  .dots{display:flex;gap:6px;}
+  .dots i{width:11px;height:11px;border-radius:50%;display:block;}
+  .dots i:nth-child(1){background:#ec6a5e;}.dots i:nth-child(2){background:#f4bf4f;}.dots i:nth-child(3){background:#61c554;}
+  .urlbar{flex:1;background:var(--surface);border:1px solid var(--border);border-radius:7px;padding:5px 12px;font-size:.76rem;color:var(--muted);font-family:var(--mono);text-align:center;}
+  .frame-body{overflow-x:auto;}
+  .cap{font-size:.8rem;color:var(--faint);margin-top:10px;text-align:center;}
+  .cap b{color:var(--muted);font-weight:600;}
+
+  .logo{display:inline-flex;align-items:center;gap:8px;font-weight:750;letter-spacing:-.01em;}
+  .logo .mark{width:26px;height:26px;border-radius:8px;background:linear-gradient(135deg,var(--pw),var(--pw-d));display:grid;place-items:center;color:#fff;font-size:.85rem;}
+  .btn{font:inherit;font-size:.85rem;font-weight:600;border-radius:9px;padding:9px 15px;border:1px solid transparent;cursor:default;display:inline-flex;align-items:center;gap:8px;}
+  .btn.primary{background:var(--pw-d);color:#fff;}
+  .btn.ghost{background:var(--surface);border-color:var(--border-2);color:var(--text);}
+  .btn.block{width:100%;justify-content:center;}
+  .btn.dis{background:var(--surface-3);color:var(--faint);}
+  .pill{font-size:.72rem;font-weight:650;padding:3px 9px;border-radius:20px;}
+  .pill.live{background:var(--good-wash);color:var(--good);}
+  .pill.draft{background:var(--warn-wash);color:var(--warn);}
+  .field{display:block;}
+  .field label{display:block;font-size:.74rem;font-weight:600;color:var(--muted);margin-bottom:5px;}
+  .input{width:100%;border:1px solid var(--border-2);border-radius:9px;padding:10px 12px;font-size:.85rem;color:var(--text);background:var(--surface);}
+  .input.ph{color:var(--faint);}
+  .two{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+  @media(max-width:720px){.two{grid-template-columns:1fr;}}
+
+  /* LOGIN */
+  .login{display:grid;grid-template-columns:1.1fr .9fr;min-height:430px;}
+  @media(max-width:640px){.login{grid-template-columns:1fr;}.login .brandside{display:none;}}
+  .login .formside{padding:38px 44px;display:flex;flex-direction:column;justify-content:center;}
+  .login .brandside{background:linear-gradient(150deg,var(--pw-d),#3b46a0);color:#fff;padding:38px;display:flex;flex-direction:column;justify-content:space-between;}
+  .login h3{font-size:1.5rem;margin:0 0 6px;font-weight:720;letter-spacing:-.01em;}
+  .login .lsub{color:var(--muted);font-size:.88rem;margin:0 0 22px;}
+  .login .formstack{display:flex;flex-direction:column;gap:13px;max-width:320px;}
+  .oauth{display:flex;gap:10px;} .oauth .btn{flex:1;justify-content:center;}
+  .divider{display:flex;align-items:center;gap:12px;color:var(--faint);font-size:.72rem;}
+  .divider::before,.divider::after{content:"";height:1px;flex:1;background:var(--border);}
+  .brandside .bmark{width:40px;height:40px;border-radius:11px;background:rgba(255,255,255,.16);display:grid;place-items:center;font-size:1.2rem;}
+  .brandside h4{font-size:1.5rem;line-height:1.2;margin:20px 0 8px;font-weight:720;letter-spacing:-.01em;}
+  .brandside p{color:rgba(255,255,255,.82);font-size:.88rem;margin:0;}
+  .brandside .foot{font-size:.75rem;color:rgba(255,255,255,.6);}
+
+  /* GATE */
+  .gate{min-height:420px;display:grid;place-items:center;background:linear-gradient(150deg,var(--pw-wash),var(--bg));text-align:center;padding:40px;}
+  .gate .card{max-width:400px;}
+  .gate .bic{width:56px;height:56px;border-radius:16px;background:linear-gradient(135deg,var(--pw),var(--pw-d));display:grid;place-items:center;color:#fff;font-size:1.5rem;margin:0 auto 18px;}
+  .gate h3{font-size:1.4rem;margin:0 0 8px;font-weight:720;}
+  .gate p{color:var(--muted);font-size:.9rem;margin:0 0 20px;}
+  .gate .prog{height:6px;border-radius:3px;background:var(--surface-3);overflow:hidden;max-width:260px;margin:0 auto;}
+  .gate .prog i{display:block;height:100%;width:62%;background:var(--pw-d);border-radius:3px;}
+  .gate .steps{margin-top:14px;font-size:.78rem;color:var(--faint);}
+
+  /* WORKSPACE */
+  .ws{min-width:940px;display:flex;flex-direction:column;}
+  .ws-top{display:flex;align-items:center;gap:14px;padding:11px 16px;border-bottom:1px solid var(--border);background:var(--surface);}
+  .ws-top .tenant{font-size:.8rem;color:var(--muted);border-left:1px solid var(--border-2);padding-left:14px;}
+  .ws-top .tenant b{color:var(--text);}
+  .prod-tabs{display:flex;gap:6px;margin-left:8px;}
+  .prod-tabs .t{font-size:.8rem;font-weight:560;padding:6px 12px;border-radius:8px;color:var(--muted);}
+  .prod-tabs .t.on{background:var(--surface-3);color:var(--text);font-weight:640;}
+  .ws-top .right{margin-left:auto;display:flex;align-items:center;gap:12px;}
+  .credits{display:inline-flex;align-items:center;gap:6px;font-size:.78rem;font-weight:640;color:var(--pw-d);background:var(--pw-wash);border:1px solid var(--pw-line);border-radius:20px;padding:5px 11px;}
+  .avatar{width:30px;height:30px;border-radius:50%;background:linear-gradient(135deg,#f0a86a,#e0764a);display:grid;place-items:center;color:#fff;font-size:.78rem;font-weight:640;}
+  .ws-body{display:grid;grid-template-columns:248px 1fr 264px;height:508px;}
+  .panel{border-right:1px solid var(--border);display:flex;flex-direction:column;min-height:0;}
+  .panel.right{border-right:none;border-left:1px solid var(--border);}
+  .panel-h{font-size:.72rem;text-transform:uppercase;letter-spacing:.07em;color:var(--faint);font-weight:680;padding:13px 15px 8px;}
+  .lib-search{margin:0 13px 10px;display:flex;align-items:center;gap:8px;border:1px solid var(--border-2);border-radius:9px;padding:8px 11px;color:var(--faint);font-size:.8rem;}
+  .lib-tabs{display:flex;gap:6px;padding:0 13px 10px;flex-wrap:wrap;}
+  .lib-tabs .lt{font-size:.72rem;font-weight:560;padding:4px 9px;border-radius:7px;color:var(--muted);background:var(--surface-2);}
+  .lib-tabs .lt.on{background:var(--pw-d);color:#fff;}
+  .swatches{padding:2px 13px;overflow-y:auto;display:grid;grid-template-columns:repeat(3,1fr);gap:9px;align-content:start;}
+  .sw{border-radius:9px;overflow:hidden;border:1px solid var(--border);}
+  .sw .chipimg{height:52px;}
+  .sw .nm{font-size:.66rem;color:var(--muted);padding:4px 5px;text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .sw.sel{outline:2px solid var(--pw-d);outline-offset:1px;}
+  .addfab{margin:10px 13px 13px;font-size:.76rem;font-weight:600;color:var(--pw-d);border:1px dashed var(--pw-line);border-radius:9px;padding:9px;text-align:center;}
+  .viewport{position:relative;display:flex;align-items:center;justify-content:center;overflow:hidden;}
+  
+  :root[data-theme="light"] .viewport{background:radial-gradient(120% 120% at 50% 15%, #fbfbfe 0%, #eef0f7 70%, #e6e9f3 100%);}
+  .vp-mode{position:absolute;top:14px;left:50%;transform:translateX(-50%);display:flex;gap:4px;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:4px;box-shadow:var(--shadow-sm);z-index:2;}
+  .vp-mode .m{font-size:.76rem;font-weight:600;padding:5px 13px;border-radius:7px;color:var(--muted);}
+  .vp-mode .m.on{background:var(--pw-d);color:#fff;}
+  .zone{position:absolute;font-size:.66rem;font-weight:600;color:var(--text);background:var(--surface);border:1px solid var(--border);border-radius:20px;padding:3px 9px;box-shadow:var(--shadow-sm);z-index:2;}
+  .vp-actions{position:absolute;bottom:16px;left:50%;transform:translateX(-50%);display:flex;gap:9px;z-index:2;}
+  .vp-hint{position:absolute;bottom:16px;right:16px;font-size:.68rem;color:var(--faint);}
+  .applied{margin:0 14px 12px;border:1px solid var(--border);border-radius:11px;padding:11px;display:flex;gap:10px;align-items:center;}
+  .applied .thumb{width:38px;height:38px;border-radius:8px;}
+  .applied .meta b{font-size:.82rem;display:block;}.applied .meta span{font-size:.72rem;color:var(--faint);}
+  .slider{padding:9px 14px;}
+  .slider .row{display:flex;justify-content:space-between;font-size:.74rem;color:var(--muted);margin-bottom:6px;}
+  .slider .row b{color:var(--text);font-weight:560;}
+  .track{height:5px;border-radius:3px;background:var(--surface-3);position:relative;}
+  .track .fill{position:absolute;left:0;top:0;bottom:0;border-radius:3px;background:var(--pw-d);}
+  .track .knob{position:absolute;top:50%;width:14px;height:14px;border-radius:50%;background:#fff;border:2px solid var(--pw-d);transform:translate(-50%,-50%);box-shadow:var(--shadow-sm);}
+  .parts{padding:6px 14px 14px;}
+  .parts .p{display:flex;align-items:center;gap:9px;font-size:.78rem;color:var(--muted);padding:6px 0;}
+  .parts .cbx{width:15px;height:15px;border-radius:4px;border:1.5px solid var(--border-2);}
+  .parts .cbx.on{background:var(--pw-d);border-color:var(--pw-d);}
+  .parts .p.on{color:var(--text);font-weight:560;}
+  .room-el{display:flex;align-items:center;justify-content:space-between;padding:8px 14px;font-size:.8rem;color:var(--muted);}
+  .colorchips{display:flex;gap:7px;padding:4px 14px 10px;flex-wrap:wrap;}
+  .colorchips i{width:22px;height:22px;border-radius:6px;border:1px solid var(--border);}
+  .colorchips i.on{outline:2px solid var(--pw-d);outline-offset:1px;}
+
+  /* MODAL SCENE */
+  .mscene{height:470px;position:relative;display:grid;place-items:center;overflow:hidden;}
+  :root[data-theme="light"] .mscene{background:radial-gradient(120% 120% at 50% 0%, #eef0f7, #e4e7f1);}
+  
+  .mscene::before{content:"";position:absolute;inset:0;background:rgba(18,20,30,.34);}
+  .modal{position:relative;background:var(--surface);border:1px solid var(--border);border-radius:16px;box-shadow:var(--shadow-lg);width:580px;max-width:92%;overflow:hidden;}
+  .modal .mh{display:flex;align-items:center;justify-content:space-between;padding:14px 18px;border-bottom:1px solid var(--border);}
+  .modal .mh b{font-size:.95rem;} .modal .mh .x{color:var(--faint);}
+  .modal .mb{padding:16px 18px;}
+  .modal .mf{display:flex;justify-content:flex-end;gap:9px;padding:12px 18px;border-top:1px solid var(--border);background:var(--surface-2);}
+  .tabrow{display:flex;gap:6px;margin-bottom:14px;}
+  .tabrow .tb{font-size:.8rem;font-weight:600;padding:7px 13px;border-radius:8px;color:var(--muted);background:var(--surface-2);}
+  .tabrow .tb.on{background:var(--pw-d);color:#fff;}
+  .dropbig{border:1.5px dashed var(--border-2);border-radius:12px;background:var(--surface-2);height:150px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;color:var(--faint);font-size:.84rem;}
+  .dropbig .ic{font-size:1.7rem;}
+  .rendered{border-radius:12px;height:210px;position:relative;overflow:hidden;box-shadow:inset 0 0 60px rgba(0,0,0,.16);}
+  .rendered.warm{background:linear-gradient(135deg,#e6d3b8,#c49a72 55%,#7a5a44);}
+  .rendered.room{background:linear-gradient(160deg,#cdd6df,#b7a892 65%,#8f7a5e);}
+  .rendered .tag{position:absolute;top:10px;left:10px;font-size:.66rem;font-weight:600;color:#fff;background:rgba(0,0,0,.38);padding:3px 9px;border-radius:20px;}
+  .analysis{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:12px;}
+  .analysis .a{background:var(--surface-2);border-radius:9px;padding:8px;text-align:center;}
+  .analysis .a b{display:block;font-size:.88rem;} .analysis .a span{font-size:.64rem;color:var(--faint);}
+
+  /* CONSOLE */
+  .console{min-width:820px;display:grid;grid-template-columns:210px 1fr;height:508px;}
+  .side{border-right:1px solid var(--border);background:var(--surface-2);padding:16px 12px;display:flex;flex-direction:column;}
+  .side .s-logo{margin:2px 6px 18px;}
+  .side .nav{display:flex;flex-direction:column;gap:2px;}
+  .side .nav a{font-size:.82rem;font-weight:560;color:var(--muted);padding:9px 11px;border-radius:9px;display:flex;align-items:center;gap:9px;}
+  .side .nav a.on{background:var(--surface);color:var(--text);font-weight:640;box-shadow:var(--shadow-sm);}
+  .side .staff{margin-top:auto;font-size:.72rem;color:var(--faint);padding:10px 6px 0;}
+  .main{padding:22px 26px;overflow-y:auto;}
+  .main .mhh{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;}
+  .main .mhh h3{font-size:1.2rem;margin:0;font-weight:700;letter-spacing:-.01em;}
+  .main .msub{color:var(--muted);font-size:.86rem;margin:0 0 18px;}
+  .ctable{border:1px solid var(--border);border-radius:12px;overflow:hidden;}
+  .ctable .thead,.ctable .tr{display:grid;grid-template-columns:1.6fr .8fr .8fr .8fr;gap:10px;padding:11px 15px;align-items:center;}
+  .ctable .thead{background:var(--surface-2);font-size:.68rem;text-transform:uppercase;letter-spacing:.06em;color:var(--faint);font-weight:680;}
+  .ctable .tr{border-top:1px solid var(--border);font-size:.85rem;}
+  .ctable .tr b{font-weight:600;}.ctable .tr span{color:var(--muted);font-size:.8rem;}
+  .onb{display:grid;grid-template-columns:1fr 1fr;gap:18px;}
+  @media(max-width:720px){.onb{grid-template-columns:1fr;}}
+  .drop{border:1.5px dashed var(--border-2);border-radius:12px;background:var(--surface-2);height:150px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;color:var(--faint);font-size:.82rem;}
+  .drop .ic{font-size:1.5rem;}
+  .meshbox{border:1px solid var(--border);border-radius:12px;overflow:hidden;}
+  .meshbox .mb-h{font-size:.72rem;text-transform:uppercase;letter-spacing:.06em;color:var(--faint);font-weight:680;padding:11px 14px;border-bottom:1px solid var(--border);background:var(--surface-2);}
+  .meshrow{display:grid;grid-template-columns:1fr 1.1fr auto;gap:10px;align-items:center;padding:9px 14px;border-top:1px solid var(--border);font-size:.8rem;}
+  .meshrow:first-of-type{border-top:none;}
+  .meshrow .mono{font-family:var(--mono);font-size:.74rem;color:var(--muted);}
+  .miniinput{border:1px solid var(--border-2);border-radius:7px;padding:6px 9px;font-size:.78rem;color:var(--text);background:var(--surface);}
+  .toggle{width:34px;height:19px;border-radius:20px;background:var(--pw-d);position:relative;}
+  .toggle i{position:absolute;top:2px;right:2px;width:15px;height:15px;border-radius:50%;background:#fff;}
+  .toggle.off{background:var(--border-2);}.toggle.off i{left:2px;right:auto;}
+  .formcard{max-width:440px;border:1px solid var(--border);border-radius:14px;padding:22px;box-shadow:var(--shadow-sm);}
+  .check{display:flex;align-items:center;gap:10px;padding:10px 0;border-top:1px solid var(--border);font-size:.85rem;color:var(--text);}
+  .check:first-of-type{border-top:none;}
+  .check .ic{width:20px;height:20px;border-radius:50%;display:grid;place-items:center;font-size:.66rem;color:#fff;flex:none;}
+  .check .ic.ok{background:var(--good);} .check .ic.wait{background:var(--amber);}
+  .check span{color:var(--muted);margin-left:auto;font-size:.78rem;}
+  .previewcard{border:1px solid var(--border);border-radius:12px;overflow:hidden;}
+  .previewcard .pc-img{height:150px;background:radial-gradient(120% 120% at 50% 10%, #eef0f7, #dfe3ee);display:grid;place-items:center;color:var(--faint);font-size:.78rem;}
+  
+
+  .note{margin-top:14px;font-size:.82rem;color:var(--muted);padding:11px 14px;border:1px solid var(--border);border-left:3px solid var(--pw);border-radius:0 10px 10px 0;background:var(--pw-wash);}
+  .note b{color:var(--text);}
+  .foot{margin-top:56px;padding-top:20px;border-top:1px solid var(--border);color:var(--faint);font-size:.8rem;}
+
+@page { size: A4 landscape; margin: 8mm; }
+* { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+html,body{ background:#fff; }
+.wrap{ max-width:none; padding:0 4mm; }
+.doc-eyebrow{ margin-top:8mm; }
+.divider-h{ page-break-before:always; margin-top:0; }
+.screen{ margin-top:0; page-break-before:always; padding:2mm 1mm 0; break-inside:avoid; }
+.screen-desc{ margin-bottom:9px; }
+.frame{ box-shadow:0 2px 6px rgba(20,22,34,.12); }
+.frame-body{ overflow:visible; }
+.ws-body{ height:452px; }
+.console{ height:452px; }
+.mscene{ height:452px; }
+.login{ min-height:392px; }
+.gate{ min-height:392px; }
+.cap{ page-break-before:avoid; }
+.foot{ page-break-before:always; }
+</style></head><body>
+
+<div class="wrap">
+
+  <p class="doc-eyebrow">Product UI &middot; Screen Designs &middot; 22 Jul 2026</p>
+  <h1>Fabric Simulator — screen designs</h1>
+  <p class="doc-sub" style="page-break-after:always">The full multi-tenant app, screen by screen — the consultant experience end to end, and the staff console that onboards each client. Livinit design language: periwinkle, clean, light &amp; dark aware.</p>
+
+  <!-- ============ CONSULTANT ============ -->
+  <div class="divider-h"><div class="k">Journey A</div><h2>Consultant experience</h2><p>Sign in → configure a piece live with the customer → render.</p></div>
+
+  <!-- 01 LOGIN -->
+  <div class="screen">
+    <div class="screen-label"><span class="n">01</span><h2>Login</h2></div>
+    <p class="screen-desc">The gate. Email/password plus Google &amp; Apple (all via Supabase Auth). One login for both consultants and Livinit staff — the token decides what they see.</p>
+    <div class="frame"><div class="frame-bar"><div class="dots"><i></i><i></i><i></i></div><div class="urlbar">web.simulator.livinit.ai/login</div></div>
+      <div class="frame-body"><div class="login">
+        <div class="formside">
+          <div class="logo" style="margin-bottom:24px"><span class="mark">◆</span> Simulator</div>
+          <h3>Sign in</h3><p class="lsub">Use your work account to start a session.</p>
+          <div class="formstack">
+            <div class="oauth"><span class="btn ghost">Google</span><span class="btn ghost">Apple</span></div>
+            <div class="divider">or</div>
+            <div class="field"><label>Email</label><div class="input ph">priya@acme.com</div></div>
+            <div class="field"><label>Password</label><div class="input ph">••••••••••</div></div>
+            <span class="btn primary block">Sign in</span>
+            <div style="font-size:.76rem;color:var(--faint);text-align:center">Forgot password?</div>
+          </div>
+        </div>
+        <div class="brandside"><div class="bmark">◆</div>
+          <div><h4>Show fabrics in 3D,<br>live with your customer.</h4><p>Your furniture, your finishes — configured in real time.</p></div>
+          <div class="foot">Powered by Livinit</div>
+        </div>
+      </div></div>
+    </div>
+  </div>
+
+  <!-- 02 GATE -->
+  <div class="screen">
+    <div class="screen-label"><span class="n">02</span><h2>Being set up (draft gate)</h2></div>
+    <p class="screen-desc">If a client's tenant is still <span style="color:var(--warn)">draft</span>, sign-in lands here instead of the workspace — no half-built catalog is ever shown to a customer.</p>
+    <div class="frame"><div class="frame-bar"><div class="dots"><i></i><i></i><i></i></div><div class="urlbar">web.simulator.livinit.ai</div></div>
+      <div class="frame-body"><div class="gate"><div class="card">
+        <div class="bic">◆</div>
+        <h3>Your simulator is being set up</h3>
+        <p>Our team is building your 3D furniture catalog and fabric library. You'll get access the moment it's ready.</p>
+        <div class="prog"><i></i></div>
+        <div class="steps">Modelling &amp; segmentation · 5 of 8 products ready</div>
+      </div></div></div>
+    </div>
+  </div>
+
+  <!-- 03 WORKSPACE -->
+  <div class="screen">
+    <div class="screen-label"><span class="n">03</span><h2>Consultant workspace — Product mode</h2></div>
+    <p class="screen-desc">The product. Left: this tenant's fabric library. Center: the piece with clickable parts. Right: applied material, live PBR sliders, parts list. Top: products, credit counter, Render.</p>
+    <div class="frame"><div class="frame-bar"><div class="dots"><i></i><i></i><i></i></div><div class="urlbar">web.simulator.livinit.ai</div></div>
+      <div class="frame-body"><div class="ws">
+        <div class="ws-top">
+          <div class="logo"><span class="mark">◆</span> Simulator</div>
+          <div class="tenant">Client&nbsp; <b>Acme Furniture</b></div>
+          <div class="prod-tabs"><span class="t on">Sierra Chair</span><span class="t">Accent Chair</span><span class="t">Haven Sofa</span></div>
+          <div class="right"><span class="credits">⚡ 480 renders</span><span class="btn primary" style="padding:7px 14px">Render</span><span class="avatar">P</span></div>
+        </div>
+        <div class="ws-body">
+          <div class="panel">
+            <div class="panel-h">Fabric library</div>
+            <div class="lib-search">🔍 Search fabrics…</div>
+            <div class="lib-tabs"><span class="lt on">All</span><span class="lt">Fabric</span><span class="lt">Vinyl</span><span class="lt">Leather</span></div>
+            <div class="swatches">
+              <div class="sw sel"><div class="chipimg" style="background:#c8c0b8"></div><div class="nm">Natural Linen</div></div>
+              <div class="sw"><div class="chipimg" style="background:#8a9bb0"></div><div class="nm">Slate</div></div>
+              <div class="sw"><div class="chipimg" style="background:#6d4b3a"></div><div class="nm">Cognac</div></div>
+              <div class="sw"><div class="chipimg" style="background:#3a3a40"></div><div class="nm">Charcoal</div></div>
+              <div class="sw"><div class="chipimg" style="background:#a7bfa0"></div><div class="nm">Sage</div></div>
+              <div class="sw"><div class="chipimg" style="background:#d8b26a"></div><div class="nm">Ochre</div></div>
+              <div class="sw"><div class="chipimg" style="background:#b0524a"></div><div class="nm">Brick</div></div>
+              <div class="sw"><div class="chipimg" style="background:#e4ddd0"></div><div class="nm">Ivory</div></div>
+              <div class="sw"><div class="chipimg" style="background:#4f6472"></div><div class="nm">Teal Grey</div></div>
+            </div>
+            <div class="addfab">+ Add fabric</div>
+          </div>
+          <div class="viewport">
+            <div class="vp-mode"><span class="m on">Product</span><span class="m">Room</span></div>
+            <span class="zone" style="top:32%;left:30%">Backrest</span><span class="zone" style="top:52%;left:63%">Seat</span><span class="zone" style="top:70%;left:32%">Legs</span>
+            <svg width="230" height="220" viewBox="0 0 230 220" fill="none" aria-hidden="true"><ellipse cx="115" cy="196" rx="86" ry="12" fill="rgba(90,96,118,.16)"/><rect x="60" y="96" width="110" height="60" rx="16" fill="#c8c0b8"/><rect x="58" y="46" width="34" height="86" rx="14" fill="#bcb3a9"/><rect x="138" y="46" width="34" height="86" rx="14" fill="#bcb3a9"/><rect x="78" y="40" width="74" height="72" rx="18" fill="#cec6bc"/><rect x="70" y="150" width="12" height="40" rx="5" fill="#8a7f70"/><rect x="148" y="150" width="12" height="40" rx="5" fill="#8a7f70"/></svg>
+            <div class="vp-actions"><span class="btn ghost" style="padding:7px 13px">⤢ Explode</span><span class="btn ghost" style="padding:7px 13px">🖼 View in my room</span></div>
+            <span class="vp-hint">drag to orbit · scroll to zoom</span>
+          </div>
+          <div class="panel right">
+            <div class="panel-h">Applied material</div>
+            <div class="applied"><div class="thumb" style="background:#c8c0b8"></div><div class="meta"><b>Natural Linen</b><span>on Seat, Backrest</span></div></div>
+            <div class="panel-h">Adjustments</div>
+            <div class="slider"><div class="row"><span>Brightness</span><b>1.0</b></div><div class="track"><div class="fill" style="width:50%"></div><div class="knob" style="left:50%"></div></div></div>
+            <div class="slider"><div class="row"><span>Roughness</span><b>0.80</b></div><div class="track"><div class="fill" style="width:80%"></div><div class="knob" style="left:80%"></div></div></div>
+            <div class="slider"><div class="row"><span>Sheen</span><b>0.10</b></div><div class="track"><div class="fill" style="width:12%"></div><div class="knob" style="left:12%"></div></div></div>
+            <div class="panel-h">Parts</div>
+            <div class="parts"><div class="p on"><span class="cbx on"></span> Seat</div><div class="p on"><span class="cbx on"></span> Backrest</div><div class="p"><span class="cbx"></span> Left Arm</div><div class="p"><span class="cbx"></span> Right Arm</div><div class="p"><span class="cbx"></span> Legs / Base</div></div>
+          </div>
+        </div>
+      </div></div>
+    </div>
+    <p class="cap">Library, products and part names all come from <b>GET /api/catalog</b> — everything here is this tenant's, and only this tenant's.</p>
+  </div>
+
+  <!-- 04 ROOM MODE -->
+  <div class="screen">
+    <div class="screen-label"><span class="n">04</span><h2>Room mode</h2></div>
+    <p class="screen-desc">Stage the configured piece in a room, with the procedural curtains/blinds system. Right panel switches to room controls — curtain fabric &amp; colour, and element toggles for walls, floor, windows.</p>
+    <div class="frame"><div class="frame-bar"><div class="dots"><i></i><i></i><i></i></div><div class="urlbar">web.simulator.livinit.ai</div></div>
+      <div class="frame-body"><div class="ws">
+        <div class="ws-top">
+          <div class="logo"><span class="mark">◆</span> Simulator</div>
+          <div class="tenant">Client&nbsp; <b>Acme Furniture</b></div>
+          <div class="prod-tabs"><span class="t on">Sierra Chair</span><span class="t">Accent Chair</span><span class="t">Haven Sofa</span></div>
+          <div class="right"><span class="credits">⚡ 480 renders</span><span class="btn primary" style="padding:7px 14px">Render</span><span class="avatar">P</span></div>
+        </div>
+        <div class="ws-body">
+          <div class="panel">
+            <div class="panel-h">Curtain fabric</div>
+            <div class="swatches" style="grid-template-columns:repeat(3,1fr)">
+              <div class="sw sel"><div class="chipimg" style="background:#e6ddcf"></div><div class="nm">Linen Sheer</div></div>
+              <div class="sw"><div class="chipimg" style="background:#8a97a8"></div><div class="nm">Velvet</div></div>
+              <div class="sw"><div class="chipimg" style="background:#c9b79a"></div><div class="nm">Cotton</div></div>
+              <div class="sw"><div class="chipimg" style="background:#5a6472"></div><div class="nm">Blackout</div></div>
+            </div>
+            <div class="panel-h">Style</div>
+            <div class="lib-tabs" style="padding:0 13px 12px"><span class="lt on">Pleated</span><span class="lt">Sheer</span><span class="lt">Blinds</span></div>
+          </div>
+          <div class="viewport">
+            <div class="vp-mode"><span class="m">Product</span><span class="m on">Room</span></div>
+            <!-- room scene -->
+            <div style="position:absolute;inset:0;background:linear-gradient(180deg,#efe9df 0%,#efe9df 62%,#d9cfc0 62%,#d9cfc0 100%)"></div>
+            <div style="position:absolute;top:16%;right:14%;width:120px;height:150px;background:linear-gradient(180deg,#bcd0e6,#e8f0f8);border:6px solid #cbb79c;border-radius:4px"></div>
+            <div style="position:absolute;top:15%;right:11%;width:34px;height:172px;background:repeating-linear-gradient(90deg,#e6ddcf,#e6ddcf 6px,#d8cdba 6px,#d8cdba 12px);border-radius:4px"></div>
+            <svg width="200" height="150" viewBox="0 0 230 180" style="position:relative;margin-top:60px" aria-hidden="true"><ellipse cx="115" cy="160" rx="80" ry="10" fill="rgba(60,50,40,.15)"/><rect x="60" y="66" width="110" height="56" rx="16" fill="#c8c0b8"/><rect x="58" y="20" width="32" height="82" rx="14" fill="#bcb3a9"/><rect x="140" y="20" width="32" height="82" rx="14" fill="#bcb3a9"/><rect x="78" y="14" width="74" height="66" rx="18" fill="#cec6bc"/></svg>
+            <div class="vp-actions"><span class="btn ghost" style="padding:7px 13px">✥ Move furniture</span><span class="btn ghost" style="padding:7px 13px">🖼 View in my room</span></div>
+          </div>
+          <div class="panel right">
+            <div class="panel-h">Curtain colour</div>
+            <div class="colorchips"><i style="background:#e6ddcf" class="on"></i><i style="background:#cbb79c"></i><i style="background:#9aa7b5"></i><i style="background:#7d6f5c"></i><i style="background:#5a6472"></i><i style="background:#b0524a"></i></div>
+            <div class="panel-h">Room elements</div>
+            <div class="room-el">Walls <span class="toggle"><i></i></span></div>
+            <div class="room-el">Floor <span class="toggle"><i></i></span></div>
+            <div class="room-el">Window <span class="toggle"><i></i></span></div>
+            <div class="room-el">Curtains <span class="toggle"><i></i></span></div>
+            <div class="room-el">Rug <span class="toggle off"><i></i></span></div>
+            <div class="panel-h">Curtain size</div>
+            <div class="slider"><div class="row"><span>Width</span><b>1.2×</b></div><div class="track"><div class="fill" style="width:60%"></div><div class="knob" style="left:60%"></div></div></div>
+            <div class="slider"><div class="row"><span>Drop</span><b>0.9×</b></div><div class="track"><div class="fill" style="width:45%"></div><div class="knob" style="left:45%"></div></div></div>
+          </div>
+        </div>
+      </div></div>
+    </div>
+  </div>
+
+  <!-- 05 FABRIC FINDER -->
+  <div class="screen">
+    <div class="screen-label"><span class="n">05</span><h2>Fabric Finder</h2></div>
+    <p class="screen-desc">Add a fabric on the fly. Upload a photo → AI reads its material properties (POST /api/find-fabric); or search PolyHaven. Preview on the model, then save to "My fabrics".</p>
+    <div class="frame"><div class="frame-bar"><div class="dots"><i></i><i></i><i></i></div><div class="urlbar">web.simulator.livinit.ai</div></div>
+      <div class="frame-body"><div class="mscene"><div class="modal">
+        <div class="mh"><b>Fabric Finder</b><span class="x">✕</span></div>
+        <div class="mb">
+          <div class="tabrow"><span class="tb on">Upload photo</span><span class="tb">Search library</span></div>
+          <div class="two">
+            <div class="dropbig"><span class="ic">📷</span>Drop a fabric photo<br><span style="font-size:.72rem">or click to browse</span></div>
+            <div>
+              <div style="display:flex;gap:10px;align-items:center;margin-bottom:8px"><div style="width:44px;height:44px;border-radius:9px;background:#b98e6b"></div><div><b style="font-size:.86rem">Woven Linen</b><div style="font-size:.72rem;color:var(--faint)">detected · matte weave</div></div></div>
+              <div class="analysis">
+                <div class="a"><b>0.78</b><span>Roughness</span></div>
+                <div class="a"><b>0.12</b><span>Sheen</span></div>
+                <div class="a"><b>0</b><span>Metal</span></div>
+                <div class="a"><b>#cfc7ba</b><span>Colour</span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="mf"><span class="btn ghost">Preview on model</span><span class="btn primary">Save to my fabrics</span></div>
+      </div></div></div>
+    </div>
+  </div>
+
+  <!-- 06 RENDER RESULT -->
+  <div class="screen">
+    <div class="screen-label"><span class="n">06</span><h2>Render result</h2></div>
+    <p class="screen-desc">The Render button captures the scene and returns an AI-photoreal image (POST /api/generate). Product or Room shot. Consultant can download, share, or render again — each render draws a credit.</p>
+    <div class="frame"><div class="frame-bar"><div class="dots"><i></i><i></i><i></i></div><div class="urlbar">web.simulator.livinit.ai</div></div>
+      <div class="frame-body"><div class="mscene"><div class="modal">
+        <div class="mh"><b>Render</b><span class="x">✕</span></div>
+        <div class="mb">
+          <div class="tabrow"><span class="tb on">Product shot</span><span class="tb">Room shot</span></div>
+          <div class="rendered warm"><span class="tag">✨ AI render · gemini</span></div>
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-top:10px;font-size:.78rem;color:var(--faint)"><span>Sierra Chair · Natural Linen</span><span class="credits">⚡ 479 left</span></div>
+        </div>
+        <div class="mf"><span class="btn ghost">↻ Render again</span><span class="btn ghost">⤓ Download</span><span class="btn primary">Share</span></div>
+      </div></div></div>
+    </div>
+  </div>
+
+  <!-- 07 VIEW IN MY ROOM -->
+  <div class="screen">
+    <div class="screen-label"><span class="n">07</span><h2>View in my room</h2></div>
+    <p class="screen-desc">The two-step composite. The customer uploads a photo of their actual room; the configured piece is dropped into it photorealistically (POST /api/gemini-room). The strongest close in a consultation.</p>
+    <div class="frame"><div class="frame-bar"><div class="dots"><i></i><i></i><i></i></div><div class="urlbar">web.simulator.livinit.ai</div></div>
+      <div class="frame-body"><div class="mscene"><div class="modal" style="width:620px">
+        <div class="mh"><b>View in my room</b><span class="x">✕</span></div>
+        <div class="mb">
+          <div class="two">
+            <div><div style="font-size:.72rem;text-transform:uppercase;letter-spacing:.06em;color:var(--faint);font-weight:680;margin-bottom:6px">1 · Your room photo</div><div class="dropbig" style="height:170px"><span class="ic">🏠</span>living-room.jpg<br><span style="font-size:.72rem">uploaded</span></div></div>
+            <div><div style="font-size:.72rem;text-transform:uppercase;letter-spacing:.06em;color:var(--faint);font-weight:680;margin-bottom:6px">2 · Result</div><div class="rendered room" style="height:170px"><span class="tag">✨ composited</span></div></div>
+          </div>
+        </div>
+        <div class="mf"><span class="btn ghost">Change photo</span><span class="btn primary">Generate</span></div>
+      </div></div></div>
+    </div>
+  </div>
+
+  <!-- ============ STAFF ============ -->
+  <div class="divider-h"><div class="k">Journey B</div><h2>Staff console</h2><p>How Livinit's team onboards a client — from 2D images to a live catalog. Staff-only.</p></div>
+
+  <!-- 08 CLIENTS -->
+  <div class="screen">
+    <div class="screen-label"><span class="n">08</span><h2>Clients</h2></div>
+    <p class="screen-desc">Every client tenant with its status and asset counts, and the entry point to onboard a new one.</p>
+    <div class="frame"><div class="frame-bar"><div class="dots"><i></i><i></i><i></i></div><div class="urlbar">web.simulator.livinit.ai/admin</div></div>
+      <div class="frame-body"><div class="console">
+        <div class="side"><div class="s-logo logo"><span class="mark">◆</span> Simulator</div><div class="nav"><a class="on">▦ Clients</a><a>＋ Onboard</a><a>⚙ Settings</a></div><div class="staff">Signed in as<br><b style="color:var(--muted)">Livinit staff</b></div></div>
+        <div class="main">
+          <div class="mhh"><h3>Clients</h3><span class="btn primary">+ New client</span></div>
+          <p class="msub">12 tenants · 2 in setup</p>
+          <div class="ctable">
+            <div class="thead"><span>Client</span><span>Status</span><span>Products</span><span>Fabrics</span></div>
+            <div class="tr"><b>Acme Furniture</b><span><span class="pill live">Live</span></span><span>8</span><span>24</span></div>
+            <div class="tr"><b>Bhavya Interiors</b><span><span class="pill draft">Draft</span></span><span>0</span><span>0</span></div>
+            <div class="tr"><b>Cove &amp; Co.</b><span><span class="pill live">Live</span></span><span>15</span><span>41</span></div>
+            <div class="tr"><b>Dune Living</b><span><span class="pill live">Live</span></span><span>6</span><span>18</span></div>
+            <div class="tr"><b>Elm House</b><span><span class="pill draft">Draft</span></span><span>3</span><span>9</span></div>
+          </div>
+          <div class="note"><b>Status gates access:</b> a client can only log in once their tenant is <b>Live</b>. Draft tenants are still being built.</div>
+        </div>
+      </div></div>
+    </div>
+  </div>
+
+  <!-- 09 CREATE CLIENT -->
+  <div class="screen">
+    <div class="screen-label"><span class="n">09</span><h2>Create client</h2></div>
+    <p class="screen-desc">Step 1 of onboarding: create the tenant and the first client login. Creates the tenant in <span style="color:var(--warn)">draft</span> and emails an invite (POST /api/admin/tenants + …/members).</p>
+    <div class="frame"><div class="frame-bar"><div class="dots"><i></i><i></i><i></i></div><div class="urlbar">web.simulator.livinit.ai/admin/new</div></div>
+      <div class="frame-body"><div class="console">
+        <div class="side"><div class="s-logo logo"><span class="mark">◆</span> Simulator</div><div class="nav"><a>▦ Clients</a><a class="on">＋ Onboard</a><a>⚙ Settings</a></div><div class="staff">Livinit staff</div></div>
+        <div class="main">
+          <div class="mhh"><h3>New client</h3></div>
+          <p class="msub">Step 1 of 4 · account</p>
+          <div class="formcard">
+            <div class="field" style="margin-bottom:14px"><label>Client name</label><div class="input">Bhavya Interiors</div></div>
+            <div class="field" style="margin-bottom:14px"><label>URL slug</label><div class="input" style="color:var(--muted)">bhavya <span style="color:var(--faint);font-size:.78rem">· web.simulator.livinit.ai</span></div></div>
+            <div class="field" style="margin-bottom:18px"><label>Primary contact (their login)</label><div class="input ph">buyer@bhavya.com</div></div>
+            <span class="btn primary block">Create client &amp; send invite</span>
+            <div class="note" style="margin-top:16px">Creates the tenant in <b>draft</b> + a <code style="font-family:var(--mono)">client</code> membership. They can't log in until the catalog is live.</div>
+          </div>
+        </div>
+      </div></div>
+    </div>
+  </div>
+
+  <!-- 10 ONBOARD PRODUCT -->
+  <div class="screen">
+    <div class="screen-label"><span class="n">10</span><h2>Onboard product &amp; segment parts</h2></div>
+    <p class="screen-desc">The key workflow. Upload the finished GLB, then author the <b>part map</b> — name each mesh and mark which parts a consultant can re-fabric. This is "our team segments the sections", in the tool.</p>
+    <div class="frame"><div class="frame-bar"><div class="dots"><i></i><i></i><i></i></div><div class="urlbar">web.simulator.livinit.ai/admin/bhavya/products/new</div></div>
+      <div class="frame-body"><div class="console">
+        <div class="side"><div class="s-logo logo"><span class="mark">◆</span> Simulator</div><div class="nav"><a>▦ Clients</a><a class="on">＋ Onboard</a><a>⚙ Settings</a></div><div class="staff">Bhavya Interiors<br><b style="color:var(--warn)">Draft</b></div></div>
+        <div class="main">
+          <div class="mhh"><h3>New product · Haven Sofa</h3><span class="btn primary">Save product</span></div>
+          <p class="msub">Step 2 of 4 · segment the customizable parts</p>
+          <div class="onb">
+            <div>
+              <div class="field" style="margin-bottom:14px"><label>Product name</label><div class="input">Haven Sofa</div></div>
+              <label style="display:block;font-size:.74rem;font-weight:600;color:var(--muted);margin-bottom:5px">3D model (GLB)</label>
+              <div class="drop"><span class="ic">⬆</span> sofa_haven.glb uploaded<br><span style="font-size:.72rem">4.2 MB · 6 meshes detected</span></div>
+              <div class="note" style="margin-top:14px"><b>part_map</b> is stored on the product and applied at load — arbitrary furniture can't be auto-classified, so it's authored here once.</div>
+            </div>
+            <div class="meshbox">
+              <div class="mb-h">Mesh nodes → parts</div>
+              <div class="meshrow"><span class="mono">seat_cushion</span><span class="miniinput">Seat</span><span class="toggle"><i></i></span></div>
+              <div class="meshrow"><span class="mono">back_cushion</span><span class="miniinput">Backrest</span><span class="toggle"><i></i></span></div>
+              <div class="meshrow"><span class="mono">arm_L</span><span class="miniinput">Left Arm</span><span class="toggle"><i></i></span></div>
+              <div class="meshrow"><span class="mono">arm_R</span><span class="miniinput">Right Arm</span><span class="toggle"><i></i></span></div>
+              <div class="meshrow"><span class="mono">base_frame</span><span class="miniinput">Base</span><span class="toggle off"><i></i></span></div>
+              <div class="meshrow"><span class="mono">legs</span><span class="miniinput">Legs</span><span class="toggle off"><i></i></span></div>
+            </div>
+          </div>
+          <p class="cap" style="text-align:left;margin-top:14px">Toggle = customizable. <b>Base &amp; Legs off</b> → consultants can't re-fabric them.</p>
+        </div>
+      </div></div>
+    </div>
+  </div>
+
+  <!-- 11 ADD FABRIC -->
+  <div class="screen">
+    <div class="screen-label"><span class="n">11</span><h2>Add fabric</h2></div>
+    <p class="screen-desc">Register a finish for the client's library: upload PBR maps (or seed from a photo), set the base colour, tune the material defaults (POST /api/admin/fabrics).</p>
+    <div class="frame"><div class="frame-bar"><div class="dots"><i></i><i></i><i></i></div><div class="urlbar">web.simulator.livinit.ai/admin/bhavya/fabrics/new</div></div>
+      <div class="frame-body"><div class="console">
+        <div class="side"><div class="s-logo logo"><span class="mark">◆</span> Simulator</div><div class="nav"><a>▦ Clients</a><a class="on">＋ Onboard</a><a>⚙ Settings</a></div><div class="staff">Bhavya Interiors<br><b style="color:var(--warn)">Draft</b></div></div>
+        <div class="main">
+          <div class="mhh"><h3>Add fabric</h3><span class="btn primary">Save fabric</span></div>
+          <p class="msub">Step 3 of 4 · Charcoal Velvet</p>
+          <div class="onb">
+            <div>
+              <div class="field" style="margin-bottom:13px"><label>Name</label><div class="input">Charcoal Velvet</div></div>
+              <div style="display:flex;gap:12px;margin-bottom:13px"><div class="field" style="flex:1"><label>Type</label><div class="input">fabric</div></div><div class="field" style="width:120px"><label>Base colour</label><div class="input" style="display:flex;align-items:center;gap:8px"><span style="width:16px;height:16px;border-radius:4px;background:#3a3a40;display:inline-block"></span>#3a3a40</div></div></div>
+              <label style="display:block;font-size:.74rem;font-weight:600;color:var(--muted);margin-bottom:5px">PBR maps</label>
+              <div style="display:flex;gap:9px"><div class="drop" style="flex:1;height:78px;font-size:.72rem"><span class="ic" style="font-size:1.1rem">🖼</span>Diffuse</div><div class="drop" style="flex:1;height:78px;font-size:.72rem"><span class="ic" style="font-size:1.1rem">🌐</span>Normal</div><div class="drop" style="flex:1;height:78px;font-size:.72rem"><span class="ic" style="font-size:1.1rem">◐</span>Rough</div></div>
+              <div style="margin-top:12px;display:inline-block;font-size:.78rem;font-weight:600;color:var(--pw-d);border:1px solid var(--pw-line);background:var(--pw-wash);border-radius:8px;padding:6px 12px">✨ Seed from a photo</div>
+            </div>
+            <div class="meshbox">
+              <div class="mb-h">Material defaults (PBR)</div>
+              <div style="padding:6px 4px">
+                <div class="slider"><div class="row"><span>Roughness</span><b>0.55</b></div><div class="track"><div class="fill" style="width:55%"></div><div class="knob" style="left:55%"></div></div></div>
+                <div class="slider"><div class="row"><span>Sheen</span><b>0.60</b></div><div class="track"><div class="fill" style="width:60%"></div><div class="knob" style="left:60%"></div></div></div>
+                <div class="slider"><div class="row"><span>Metalness</span><b>0.00</b></div><div class="track"><div class="fill" style="width:3%"></div><div class="knob" style="left:3%"></div></div></div>
+                <div class="slider"><div class="row"><span>Pattern scale</span><b>8</b></div><div class="track"><div class="fill" style="width:34%"></div><div class="knob" style="left:34%"></div></div></div>
+                <div class="slider"><div class="row"><span>Normal strength</span><b>1.0</b></div><div class="track"><div class="fill" style="width:50%"></div><div class="knob" style="left:50%"></div></div></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div></div>
+    </div>
+  </div>
+
+  <!-- 12 QA & GO LIVE -->
+  <div class="screen">
+    <div class="screen-label"><span class="n">12</span><h2>QA &amp; go live</h2></div>
+    <p class="screen-desc">The final gate. Preview the tenant as a client, run the readiness checks, then activate — which flips the tenant to <span style="color:var(--good)">Live</span> and lets the client log in (POST /api/admin/tenants/:id/activate).</p>
+    <div class="frame"><div class="frame-bar"><div class="dots"><i></i><i></i><i></i></div><div class="urlbar">web.simulator.livinit.ai/admin/bhavya/review</div></div>
+      <div class="frame-body"><div class="console">
+        <div class="side"><div class="s-logo logo"><span class="mark">◆</span> Simulator</div><div class="nav"><a>▦ Clients</a><a class="on">＋ Onboard</a><a>⚙ Settings</a></div><div class="staff">Bhavya Interiors<br><b style="color:var(--warn)">Draft</b></div></div>
+        <div class="main">
+          <div class="mhh"><h3>Review &amp; go live</h3><span class="btn primary">Activate — go live</span></div>
+          <p class="msub">Step 4 of 4 · Bhavya Interiors</p>
+          <div class="onb">
+            <div class="previewcard"><div class="pc-img">◆ &nbsp; Preview as this client</div><div style="padding:11px 14px;font-size:.8rem;color:var(--muted)">Opens the workspace exactly as Bhavya's consultants will see it.</div></div>
+            <div>
+              <div style="font-size:.72rem;text-transform:uppercase;letter-spacing:.06em;color:var(--faint);font-weight:680;margin-bottom:8px">Readiness checks</div>
+              <div class="check"><span class="ic ok">✓</span> 4 products registered <span>4 / 4</span></div>
+              <div class="check"><span class="ic ok">✓</span> Every product has a part map <span>4 / 4</span></div>
+              <div class="check"><span class="ic ok">✓</span> 12 fabrics with PBR maps <span>12</span></div>
+              <div class="check"><span class="ic wait">!</span> Thumbnails generated <span>3 / 4</span></div>
+              <div class="check"><span class="ic ok">✓</span> Client login invited <span>sent</span></div>
+              <div class="note">Activation is allowed once the blockers clear. The amber item is a warning, not a blocker.</div>
+            </div>
+          </div>
+        </div>
+      </div></div>
+    </div>
+  </div>
+
+  <p class="foot">
+    Screen designs for the multi-tenant Fabric Simulator (schema <code style="font-family:var(--mono)">simulator</code>) — 12 screens across the consultant and staff journeys. Static hi-fi mockups (the 3D viewport is an SVG placeholder); visuals in Livinit's periwinkle design language, grounded in the codebase and API surface.
+  </p>
+
+</div>
+</body></html>

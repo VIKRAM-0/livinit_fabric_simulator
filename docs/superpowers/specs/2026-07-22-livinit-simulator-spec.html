@@ -1,0 +1,661 @@
+<style>
+  :root{
+    --bg:#FAFBFD; --surface:#FFFFFF; --surface-2:#F3F5F9; --surface-3:#ECEFF6;
+    --border:#E4E7F0; --border-strong:#CFD4E3;
+    --text:#181B24; --muted:#565C70; --faint:#868CA1;
+    --accent:#4A5CC4; --accent-soft:#7A91EE; --accent-wash:#EBEEFC; --accent-line:#C3CDF6;
+    --get:#1C7F9B; --get-wash:#E0F0F4; --post:#1C9160; --post-wash:#E1F3E9;
+    --patch:#B37320; --patch-wash:#F8EEDA; --del:#C4443C; --del-wash:#FBE6E4;
+    --good:#1C9160; --good-wash:#E1F3E9; --warn:#B37320; --warn-wash:#F8EEDA;
+    --crit:#C4443C; --crit-wash:#FBE6E4; --reuse:#7A5AA8; --reuse-wash:#F0EAF8;
+    --new:#4A5CC4; --new-wash:#EBEEFC; --hard:#B37320; --hard-wash:#F8EEDA;
+    --keep:#5A6072; --keep-wash:#EBEDF3; --ext:#7A5AA8; --ext-wash:#F0EAF8; --sb:#2E8B7A; --sb-wash:#DEF1EC;
+    --shadow:0 1px 2px rgba(24,27,36,.04), 0 10px 28px -16px rgba(24,27,36,.16);
+    --mono:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,monospace;
+    --sans:system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+  }
+  @media (prefers-color-scheme:dark){:root{
+    --bg:#0C0D12; --surface:#14161E; --surface-2:#1A1D28; --surface-3:#212433;
+    --border:#262A38; --border-strong:#363B4D;
+    --text:#ECEEF4; --muted:#9BA1B5; --faint:#6C7286;
+    --accent:#8CA0F2; --accent-soft:#7A91EE; --accent-wash:#1B2138; --accent-line:#38406A;
+    --get:#57B6CE; --get-wash:#122730; --post:#4CC38A; --post-wash:#132420;
+    --patch:#E0A94A; --patch-wash:#282011; --del:#E9736A; --del-wash:#2A1615;
+    --good:#4CC38A; --good-wash:#132420; --warn:#E0A94A; --warn-wash:#282011;
+    --crit:#E9736A; --crit-wash:#2A1615; --reuse:#B79AE0; --reuse-wash:#221B31;
+    --new:#8CA0F2; --new-wash:#1B2138; --hard:#E0A94A; --hard-wash:#282011;
+    --keep:#9BA1B5; --keep-wash:#1E212C; --ext:#B79AE0; --ext-wash:#221B31; --sb:#5BC9B2; --sb-wash:#0F2621;
+    --shadow:0 1px 2px rgba(0,0,0,.35), 0 14px 34px -18px rgba(0,0,0,.72);
+  }}
+  :root[data-theme="light"]{--bg:#FAFBFD;--surface:#FFFFFF;--surface-2:#F3F5F9;--surface-3:#ECEFF6;--border:#E4E7F0;--border-strong:#CFD4E3;--text:#181B24;--muted:#565C70;--faint:#868CA1;--accent:#4A5CC4;--accent-soft:#7A91EE;--accent-wash:#EBEEFC;--accent-line:#C3CDF6;--get:#1C7F9B;--get-wash:#E0F0F4;--post:#1C9160;--post-wash:#E1F3E9;--patch:#B37320;--patch-wash:#F8EEDA;--del:#C4443C;--del-wash:#FBE6E4;--good:#1C9160;--good-wash:#E1F3E9;--warn:#B37320;--warn-wash:#F8EEDA;--crit:#C4443C;--crit-wash:#FBE6E4;--reuse:#7A5AA8;--reuse-wash:#F0EAF8;--new:#4A5CC4;--new-wash:#EBEEFC;--hard:#B37320;--hard-wash:#F8EEDA;--keep:#5A6072;--keep-wash:#EBEDF3;--ext:#7A5AA8;--ext-wash:#F0EAF8;--sb:#2E8B7A;--sb-wash:#DEF1EC;--shadow:0 1px 2px rgba(24,27,36,.04),0 10px 28px -16px rgba(24,27,36,.16);}
+  :root[data-theme="dark"]{--bg:#0C0D12;--surface:#14161E;--surface-2:#1A1D28;--surface-3:#212433;--border:#262A38;--border-strong:#363B4D;--text:#ECEEF4;--muted:#9BA1B5;--faint:#6C7286;--accent:#8CA0F2;--accent-soft:#7A91EE;--accent-wash:#1B2138;--accent-line:#38406A;--get:#57B6CE;--get-wash:#122730;--post:#4CC38A;--post-wash:#132420;--patch:#E0A94A;--patch-wash:#282011;--del:#E9736A;--del-wash:#2A1615;--good:#4CC38A;--good-wash:#132420;--warn:#E0A94A;--warn-wash:#282011;--crit:#E9736A;--crit-wash:#2A1615;--reuse:#B79AE0;--reuse-wash:#221B31;--new:#8CA0F2;--new-wash:#1B2138;--hard:#E0A94A;--hard-wash:#282011;--keep:#9BA1B5;--keep-wash:#1E212C;--ext:#B79AE0;--ext-wash:#221B31;--sb:#5BC9B2;--sb-wash:#0F2621;--shadow:0 1px 2px rgba(0,0,0,.35),0 14px 34px -18px rgba(0,0,0,.72);}
+
+  *{box-sizing:border-box;}
+  html{scroll-behavior:smooth;}
+  body{margin:0;background:var(--bg);color:var(--text);font-family:var(--sans);line-height:1.56;-webkit-font-smoothing:antialiased;}
+  code{font-family:var(--mono);font-size:.85em;background:var(--surface-2);padding:1px 5px;border-radius:5px;color:var(--text);}
+
+  /* sticky nav */
+  .nav{position:sticky;top:0;z-index:30;background:var(--bg);border-bottom:1px solid var(--border);}
+  .nav-in{max-width:1000px;margin:0 auto;display:flex;gap:6px;padding:10px clamp(16px,4vw,40px);overflow-x:auto;align-items:center;}
+  .nav-in .brand{font-weight:720;font-size:.9rem;letter-spacing:-.01em;margin-right:8px;white-space:nowrap;color:var(--text);}
+  .nav a{font-size:.82rem;font-weight:560;color:var(--muted);text-decoration:none;padding:6px 12px;border-radius:8px;white-space:nowrap;border:1px solid transparent;}
+  .nav a:hover{color:var(--accent);background:var(--surface-2);}
+  .nav a.active{color:var(--accent);background:var(--accent-wash);border-color:var(--accent-line);}
+
+  .wrap{max-width:1000px;margin:0 auto;padding:clamp(22px,4vw,40px) clamp(16px,4vw,40px) 110px;}
+  .eyebrow{font-size:.7rem;letter-spacing:.16em;text-transform:uppercase;color:var(--accent);font-weight:660;margin:0 0 12px;}
+  h1{font-size:clamp(1.7rem,4vw,2.5rem);line-height:1.08;margin:0 0 12px;letter-spacing:-.022em;text-wrap:balance;font-weight:730;}
+  .sub{margin:0;color:var(--muted);font-size:1.02rem;max-width:66ch;}
+  .facts{display:flex;flex-wrap:wrap;gap:8px;margin-top:18px;}
+  .fact{display:inline-flex;gap:7px;align-items:center;font-size:.78rem;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:6px 11px;color:var(--muted);}
+  .fact b{color:var(--text);font-weight:600;}
+
+  /* section band */
+  .band{margin-top:clamp(40px,6vw,64px);scroll-margin-top:64px;}
+  .band-head{display:flex;align-items:center;gap:12px;margin-bottom:6px;padding-bottom:12px;border-bottom:2px solid var(--accent-line);}
+  .band-head .bn{font-family:var(--mono);font-size:.82rem;color:#fff;background:var(--accent);border-radius:7px;padding:3px 9px;font-weight:600;flex:none;}
+  .band-head h2{font-size:1.5rem;margin:0;font-weight:720;letter-spacing:-.015em;}
+  .band-lead{color:var(--muted);margin:16px 0 20px;max-width:72ch;font-size:.96rem;}
+  h3{font-size:1.06rem;margin:26px 0 10px;font-weight:660;letter-spacing:-.005em;}
+
+  .grid{display:grid;gap:12px;}
+  .g2{grid-template-columns:repeat(2,1fr);}.g3{grid-template-columns:repeat(3,1fr);}.g4{grid-template-columns:repeat(4,1fr);}
+  @media(max-width:760px){.g4,.g3{grid-template-columns:repeat(2,1fr);}}
+  @media(max-width:480px){.g2,.g3,.g4{grid-template-columns:1fr;}}
+  .box{border:1px solid var(--border-strong);border-radius:11px;background:var(--surface-2);padding:13px 14px;}
+  .box .bt{font-weight:640;font-size:.9rem;margin:0 0 3px;}
+  .box .bd{margin:0;font-size:.8rem;color:var(--muted);line-height:1.5;}
+
+  /* vs */
+  .vs{display:grid;grid-template-columns:1fr auto 1fr;gap:16px;align-items:stretch;}
+  @media(max-width:680px){.vs{grid-template-columns:1fr;}.vs .arrow{display:none;}}
+  .vs .col{padding:18px 20px;border:1px solid var(--border);border-radius:14px;background:var(--surface);box-shadow:var(--shadow);}
+  .vs .arrow{align-self:center;color:var(--accent);font-size:1.3rem;}
+  .vs .cl{font-size:.68rem;text-transform:uppercase;letter-spacing:.1em;font-weight:660;margin-bottom:11px;}
+  .vs .now .cl{color:var(--crit);}.vs .then .cl{color:var(--good);}
+  .vs ul{margin:0;padding-left:17px;}.vs li{margin:6px 0;color:var(--muted);font-size:.87rem;}.vs li b{color:var(--text);font-weight:580;}
+
+  /* figure */
+  .fig{margin:14px 0 6px;border:1px solid var(--border-strong);border-radius:14px;background:#F6F7FB;box-shadow:var(--shadow);padding:20px 16px 12px;overflow-x:auto;}
+  .fig .mermaid{display:flex;justify-content:center;min-width:0;font-family:var(--sans);}
+  .figcap{text-align:center;font-size:.77rem;color:#7C8296;margin:8px 0 0;}
+  .legend{display:flex;flex-wrap:wrap;gap:8px 16px;margin:12px 0 0;font-size:.76rem;color:var(--muted);justify-content:center;}
+  .legend .li{display:inline-flex;align-items:center;gap:7px;}
+  .sw{width:11px;height:11px;border-radius:3px;flex:none;border:1px solid rgba(0,0,0,.12);}
+  .sw.new{background:#EBEEFC;border-color:#4A5CC4;}.sw.hard{background:#F8EEDA;border-color:#B37320;}
+  .sw.keep{background:#EBEDF3;border-color:#5A6072;}.sw.ext{background:#F0EAF8;border-color:#7A5AA8;}
+  .sw.good{background:#E1F3E9;border-color:#1C9160;}.sw.warn{background:#F8EEDA;border-color:#B37320;}.sw.app{background:#EBEEFC;border-color:#4A5CC4;}
+
+  /* tables */
+  .tscroll{overflow-x:auto;border:1px solid var(--border);border-radius:13px;box-shadow:var(--shadow);}
+  table{border-collapse:collapse;width:100%;font-size:.86rem;min-width:560px;background:var(--surface);}
+  thead th{text-align:left;font-size:.67rem;text-transform:uppercase;letter-spacing:.07em;color:var(--faint);font-weight:670;padding:11px 14px;border-bottom:1px solid var(--border);background:var(--surface-2);}
+  tbody td{padding:11px 14px;border-bottom:1px solid var(--border);vertical-align:top;color:var(--muted);}
+  tbody tr:last-child td{border-bottom:none;}
+  tbody td:first-child{color:var(--text);font-weight:560;}
+  .m{font-family:var(--mono);font-size:.77rem;color:var(--accent);}
+  .loc{font-family:var(--mono);font-size:.75rem;color:var(--accent);}
+  .mono{font-family:var(--mono);font-size:.8rem;color:var(--accent);}
+  .tag{font-size:.61rem;font-weight:720;text-transform:uppercase;letter-spacing:.04em;padding:2px 6px;border-radius:5px;white-space:nowrap;}
+  .tag.prox{background:var(--good-wash);color:var(--good);}.tag.dir{background:var(--warn-wash);color:var(--warn);}
+
+  /* ER */
+  .erd{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:12px;}
+  .ent{border:1px solid var(--border);border-radius:12px;overflow:hidden;box-shadow:var(--shadow);background:var(--surface);}
+  .ent h5{margin:0;font-family:var(--mono);font-size:.82rem;padding:9px 13px;background:var(--surface-3);border-bottom:1px solid var(--border);color:var(--accent);font-weight:650;}
+  .ent ul{list-style:none;margin:0;padding:8px 13px;}
+  .ent li{font-size:.78rem;padding:3px 0;color:var(--muted);display:flex;justify-content:space-between;gap:10px;}
+  .ent li span{font-family:var(--mono);color:var(--text);font-size:.75rem;}
+  .ent li em{font-style:normal;color:var(--faint);font-size:.67rem;}
+  .ent li.k span{color:var(--accent);}
+
+  /* callouts */
+  .callout{border-left:3px solid var(--accent-soft);background:var(--accent-wash);border-radius:0 12px 12px 0;padding:14px 18px;margin:18px 0;}
+  .callout.crit{border-left-color:var(--crit);background:var(--crit-wash);}
+  .callout.good{border-left-color:var(--good);background:var(--good-wash);}
+  .callout h4{margin:0 0 5px;font-size:.93rem;color:var(--text);}
+  .callout p{margin:0;color:var(--muted);font-size:.87rem;}
+
+  /* kv */
+  .kvlist{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;}
+  @media(max-width:600px){.kvlist{grid-template-columns:1fr;}}
+  .kv{border:1px solid var(--border);border-radius:11px;background:var(--surface);box-shadow:var(--shadow);padding:13px 15px;}
+  .kv b{font-size:.86rem;}.kv p{margin:4px 0 0;font-size:.8rem;color:var(--muted);}
+
+  /* pipeline / phases */
+  .pipe{margin:0;padding:0;list-style:none;}
+  .pipe li{display:flex;gap:15px;padding:13px 0;border-top:1px solid var(--border);}
+  .pipe li:first-child{border-top:none;}
+  .pipe .pn{flex:none;width:30px;height:30px;border-radius:9px;display:grid;place-items:center;font-weight:730;font-size:.85rem;background:var(--accent-wash);color:var(--accent);border:1px solid var(--accent-line);}
+  .pipe .pc b{display:block;font-size:.92rem;margin-bottom:2px;}
+  .pipe .pc p{margin:0;font-size:.84rem;color:var(--muted);}
+  .pipe .pc .gate{display:block;margin-top:5px;font-size:.79rem;color:var(--muted);}
+  .pipe .pc .gate b{display:inline;color:var(--good);}
+  .actor{font-size:.62rem;text-transform:uppercase;letter-spacing:.05em;font-weight:670;padding:2px 7px;border-radius:5px;margin-left:8px;vertical-align:middle;}
+  .actor.client{background:var(--keep-wash);color:var(--keep);}
+  .actor.ops{background:var(--hard-wash);color:var(--hard);}
+  .actor.sys{background:var(--accent-wash);color:var(--accent);}
+
+  /* findings */
+  .find{display:flex;gap:13px;padding:13px 0;border-top:1px solid var(--border);}
+  .find:first-of-type{border-top:none;}
+  .find .stripe{flex:none;width:4px;border-radius:3px;}
+  .find.good .stripe{background:var(--good);}.find.crit .stripe{background:var(--crit);}.find.warn .stripe{background:var(--warn);}
+  .find .fb b{display:block;margin-bottom:3px;font-size:.93rem;}
+  .find .fb p{margin:0;color:var(--muted);font-size:.86rem;}
+  .find .fb .ev{font-family:var(--mono);font-size:.72rem;color:var(--faint);}
+  .sev{font-size:.59rem;font-weight:730;text-transform:uppercase;letter-spacing:.04em;padding:2px 7px;border-radius:5px;margin-left:8px;}
+  .sev.good{background:var(--good-wash);color:var(--good);}.sev.crit{background:var(--crit-wash);color:var(--crit);}.sev.warn{background:var(--warn-wash);color:var(--warn);}
+
+  /* API accordions */
+  .counts{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin:6px 0 18px;}
+  @media(max-width:720px){.counts{grid-template-columns:repeat(2,1fr);}}
+  @media(max-width:420px){.counts{grid-template-columns:1fr;}}
+  .cbox{border:1px solid var(--border);border-radius:12px;background:var(--surface);box-shadow:var(--shadow);padding:13px 14px;}
+  .cbox .num{font-size:1.7rem;font-weight:760;letter-spacing:-.03em;line-height:1;font-variant-numeric:tabular-nums;}
+  .cbox .lbl{font-size:.72rem;color:var(--muted);margin-top:6px;font-weight:560;}
+  .cbox.total .num{color:var(--text);}.cbox.new .num{color:var(--new);}.cbox.hard .num{color:var(--hard);}
+  .cbox.reuse .num{color:var(--reuse);}.cbox.sb .num{color:var(--sb);}
+  .apibar{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin:8px 0 14px;}
+  .btn{font:inherit;font-size:.82rem;font-weight:600;padding:8px 14px;border-radius:9px;border:1px solid var(--border-strong);background:var(--surface);color:var(--text);cursor:pointer;box-shadow:var(--shadow);}
+  .btn:hover{border-color:var(--accent);color:var(--accent);}
+  .btn:focus-visible{outline:2px solid var(--accent);outline-offset:2px;}
+  .apigrp{margin:16px 0;}
+  .apigrp .gh{display:flex;align-items:center;gap:9px;margin:0 0 9px;flex-wrap:wrap;}
+  .apigrp .gh .lt{font-family:var(--mono);font-size:.72rem;color:var(--accent);border:1px solid var(--accent-line);border-radius:6px;padding:2px 7px;font-weight:600;}
+  .apigrp .gh h4{margin:0;font-size:1rem;font-weight:660;}
+  .badge{font-size:.6rem;font-weight:730;letter-spacing:.05em;text-transform:uppercase;padding:3px 7px;border-radius:6px;}
+  .badge.new{background:var(--new-wash);color:var(--new);}.badge.hard{background:var(--hard-wash);color:var(--hard);}
+  .badge.reuse{background:var(--reuse-wash);color:var(--reuse);}.badge.sb{background:var(--sb-wash);color:var(--sb);}
+  .acc-group{display:flex;flex-direction:column;gap:7px;}
+  details.ep{border:1px solid var(--border);border-radius:11px;background:var(--surface);box-shadow:var(--shadow);overflow:hidden;}
+  details.ep[open]{border-color:var(--accent-line);}
+  details.ep>summary{list-style:none;cursor:pointer;display:flex;align-items:center;gap:10px;padding:12px 14px;user-select:none;}
+  details.ep>summary::-webkit-details-marker{display:none;}
+  details.ep>summary:focus-visible{outline:2px solid var(--accent);outline-offset:-2px;border-radius:11px;}
+  summary .mm{font-size:.58rem;font-weight:770;letter-spacing:.03em;padding:3px 6px;border-radius:5px;flex:none;font-family:var(--mono);}
+  summary .mm.get{background:var(--get-wash);color:var(--get);}
+  summary .mm.post{background:var(--post-wash);color:var(--post);}
+  summary .mm.patch{background:var(--patch-wash);color:var(--patch);}
+  summary .mm.sdk{background:var(--sb-wash);color:var(--sb);}
+  summary .path{font-family:var(--mono);font-size:.83rem;color:var(--text);font-weight:600;}
+  summary .sp{color:var(--muted);font-size:.79rem;margin-left:auto;text-align:right;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:40%;}
+  @media(max-width:560px){summary .sp{display:none;}}
+  summary .chev{flex:none;color:var(--faint);font-size:1rem;transition:transform .18s ease;line-height:1;}
+  details.ep[open]>summary .chev{transform:rotate(90deg);}
+  .ebody{padding:2px 14px 15px;border-top:1px solid var(--border);}
+  .metar{display:flex;flex-wrap:wrap;gap:7px 15px;margin:11px 0 2px;font-size:.77rem;}
+  .metar .k{color:var(--faint);}.metar .v{color:var(--text);font-weight:560;}
+  .edesc{color:var(--muted);font-size:.84rem;margin:9px 0 11px;}
+  .pl{margin:10px 0;}
+  .pl-h{font-size:.63rem;text-transform:uppercase;letter-spacing:.07em;color:var(--faint);font-weight:680;margin-bottom:6px;display:flex;align-items:center;gap:8px;}
+  .st{font-size:.58rem;font-weight:730;padding:2px 6px;border-radius:4px;font-family:var(--mono);}
+  .st.ok{background:var(--post-wash);color:var(--post);}.st.err{background:var(--del-wash);color:var(--del);}
+  .pl pre{margin:0;background:var(--surface-2);border:1px solid var(--border);border-radius:9px;padding:12px 14px;overflow-x:auto;font-family:var(--mono);font-size:.76rem;line-height:1.65;color:var(--text);white-space:pre;}
+
+  .foot{margin-top:56px;padding-top:20px;border-top:1px solid var(--border);color:var(--faint);font-size:.8rem;}
+  .arw{color:var(--accent);}
+</style>
+
+<div class="nav">
+  <div class="nav-in">
+    <span class="brand">🧵 Simulator Spec</span>
+    <a href="#overview" data-nav>Overview</a>
+    <a href="#architecture" data-nav>Architecture</a>
+    <a href="#requests" data-nav>Requests</a>
+    <a href="#api" data-nav>API</a>
+    <a href="#plan" data-nav>Plan</a>
+  </div>
+</div>
+
+<div class="wrap">
+
+  <header style="margin-top:8px">
+    <p class="eyebrow">Multi-Tenant Platform Spec &middot; v1 &middot; 22 Jul 2026</p>
+    <h1>Fabric Simulator — one specification</h1>
+    <p class="sub">Everything in a single document: what we're building and why, the full architecture, a request-layer review of the existing code, the complete API surface with payloads, and the delivery plan. Grounded in the codebase; use the nav above to jump between sections.</p>
+    <div class="facts">
+      <span class="fact"><b>Prepared for</b> Anviksha (Founder)</span>
+      <span class="fact"><b>Schema</b> <code style="background:none;padding:0">simulator</code></span>
+      <span class="fact"><b>Backend</b> Vercel + Supabase</span>
+      <span class="fact"><b>Tenant model</b> Simulator-owned (RLS)</span>
+    </div>
+  </header>
+
+  <!-- ============ OVERVIEW ============ -->
+  <div class="band" id="overview">
+    <div class="band-head"><span class="bn">01</span><h2>Overview</h2></div>
+    <p class="band-lead">The simulator is a browser 3D configurator: a client's consultant picks a product, applies real fabrics to individual parts, stages it in a room and generates AI-photoreal renders — live in front of a customer. The v1 goal is to make it multi-tenant: many clients, each with a private library, one shared platform at <code>web.simulator.livinit.ai</code>.</p>
+    <div class="grid g4">
+      <div class="box"><p class="bt">Private per client</p><p class="bd">Each account accesses only its own furniture &amp; fabrics.</p></div>
+      <div class="box"><p class="bt">Login-gated</p><p class="bd">Consultants sign in; the session drives what they see.</p></div>
+      <div class="box"><p class="bt">Team-onboarded</p><p class="bd">Clients send 2D images + a fabric list; Livinit builds the 3D assets.</p></div>
+      <div class="box"><p class="bt">Dedicated host</p><p class="bd">Its own experience at <code>web.simulator.livinit.ai</code>.</p></div>
+    </div>
+    <h3>The gap in one line</h3>
+    <div class="vs">
+      <div class="col now"><div class="cl">Today — single-tenant demo</div><ul><li>One shared, public asset set</li><li><b>No login</b></li><li>Catalog compiled into JavaScript</li><li>Any client could read another's files</li><li>Uncapped AI spend</li></ul></div>
+      <div class="arrow">&rarr;</div>
+      <div class="col then"><div class="cl">Target — per-client platform</div><ul><li>Each account sees <b>only its own</b> library</li><li><b>Login required</b></li><li>Catalog served per-tenant from a database</li><li>Isolation in DB <b>and</b> asset proxy</li><li>Per-tenant AI quota</li></ul></div>
+    </div>
+    <div class="callout"><h4>Decisions locked</h4><p><b>Backend:</b> standalone Supabase (Auth + Postgres + RLS). <b>Tenant model:</b> simulator-owned — its own Supabase, zero blast radius on the core backend (Option A). <b>Onboarding:</b> staff-only admin console. <b>Reuse:</b> auth patterns from web-pipeline + Livinit's existing Stripe credits for AI metering — not rebuilt.</p></div>
+  </div>
+
+  <!-- ============ ARCHITECTURE ============ -->
+  <div class="band" id="architecture">
+    <div class="band-head"><span class="bn">02</span><h2>Architecture</h2></div>
+    <p class="band-lead">A layered system, top to bottom: people sign in, the web app is gated by identity, every request is authorized against the signed-in client, and each client's assets sit behind two independent locks.</p>
+
+    <h3>Top-level hierarchy</h3>
+    <div class="fig">
+      <pre class="mermaid">
+%%{init: {"theme":"base","themeVariables":{"fontFamily":"system-ui","fontSize":"13px","lineColor":"#5364C9","primaryColor":"#EBEEFC","primaryTextColor":"#181B24","primaryBorderColor":"#4A5CC4","clusterBkg":"#FFFFFF","clusterBorder":"#CFD4E3","titleColor":"#4A5CC4","edgeLabelBackground":"#F6F7FB","textColor":"#181B24"}}}%%
+flowchart TD
+  U1["👤 Client consultant"]:::keep
+  U2["🛠️ Livinit staff"]:::keep
+  subgraph APP["APPLICATION · web.simulator.livinit.ai"]
+    direction LR
+    AG["Auth gate"]:::new
+    CFG["3D configurator engine"]:::keep
+    CL["Catalog loader"]:::new
+    SC["Staff console"]:::new
+  end
+  subgraph API["SERVICE TIER · Vercel serverless"]
+    direction LR
+    CAT["GET /catalog"]:::new
+    ADM["POST /admin/*"]:::new
+    PX["GET /s3proxy · prefix check"]:::hard
+    AI["AI gateway · gated + metered"]:::hard
+  end
+  subgraph DATA["DATA + STORAGE · own Supabase — isolation boundary"]
+    direction LR
+    PG["Postgres + RLS"]:::new
+    S3["S3 · tenants/ID/"]:::hard
+  end
+  subgraph EXT["IDENTITY + EXTERNAL · reused"]
+    direction LR
+    AU["Supabase Auth"]:::ext
+    CR["Livinit Stripe credits"]:::ext
+    GM["Google Gemini"]:::ext
+  end
+  U1 --> APP
+  U2 --> APP
+  APP -->|"session token"| API
+  AG -.verify.-> AU
+  CAT --> PG
+  PX --> S3
+  ADM --> PG
+  ADM --> S3
+  AI --> CR
+  AI --> GM
+  classDef new fill:#EBEEFC,stroke:#4A5CC4,color:#181B24;
+  classDef hard fill:#F8EEDA,stroke:#B37320,color:#181B24;
+  classDef keep fill:#EBEDF3,stroke:#5A6072,color:#181B24;
+  classDef ext fill:#F0EAF8,stroke:#7A5AA8,color:#181B24;
+      </pre>
+      <div class="legend">
+        <span class="li"><span class="sw new"></span>New</span>
+        <span class="li"><span class="sw hard"></span>Hardened</span>
+        <span class="li"><span class="sw keep"></span>Kept (3D engine)</span>
+        <span class="li"><span class="sw ext"></span>External / reused</span>
+      </div>
+      <p class="figcap">Figure 1 — Five-tier system hierarchy.</p>
+    </div>
+
+    <h3>Component responsibilities</h3>
+    <div class="tscroll"><table>
+      <thead><tr><th style="width:160px">Component</th><th>Responsibility</th><th style="width:90px">State</th></tr></thead>
+      <tbody>
+        <tr><td>Auth gate</td><td>Blocks the app until a session exists; exposes tenant + role; redirects logged-out to login.</td><td><span class="mono">new</span></td></tr>
+        <tr><td>3D configurator</td><td>The unchanged Three.js engine — model load, per-part fabric apply, room staging, renders.</td><td><span class="mono">keep</span></td></tr>
+        <tr><td>Catalog loader</td><td>Fetches <code>/api/catalog</code> at boot and populates the product switcher + fabric library at runtime.</td><td><span class="mono">new</span></td></tr>
+        <tr><td>Staff console</td><td>Create tenant + login, upload GLBs, author part-map, register fabrics.</td><td><span class="mono">new</span></td></tr>
+        <tr><td>Asset proxy</td><td>Streams GLBs/textures, enforcing the <code>tenants/&lt;id&gt;/</code> prefix. Keeps AWS keys server-side.</td><td><span class="mono">hardened</span></td></tr>
+        <tr><td>AI gateway</td><td>Four Gemini endpoints — now authenticated, attributed, quota-checked.</td><td><span class="mono">hardened</span></td></tr>
+        <tr><td>Postgres + RLS</td><td>System of record; row-level security is the primary isolation guarantee.</td><td><span class="mono">new</span></td></tr>
+      </tbody>
+    </table></div>
+
+    <h3>Data model</h3>
+    <div class="fig">
+      <pre class="mermaid">
+%%{init: {"theme":"base","themeVariables":{"fontFamily":"system-ui","fontSize":"12.5px","lineColor":"#5364C9","primaryColor":"#EBEEFC","primaryTextColor":"#181B24","primaryBorderColor":"#4A5CC4","textColor":"#181B24"}}}%%
+erDiagram
+  TENANTS ||--o{ MEMBERSHIPS : has
+  AUTH_USERS ||--o{ MEMBERSHIPS : joins
+  TENANTS ||--o{ PRODUCTS : owns
+  TENANTS ||--o{ FABRICS : owns
+  TENANTS ||--o{ USAGE_EVENTS : logs
+  TENANTS { uuid id PK
+    text name
+    text slug
+    text status }
+  MEMBERSHIPS { uuid user_id FK
+    uuid tenant_id FK
+    text role }
+  PRODUCTS { uuid id PK
+    uuid tenant_id FK
+    text glb_key
+    jsonb part_map
+    text status }
+  FABRICS { uuid id PK
+    uuid tenant_id FK
+    text type
+    text diffuse_key
+    jsonb pbr_defaults }
+  USAGE_EVENTS { uuid tenant_id FK
+    text kind
+    int cost_units }
+      </pre>
+      <p class="figcap">Figure 2 — All tables live in the <code>simulator</code> Postgres schema; every business table hangs off <code>simulator.tenants</code>. <code>part_map</code> = the authored segmentation.</p>
+    </div>
+    <div class="callout"><h4>Naming convention</h4><p>Postgres schema <code>simulator</code> (tables: <code>simulator.tenants</code>, <code>simulator.memberships</code>, <code>simulator.products</code>, <code>simulator.fabrics</code>, <code>simulator.usage_events</code>). Object storage bucket <code>simulator-assets</code>. Storage prefix <code>tenants/&lt;id&gt;/</code>. This keeps the platform self-contained and easy to promote later without colliding with Livinit's other schemas.</p></div>
+
+    <h3>Tenant isolation — two independent locks</h3>
+    <div class="kvlist">
+      <div class="kv"><b>Lock 1 · Database (RLS)</b><p>Every query is filtered by <code>tenant_id = token.tenant_id</code> in Postgres. Forget a filter and the DB still returns nothing.</p></div>
+      <div class="kv"><b>Lock 2 · Asset proxy (prefix)</b><p>Every file must sit under <code>tenants/&lt;your id&gt;/</code>. Ask for another's key → <code>403</code> before S3 is touched.</p></div>
+    </div>
+    <div class="callout good"><h4>The claim is set once, server-side</h4><p>On sign-in a Supabase hook stamps <code>tenant_id</code> + <code>role</code> into the JWT from <code>memberships</code>. Every endpoint re-derives them from the verified token — the browser can never assert which tenant it is.</p></div>
+
+    <h3>Storage layout</h3>
+    <div class="fig" style="padding-bottom:14px">
+      <pre style="margin:0;font-family:var(--mono);font-size:.8rem;line-height:1.85;color:#2A2E3C;white-space:pre;background:none;padding:0;">s3://simulator-assets/
+  <b style="color:#4A5CC4">shared/</b>                       # room shells — any authed tenant
+  <b style="color:#4A5CC4">tenants/&lt;tenant_id&gt;/</b>          # gated: prefix MUST equal caller's tenant_id
+    glbs/&lt;product&gt;.glb
+    fabric_maps/&lt;series&gt;/{diffuse,normal,roughness}.jpg
+    thumbnails/&lt;product&gt;.jpg</pre>
+      <p class="figcap">Figure 3 — Namespacing is the physical side of isolation.</p>
+    </div>
+
+    <h3>Runtime flow — a live consultation</h3>
+    <div class="fig">
+      <pre class="mermaid">
+%%{init: {"theme":"base","themeVariables":{"fontFamily":"system-ui","fontSize":"12.5px","actorBkg":"#EBEEFC","actorBorder":"#4A5CC4","actorTextColor":"#181B24","signalColor":"#5364C9","signalTextColor":"#181B24","noteBkgColor":"#F8EEDA","noteBorderColor":"#B37320","noteTextColor":"#181B24","sequenceNumberColor":"#FFFFFF","lineColor":"#5364C9","textColor":"#181B24"}}}%%
+sequenceDiagram
+  autonumber
+  actor C as Consultant
+  participant A as Web app
+  participant Au as Supabase Auth
+  participant Cat as Catalog API
+  participant Px as S3 proxy
+  participant Ai as AI gateway
+  C->>A: Open simulator
+  A->>Au: Sign in
+  Au-->>A: Session (tenant_id, role)
+  A->>Cat: GET /catalog (token)
+  Cat-->>A: Only this tenant's products + fabrics
+  A->>Px: GET /s3proxy key=tenants/ID/model.glb
+  Px-->>A: GLB + textures (prefix OK)
+  Note over A: Apply fabrics, stage room
+  C->>A: Render
+  A->>Ai: POST /generate (token, metered)
+  Ai-->>A: Photorealistic image
+      </pre>
+      <p class="figcap">Figure 4 — Sign-in to render, tenant-scoped throughout.</p>
+    </div>
+
+    <h3>Deployment &amp; stack</h3>
+    <div class="kvlist" style="margin-bottom:12px">
+      <div class="kv"><b>Hosting</b><p>Vercel project → <code>web.simulator.livinit.ai</code>. Static SPA + serverless, CDN edge.</p></div>
+      <div class="kv"><b>Identity &amp; data</b><p>Dedicated Supabase (Auth + Postgres + RLS). Own user pool.</p></div>
+      <div class="kv"><b>Env vars</b><p><code>SUPABASE_*</code>, <code>AWS_*</code>, <code>S3_BUCKET=simulator-assets</code>, <code>GEMINI_API_KEY</code>.</p></div>
+      <div class="kv"><b>Stack</b><p>Vanilla JS · Three.js r128 · Vercel · Supabase · S3 · Gemini · reused Stripe credits.</p></div>
+    </div>
+  </div>
+
+  <!-- ============ REQUESTS ============ -->
+  <div class="band" id="requests">
+    <div class="band-head"><span class="bn">03</span><h2>Request-layer review</h2></div>
+    <p class="band-lead">The existing code reviewed through the lens of network requests — what it calls today, read from source, and what each request means for the migration. <b>Verdict:</b> a wrap-and-scope job, not a rebuild.</p>
+
+    <div class="fig">
+      <pre class="mermaid">
+%%{init: {"theme":"base","themeVariables":{"fontFamily":"system-ui","fontSize":"12.5px","lineColor":"#5364C9","primaryColor":"#EBEEFC","primaryTextColor":"#181B24","primaryBorderColor":"#4A5CC4","clusterBkg":"#FFFFFF","clusterBorder":"#CFD4E3","titleColor":"#4A5CC4","edgeLabelBackground":"#F6F7FB","textColor":"#181B24"}}}%%
+flowchart LR
+  APP["Browser SPA · Three.js"]:::app
+  subgraph PROXY["Same-origin /api/* · single choke point"]
+    direction TB
+    S3["GET /api/s3proxy — ALL GLBs + textures"]:::good
+    GEN["POST /api/generate"]:::good
+    ROOM["POST /api/gemini-room"]:::good
+    FIND["POST /api/find-fabric"]:::good
+    ENH["POST /api/enhance-texture"]:::good
+  end
+  subgraph DIRECT["Direct to external · NOT proxied"]
+    direction TB
+    PH["api.polyhaven.com — PBR maps"]:::warn
+    CDN["cdn.jsdelivr.net x5 — Three addons"]:::warn
+    GS["gstatic.com — DRACO decoder"]:::warn
+  end
+  APP --> S3
+  APP --> GEN
+  APP --> ROOM
+  APP --> FIND
+  APP --> ENH
+  APP -.direct.-> PH
+  APP -.direct.-> CDN
+  APP -.direct.-> GS
+  classDef app fill:#EBEEFC,stroke:#4A5CC4,color:#181B24;
+  classDef good fill:#E1F3E9,stroke:#1C9160,color:#181B24;
+  classDef warn fill:#F8EEDA,stroke:#B37320,color:#181B24;
+      </pre>
+      <div class="legend">
+        <span class="li"><span class="sw good"></span>Proxied — securable in one place</span>
+        <span class="li"><span class="sw warn"></span>Direct external — outside our control</span>
+      </div>
+      <p class="figcap">Figure 5 — Not one request carries an <code>Authorization</code> header today (verified across <code>src/</code>).</p>
+    </div>
+
+    <h3>Findings</h3>
+    <div class="find good"><div class="stripe"></div><div class="fb"><b>Single asset choke point <span class="sev good">strong</span></b><p>Every GLB + texture routes through <code>/api/s3proxy</code> — tenant-scoping is a one-place change.</p><span class="ev">catalog.js:13</span></div></div>
+    <div class="find good"><div class="stripe"></div><div class="fb"><b>AI endpoints cleanly isolated <span class="sev good">strong</span></b><p>Adding auth + metering is a wrapper, not a rewrite. Payload limits &amp; graceful degradation already handled.</p><span class="ev">render.js:449 · finder.js:289</span></div></div>
+    <div class="find crit"><div class="stripe"></div><div class="fb"><b>Zero authentication on any request <span class="sev crit">critical</span></b><p>No <code>Authorization</code> header anywhere in <code>src/</code>. Must be added to all five request families + verified server-side.</p></div></div>
+    <div class="find crit"><div class="stripe"></div><div class="fb"><b>The catalog is not a request <span class="sev crit">critical</span></b><p>Products are a compile-time <code>import</code>. The unlocking request <code>GET /api/catalog</code> doesn't exist; insertion point is the hardcoded <code>loadModel(CHAIR_GLB)</code> in boot.</p><span class="ev">boot.js</span></div></div>
+    <div class="find warn"><div class="stripe"></div><div class="fb"><b>PolyHaven is a live consultation dependency <span class="sev warn">high</span></b><p>Direct browser call bypasses the tenant boundary and degrades the demo if PolyHaven is slow. Bake maps into tenant S3 at onboarding.</p><span class="ev">engine.js:233</span></div></div>
+    <div class="find warn"><div class="stripe"></div><div class="fb"><b>Nine silent asset failures <span class="sev warn">high</span></b><p><code>.catch(() =&gt; null)</code> turns a failed fabric into a blank grey mesh with no signal — bad in front of a customer.</p><span class="ev">materials.js ×7 · room.js ×2</span></div></div>
+
+    <h3>Per-request change map</h3>
+    <div class="tscroll"><table>
+      <thead><tr><th style="width:260px">Request</th><th>Change</th></tr></thead>
+      <tbody>
+        <tr><td><span class="m">GET /api/s3proxy</span></td><td>+ verify session, enforce <code>tenants/{id}/</code> prefix</td></tr>
+        <tr><td><span class="m">POST generate · gemini-room · enhance</span></td><td>+ auth, + <code>billing/consume</code> before the paid call</td></tr>
+        <tr><td><span class="m">POST find-fabric</span></td><td>+ auth (authoring path)</td></tr>
+        <tr><td><span class="m">api.polyhaven.com</span></td><td><b>Remove at runtime</b> — resolve to tenant S3 at onboarding</td></tr>
+        <tr><td><span class="m">CDN addon scripts</span></td><td>Self-host for reliability</td></tr>
+        <tr><td><span class="m">GET /api/catalog</span></td><td><span class="arw">NEW</span> — replaces the <code>catalog.js</code> import</td></tr>
+        <tr><td><span class="m">GET /api/me</span></td><td><span class="arw">NEW</span> — gate the shell on <code>status = active</code></td></tr>
+      </tbody>
+    </table></div>
+  </div>
+
+  <!-- ============ API ============ -->
+  <div class="band" id="api">
+    <div class="band-head"><span class="bn">04</span><h2>API surface &amp; payloads</h2></div>
+    <p class="band-lead">Every endpoint the platform needs. Click any row to open its full request &amp; response payload. Existing contracts (assets, AI) are read from the codebase; new ones are proposed shapes.</p>
+    <div class="counts">
+      <div class="cbox total"><div class="num">~17</div><div class="lbl">Custom endpoints</div></div>
+      <div class="cbox new"><div class="num">11</div><div class="lbl">New</div></div>
+      <div class="cbox hard"><div class="num">5</div><div class="lbl">Hardened</div></div>
+      <div class="cbox reuse"><div class="num">2</div><div class="lbl">Reused (billing)</div></div>
+      <div class="cbox sb"><div class="num">5</div><div class="lbl">Supabase-handled</div></div>
+    </div>
+    <div class="apibar">
+      <button class="btn" id="expand-all">Expand all</button>
+      <button class="btn" id="collapse-all">Collapse all</button>
+      <span style="font-size:.78rem;color:var(--faint)">Every custom handler starts with <code>_lib/auth</code>; browser-sent tenant ids are never trusted.</span>
+    </div>
+
+    <div class="apigrp">
+      <div class="gh"><span class="lt">B</span><h4>Client — catalog &amp; session</h4><span class="badge new">new</span></div>
+      <div class="acc-group">
+        <details class="ep"><summary><span class="mm get">GET</span><span class="path">/api/me</span><span class="sp">Who am I + my tenant</span><span class="chev">›</span></summary>
+          <div class="ebody"><div class="metar"><span class="k">Access</span><span class="v">client</span></div><p class="edesc">Gates the shell — simulator shows only if <code>status = active</code>.</p>
+          <div class="pl"><div class="pl-h">Response <span class="st ok">200</span></div><pre>{
+  "user":   { "id": "9f2c...", "name": "Priya", "email": "priya@acme.com" },
+  "tenant": { "id": "ac001-...", "name": "Acme Furniture", "status": "active" },
+  "role":   "client"
+}</pre></div></div></details>
+        <details class="ep"><summary><span class="mm get">GET</span><span class="path">/api/catalog</span><span class="sp">This tenant's products + fabrics</span><span class="chev">›</span></summary>
+          <div class="ebody"><div class="metar"><span class="k">Access</span><span class="v">client</span><span class="k">Replaces</span><span class="v">hardcoded catalog.js</span></div><p class="edesc">The core call. RLS returns only this tenant's rows; URLs point at the gated proxy.</p>
+          <div class="pl"><div class="pl-h">Response <span class="st ok">200</span></div><pre>{
+  "products": [
+    { "id": "prd_01", "name": "Sierra Chair",
+      "glbUrl": "/api/s3proxy?key=tenants/ac001/glbs/sierra_chair.glb",
+      "partMap": { "seat_cushion": "Seat", "backrest": "Backrest",
+                   "arm_left": "Left Arm", "legs": "Legs / Base" },
+      "status": "live" }
+  ],
+  "fabrics": [
+    { "id": "fab_01", "name": "Natural Linen", "type": "fabric", "hex": "#c8c0b8",
+      "maps": { "diffuse": "/api/s3proxy?key=tenants/ac001/fabric_maps/linen/diffuse.jpg",
+                "normal": "...", "roughness": "..." },
+      "pbr": { "roughness": 0.8, "sheen": 0.1, "metalness": 0, "scale": 10, "norm": 1 } }
+  ]
+}</pre></div></div></details>
+      </div>
+    </div>
+
+    <div class="apigrp">
+      <div class="gh"><span class="lt">C</span><h4>Asset delivery</h4><span class="badge hard">existing → hardened</span></div>
+      <div class="acc-group">
+        <details class="ep"><summary><span class="mm get">GET</span><span class="path">/api/s3proxy</span><span class="sp">Stream a GLB / texture</span><span class="chev">›</span></summary>
+          <div class="ebody"><div class="metar"><span class="k">Access</span><span class="v">client</span><span class="k">Input</span><span class="v">?key=</span></div><p class="edesc">Streams from S3, keys server-side. New guard: key must be under <code>tenants/{tenant_id}/</code> or <code>shared/</code>.</p>
+          <div class="pl"><div class="pl-h">Request</div><pre>GET /api/s3proxy?key=tenants/ac001/glbs/sierra_chair.glb
+Authorization: Bearer eyJhbGci...</pre></div>
+          <div class="pl"><div class="pl-h">Errors</div><pre>400 { "error": "missing key" }
+403 { "error": "forbidden: key outside tenant scope" }   // NEW</pre></div></div></details>
+      </div>
+    </div>
+
+    <div class="apigrp">
+      <div class="gh"><span class="lt">D</span><h4>AI gateway</h4><span class="badge hard">existing → hardened</span></div>
+      <div class="acc-group">
+        <details class="ep"><summary><span class="mm post">POST</span><span class="path">/api/generate</span><span class="sp">Photoreal render</span><span class="chev">›</span></summary>
+          <div class="ebody"><div class="metar"><span class="k">Access</span><span class="v">client</span><span class="k">Meters</span><span class="v">1 render credit</span></div><p class="edesc">Product / room / furniture hero shot. From the code.</p>
+          <div class="pl"><div class="pl-h">Request</div><pre>{ "imageData": "data:image/jpeg;base64,/9j/4AAQ...",
+  "mode": "product" }   // product | room | furniture</pre></div>
+          <div class="pl"><div class="pl-h">Response <span class="st ok">200</span></div><pre>{ "imageUrl": "data:image/png;base64,iVBORw0K..." }</pre></div>
+          <div class="pl"><div class="pl-h">Errors</div><pre>400 Missing imageData   ·   402 insufficient credits (NEW)</pre></div></div></details>
+        <details class="ep"><summary><span class="mm post">POST</span><span class="path">/api/gemini-room</span><span class="sp">View in my room</span><span class="chev">›</span></summary>
+          <div class="ebody"><p class="edesc">Composites furniture onto a real room photo.</p>
+          <div class="pl"><div class="pl-h">Request</div><pre>{ "roomPhoto": "data:image/jpeg;base64,...",
+  "furnitureRender": "data:image/png;base64,...",
+  "assetLabel": "Sierra Chair", "singleAsset": true }</pre></div>
+          <div class="pl"><div class="pl-h">Response <span class="st ok">200</span></div><pre>{ "imageUrl": "data:image/png;base64,..." }</pre></div></div></details>
+        <details class="ep"><summary><span class="mm post">POST</span><span class="path">/api/find-fabric</span><span class="sp">Fabric photo → PBR</span><span class="chev">›</span></summary>
+          <div class="ebody"><p class="edesc">Analyses a fabric photo → material properties.</p>
+          <div class="pl"><div class="pl-h">Request</div><pre>{ "imageData": "data:image/jpeg;base64,..." }</pre></div>
+          <div class="pl"><div class="pl-h">Response <span class="st ok">200</span></div><pre>{ "name": "Woven Linen", "type": "fabric", "roughness": 0.78,
+  "sheen": 0.12, "metalness": 0, "scale": 10, "norm": 1, "hex": "#cfc7ba" }</pre></div></div></details>
+        <details class="ep"><summary><span class="mm post">POST</span><span class="path">/api/enhance-texture</span><span class="sp">Clean a texture</span><span class="chev">›</span></summary>
+          <div class="ebody"><p class="edesc">Cleans a diffuse texture — seamless, neutral light.</p>
+          <div class="pl"><div class="pl-h">Request → Response</div><pre>{ "imageData": "data:image/jpeg;base64,..." }
+  → { "imageData": "data:image/png;base64,..." }</pre></div></div></details>
+      </div>
+    </div>
+
+    <div class="apigrp">
+      <div class="gh"><span class="lt">E</span><h4>Billing &amp; usage</h4><span class="badge reuse">reused</span></div>
+      <div class="acc-group">
+        <details class="ep"><summary><span class="mm get">GET</span><span class="path">/api/billing</span><span class="sp">Credit snapshot</span><span class="chev">›</span></summary>
+          <div class="ebody"><p class="edesc">Tenant balance + plan; drives the header render counter.</p>
+          <div class="pl"><div class="pl-h">Response <span class="st ok">200</span></div><pre>{ "plan": "pro", "credits": { "balance": 480, "included": 500 }, "renderCount": 20 }</pre></div></div></details>
+        <details class="ep"><summary><span class="mm post">POST</span><span class="path">/api/billing/consume</span><span class="sp">Deduct a credit (internal)</span><span class="chev">›</span></summary>
+          <div class="ebody"><div class="metar"><span class="k">Called by</span><span class="v">AI gateway, not the browser</span></div>
+          <div class="pl"><div class="pl-h">Request → Response</div><pre>{ "kind": "render", "units": 1 }  →  { "credits": { "balance": 479 }, "ok": true }</pre></div></div></details>
+      </div>
+    </div>
+
+    <div class="apigrp">
+      <div class="gh"><span class="lt">F</span><h4>Admin &amp; onboarding</h4><span class="badge new">new · staff only</span></div>
+      <div class="acc-group">
+        <details class="ep"><summary><span class="mm post">POST</span><span class="path">/api/admin/tenants</span><span class="sp">Create a client</span><span class="chev">›</span></summary>
+          <div class="ebody"><div class="pl"><div class="pl-h">Request → Response</div><pre>{ "name": "Bhavya Interiors", "slug": "bhavya" }
+  → { "tenant": { "id": "bh002-...", "status": "draft" } }</pre></div></div></details>
+        <details class="ep"><summary><span class="mm post">POST</span><span class="path">/api/admin/tenants/:id/members</span><span class="sp">Create the client login</span><span class="chev">›</span></summary>
+          <div class="ebody"><div class="pl"><div class="pl-h">Request → Response</div><pre>{ "email": "buyer@bhavya.com", "role": "client" }
+  → { "membership": {...}, "inviteSent": true }</pre></div></div></details>
+        <details class="ep"><summary><span class="mm post">POST</span><span class="path">/api/admin/uploads</span><span class="sp">Presigned S3 upload</span><span class="chev">›</span></summary>
+          <div class="ebody"><p class="edesc">One-time signed URL to PUT a GLB / map into the tenant prefix.</p>
+          <div class="pl"><div class="pl-h">Request → Response</div><pre>{ "tenantId": "bh002-...", "kind": "glb", "filename": "sofa_haven.glb" }
+  → { "uploadUrl": "https://s3...signed", "key": "tenants/bh002/glbs/sofa_haven.glb", "expiresIn": 300 }</pre></div></div></details>
+        <details class="ep"><summary><span class="mm post">POST</span><span class="path">/api/admin/products</span><span class="sp">Register a product</span><span class="chev">›</span></summary>
+          <div class="ebody"><p class="edesc">Saves a product with its GLB key + authored <code>partMap</code>.</p>
+          <div class="pl"><div class="pl-h">Request</div><pre>{ "tenantId": "bh002-...", "name": "Haven Sofa",
+  "glbKey": "tenants/bh002/glbs/sofa_haven.glb",
+  "partMap": { "seat_cushion": "Seat", "back_cushion": "Back", "base": "Base" },
+  "status": "draft" }</pre></div></div></details>
+        <details class="ep"><summary><span class="mm patch">PATCH</span><span class="path">/api/admin/products/:id</span><span class="sp">Fix parts / go live</span><span class="chev">›</span></summary>
+          <div class="ebody"><div class="pl"><div class="pl-h">Request → Response</div><pre>{ "partMap": {...}, "status": "live" }  →  { "product": { "id": "prd_09", "status": "live" } }</pre></div></div></details>
+        <details class="ep"><summary><span class="mm post">POST</span><span class="path">/api/admin/fabrics</span><span class="sp">Register a fabric</span><span class="chev">›</span></summary>
+          <div class="ebody"><div class="pl"><div class="pl-h">Request</div><pre>{ "tenantId": "bh002-...", "name": "Charcoal Velvet", "type": "fabric", "hex": "#3a3a40",
+  "diffuseKey": "tenants/bh002/fabric_maps/charcoal_velvet/diffuse.jpg",
+  "pbrDefaults": { "roughness": 0.55, "sheen": 0.6, "metalness": 0, "scale": 8, "norm": 1 } }</pre></div></div></details>
+        <details class="ep"><summary><span class="mm post">POST</span><span class="path">/api/admin/tenants/:id/activate</span><span class="sp">Go live</span><span class="chev">›</span></summary>
+          <div class="ebody"><div class="pl"><div class="pl-h">Request → Response</div><pre>{}  →  { "tenant": { "id": "bh002-...", "status": "active" } }</pre></div></div></details>
+      </div>
+    </div>
+    <p style="font-size:.78rem;color:var(--faint);margin-top:12px">Group A (identity) is Supabase-configured, not built: sign-in, OAuth, reset, refresh + the claims hook that injects <code>tenant_id</code> / <code>role</code>.</p>
+  </div>
+
+  <!-- ============ PLAN ============ -->
+  <div class="band" id="plan">
+    <div class="band-head"><span class="bn">05</span><h2>Onboarding &amp; delivery plan</h2></div>
+
+    <h3>Onboarding pipeline</h3>
+    <p class="band-lead" style="margin-top:0">Client sends 2D images + a fabric list; Livinit's team does the 3D work. Actors: <span class="actor client">client</span> <span class="actor ops">livinit team</span> <span class="actor sys">system</span></p>
+    <ol class="pipe">
+      <li><span class="pn">1</span><div class="pc"><b>Intake <span class="actor client">client</span></b><p>2D product images + fabric &amp; finish list.</p></div></li>
+      <li><span class="pn">2</span><div class="pc"><b>Create tenant + login <span class="actor ops">livinit team</span></b><p>Tenant starts in <code>draft</code>.</p></div></li>
+      <li><span class="pn">3</span><div class="pc"><b>3D modelling <span class="actor ops">livinit team</span></b><p>2D → GLB, real-world scale.</p></div></li>
+      <li><span class="pn">4</span><div class="pc"><b>Segmentation <span class="actor ops">livinit team</span></b><p>Author the <code>part_map</code> — what makes "change this cushion's fabric" work.</p></div></li>
+      <li><span class="pn">5</span><div class="pc"><b>Fabric setup <span class="actor ops">livinit team</span></b><p>PBR maps prepared / generated; stored with type/hex/defaults.</p></div></li>
+      <li><span class="pn">6</span><div class="pc"><b>Upload + register <span class="actor sys">system</span></b><p>Assets to <code>tenants/&lt;id&gt;/</code>; rows via the admin API.</p></div></li>
+      <li><span class="pn">7</span><div class="pc"><b>QA preview <span class="actor ops">livinit team</span></b><p>Every part accepts fabric, every finish renders true.</p></div></li>
+      <li><span class="pn">8</span><div class="pc"><b>Go live <span class="actor sys">system</span></b><p>Tenant → <code>active</code>; consultants log in.</p></div></li>
+    </ol>
+
+    <h3>Delivery phases</h3>
+    <ol class="pipe">
+      <li><span class="pn">1</span><div class="pc"><b>Data &amp; tenancy</b><p>Schema, RLS, claims hook.</p><span class="gate"><b>Gate:</b> tenant A can't read tenant B's rows.</span></div></li>
+      <li><span class="pn">2</span><div class="pc"><b>Auth &amp; gated shell</b><p>Login, boot guard (ported from web-pipeline).</p><span class="gate"><b>Gate:</b> no <code>/api/*</code> succeeds pre-login.</span></div></li>
+      <li><span class="pn">3</span><div class="pc"><b>Secure the proxies</b><p><code>_lib/auth</code>, s3proxy prefix, AI quota.</p><span class="gate"><b>Gate:</b> cross-tenant key → 403; unauth AI → 401.</span></div></li>
+      <li><span class="pn">4</span><div class="pc"><b>Tenant catalog</b><p><code>/api/catalog</code> + runtime loader + dynamic product UI.</p><span class="gate"><b>Gate:</b> two tenants, two libraries; render still works.</span></div></li>
+      <li><span class="pn">5</span><div class="pc"><b>Staff onboarding</b><p>Console + admin API.</p><span class="gate"><b>Gate:</b> staff onboards "Acme"; client sees exactly Acme's assets.</span></div></li>
+      <li><span class="pn">6</span><div class="pc"><b>Deploy</b><p>Domain, env, prod smoke incl. cross-tenant 403.</p></div></li>
+    </ol>
+
+    <h3>Risks worth naming</h3>
+    <div class="find crit"><div class="stripe"></div><div class="fb"><b>Isolation must hold below the UI</b><p>RLS + proxy check are the real guarantee. Phase 3 is ordered early on purpose.</p></div></div>
+    <div class="find crit"><div class="stripe"></div><div class="fb"><b>Open AI endpoints are an uncapped bill</b><p>Per-tenant quota is v1 scope, not a nice-to-have.</p></div></div>
+    <div class="find warn"><div class="stripe"></div><div class="fb"><b>Segmentation is authored, not inferred</b><p>Each client's quality depends on the hand-authored <code>part_map</code>. Budget onboarding time.</p></div></div>
+    <div class="find warn"><div class="stripe"></div><div class="fb"><b>Confirm the base repo</b><p>This clone (<code>VIKRAM-0/main</code>) drifts from its own doc — no bed, missing search endpoints. Lock the canonical snapshot before building.</p></div></div>
+  </div>
+
+  <p class="foot">
+    Single specification for the Fabric Simulator multi-tenant migration (schema namespace <code>simulator</code>). Grounded in <code>VIKRAM-0/livinit_fabric_simulator @ main</code>; existing request contracts read from <code>api/</code> + <code>src/</code>. Diagrams rendered with Mermaid. Supersedes the earlier separate documents.
+  </p>
+
+</div>
+
+<script>
+  (function(){
+    // API expand/collapse
+    var ea=document.getElementById('expand-all'), ca=document.getElementById('collapse-all');
+    if(ea) ea.addEventListener('click',function(){document.querySelectorAll('details.ep').forEach(function(d){d.open=true;});});
+    if(ca) ca.addEventListener('click',function(){document.querySelectorAll('details.ep').forEach(function(d){d.open=false;});});
+    // Scrollspy nav highlight
+    var links=[].slice.call(document.querySelectorAll('.nav a[data-nav]'));
+    var map={}; links.forEach(function(a){map[a.getAttribute('href').slice(1)]=a;});
+    var obs=new IntersectionObserver(function(entries){
+      entries.forEach(function(e){
+        if(e.isIntersecting){ links.forEach(function(l){l.classList.remove('active');}); if(map[e.target.id]) map[e.target.id].classList.add('active'); }
+      });
+    },{rootMargin:'-45% 0px -50% 0px'});
+    document.querySelectorAll('.band').forEach(function(b){obs.observe(b);});
+  })();
+</script>

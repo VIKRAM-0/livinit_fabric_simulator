@@ -1,0 +1,546 @@
+<style>
+  :root {
+    --bg: #FBFBFD;
+    --surface: #FFFFFF;
+    --surface-2: #F4F5F9;
+    --border: #E6E7EF;
+    --border-strong: #D2D5E2;
+    --text: #1A1C24;
+    --muted: #5C6173;
+    --faint: #8A8FA3;
+    --accent: #5364C9;
+    --accent-soft: #7A91EE;
+    --accent-wash: #EEF1FD;
+    --good: #1F9D63;
+    --good-wash: #E4F5EC;
+    --warn: #B9781F;
+    --warn-wash: #FBF0DC;
+    --crit: #C64A42;
+    --crit-wash: #FBE7E5;
+    --shadow: 0 1px 2px rgba(26,28,36,.04), 0 8px 24px -12px rgba(26,28,36,.12);
+    --radius: 14px;
+    --mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+    --sans: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #0D0E13;
+      --surface: #15171F;
+      --surface-2: #1B1E29;
+      --border: #262A38;
+      --border-strong: #333849;
+      --text: #ECEDF3;
+      --muted: #9CA1B5;
+      --faint: #6E7488;
+      --accent: #8CA0F2;
+      --accent-soft: #7A91EE;
+      --accent-wash: #1B2036;
+      --good: #4CC38A;
+      --good-wash: #14251C;
+      --warn: #E0A94A;
+      --warn-wash: #2A2213;
+      --crit: #E9736A;
+      --crit-wash: #2C1817;
+      --shadow: 0 1px 2px rgba(0,0,0,.3), 0 12px 32px -16px rgba(0,0,0,.6);
+    }
+  }
+  :root[data-theme="light"] {
+    --bg:#FBFBFD;--surface:#FFFFFF;--surface-2:#F4F5F9;--border:#E6E7EF;--border-strong:#D2D5E2;
+    --text:#1A1C24;--muted:#5C6173;--faint:#8A8FA3;--accent:#5364C9;--accent-soft:#7A91EE;--accent-wash:#EEF1FD;
+    --good:#1F9D63;--good-wash:#E4F5EC;--warn:#B9781F;--warn-wash:#FBF0DC;--crit:#C64A42;--crit-wash:#FBE7E5;
+    --shadow:0 1px 2px rgba(26,28,36,.04),0 8px 24px -12px rgba(26,28,36,.12);
+  }
+  :root[data-theme="dark"] {
+    --bg:#0D0E13;--surface:#15171F;--surface-2:#1B1E29;--border:#262A38;--border-strong:#333849;
+    --text:#ECEDF3;--muted:#9CA1B5;--faint:#6E7488;--accent:#8CA0F2;--accent-soft:#7A91EE;--accent-wash:#1B2036;
+    --good:#4CC38A;--good-wash:#14251C;--warn:#E0A94A;--warn-wash:#2A2213;--crit:#E9736A;--crit-wash:#2C1817;
+    --shadow:0 1px 2px rgba(0,0,0,.3),0 12px 32px -16px rgba(0,0,0,.6);
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--bg); color: var(--text);
+    font-family: var(--sans); line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+  }
+  .wrap { max-width: 940px; margin: 0 auto; padding: clamp(28px, 6vw, 72px) clamp(18px, 5vw, 40px) 96px; }
+
+  .eyebrow {
+    font-size: .72rem; letter-spacing: .14em; text-transform: uppercase;
+    color: var(--accent); font-weight: 650; margin: 0 0 14px;
+  }
+  h1 {
+    font-size: clamp(1.9rem, 4.6vw, 2.75rem); line-height: 1.08; margin: 0 0 18px;
+    letter-spacing: -.02em; text-wrap: balance; font-weight: 720;
+  }
+  .lede { font-size: clamp(1.02rem, 2vw, 1.18rem); color: var(--muted); margin: 0 0 28px; max-width: 62ch; }
+
+  .meta { display: flex; flex-wrap: wrap; gap: 10px; margin: 0 0 8px; }
+  .meta .chip {
+    display: inline-flex; align-items: center; gap: 8px;
+    background: var(--surface); border: 1px solid var(--border); border-radius: 999px;
+    padding: 7px 14px; font-size: .82rem; color: var(--muted); box-shadow: var(--shadow);
+  }
+  .meta .chip b { color: var(--text); font-weight: 620; }
+  .meta .chip .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--accent-soft); }
+
+  section { margin-top: clamp(44px, 7vw, 68px); }
+  h2 {
+    font-size: 1.42rem; letter-spacing: -.01em; margin: 0 0 6px; font-weight: 690;
+    display: flex; align-items: baseline; gap: 12px;
+  }
+  h2 .num {
+    font-family: var(--mono); font-size: .82rem; color: var(--accent);
+    border: 1px solid var(--border-strong); border-radius: 7px; padding: 2px 8px; font-weight: 600;
+  }
+  .section-note { color: var(--muted); margin: 0 0 22px; max-width: 66ch; }
+
+  h3 { font-size: 1.02rem; margin: 26px 0 10px; font-weight: 640; letter-spacing: -.005em; }
+
+  .card {
+    background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
+    box-shadow: var(--shadow); padding: 22px 24px;
+  }
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  @media (max-width: 680px) { .grid-2 { grid-template-columns: 1fr; } }
+
+  /* pills */
+  .pill {
+    display: inline-flex; align-items: center; gap: 6px; font-size: .72rem; font-weight: 640;
+    letter-spacing: .01em; padding: 3px 9px; border-radius: 6px; white-space: nowrap;
+  }
+  .pill.good { background: var(--good-wash); color: var(--good); }
+  .pill.warn { background: var(--warn-wash); color: var(--warn); }
+  .pill.crit { background: var(--crit-wash); color: var(--crit); }
+  .pill.neutral { background: var(--surface-2); color: var(--muted); }
+
+  /* tables */
+  .table-scroll { overflow-x: auto; border: 1px solid var(--border); border-radius: var(--radius); box-shadow: var(--shadow); }
+  table { border-collapse: collapse; width: 100%; font-size: .9rem; min-width: 560px; background: var(--surface); }
+  thead th {
+    text-align: left; font-size: .7rem; text-transform: uppercase; letter-spacing: .08em;
+    color: var(--faint); font-weight: 640; padding: 13px 16px; border-bottom: 1px solid var(--border);
+    background: var(--surface-2);
+  }
+  tbody td { padding: 13px 16px; border-bottom: 1px solid var(--border); vertical-align: top; color: var(--muted); }
+  tbody tr:last-child td { border-bottom: none; }
+  tbody td:first-child { color: var(--text); font-weight: 560; }
+  code { font-family: var(--mono); font-size: .85em; background: var(--surface-2); padding: 2px 6px; border-radius: 5px; color: var(--text); }
+  .method { font-family: var(--mono); font-size: .74rem; font-weight: 640; color: var(--accent); }
+
+  /* callout */
+  .callout {
+    border-left: 3px solid var(--warn); background: var(--warn-wash);
+    border-radius: 0 12px 12px 0; padding: 16px 20px; margin: 20px 0;
+  }
+  .callout.crit { border-left-color: var(--crit); background: var(--crit-wash); }
+  .callout.accent { border-left-color: var(--accent-soft); background: var(--accent-wash); }
+  .callout h4 { margin: 0 0 6px; font-size: .95rem; color: var(--text); }
+  .callout p { margin: 0; color: var(--muted); font-size: .9rem; }
+  .callout p + p { margin-top: 8px; }
+
+  /* current -> target */
+  .vs { display: grid; grid-template-columns: 1fr auto 1fr; gap: 18px; align-items: stretch; }
+  @media (max-width: 680px) { .vs { grid-template-columns: 1fr; } .vs .arrow { display: none; } }
+  .vs .col { padding: 20px 22px; }
+  .vs .arrow { align-self: center; color: var(--accent); font-size: 1.4rem; }
+  .vs .col-label { font-size: .7rem; text-transform: uppercase; letter-spacing: .1em; font-weight: 650; margin-bottom: 12px; }
+  .vs .now .col-label { color: var(--crit); }
+  .vs .then .col-label { color: var(--good); }
+  .vs ul { margin: 0; padding-left: 18px; }
+  .vs li { margin: 7px 0; color: var(--muted); font-size: .9rem; }
+  .vs li b { color: var(--text); font-weight: 580; }
+
+  /* schema cards */
+  .schema { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 14px; }
+  .schema .tbl { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; box-shadow: var(--shadow); }
+  .schema .tbl h5 {
+    margin: 0; font-family: var(--mono); font-size: .82rem; padding: 11px 14px;
+    background: var(--surface-2); border-bottom: 1px solid var(--border); color: var(--accent); font-weight: 640;
+  }
+  .schema .tbl ul { list-style: none; margin: 0; padding: 10px 14px; }
+  .schema .tbl li { font-size: .82rem; padding: 3px 0; color: var(--muted); display: flex; justify-content: space-between; gap: 10px; }
+  .schema .tbl li span { font-family: var(--mono); color: var(--text); }
+  .schema .tbl li em { font-style: normal; color: var(--faint); font-size: .74rem; }
+  .schema .tbl li.key span { color: var(--accent); }
+
+  /* code block */
+  pre {
+    margin: 16px 0 0; background: var(--surface); border: 1px solid var(--border); border-radius: 12px;
+    padding: 18px 20px; overflow-x: auto; font-family: var(--mono); font-size: .82rem; line-height: 1.7;
+    color: var(--muted); box-shadow: var(--shadow);
+  }
+  pre .p { color: var(--accent); }
+  pre .c { color: var(--faint); }
+
+  /* phase list */
+  .phase { display: flex; gap: 18px; padding: 22px 0; border-top: 1px solid var(--border); }
+  .phase:first-of-type { border-top: none; }
+  .phase .idx {
+    flex: none; width: 38px; height: 38px; border-radius: 10px; background: var(--accent-wash);
+    color: var(--accent); font-weight: 700; font-size: 1.02rem; display: grid; place-items: center;
+    border: 1px solid var(--border);
+  }
+  .phase .body { flex: 1; min-width: 0; }
+  .phase h3 { margin: 4px 0 6px; }
+  .phase p { margin: 0 0 10px; color: var(--muted); font-size: .92rem; }
+  .phase .deliver { font-size: .86rem; color: var(--text); }
+  .phase .deliver b { color: var(--accent); font-weight: 620; }
+  .phase .gate { display: block; margin-top: 8px; font-size: .82rem; color: var(--muted); }
+  .phase .gate b { color: var(--good); }
+
+  /* milestones */
+  .mile { display: grid; grid-template-columns: 90px 1fr; gap: 0; }
+  .mile .row { display: contents; }
+  .mile .m-when { padding: 16px 16px 16px 0; font-family: var(--mono); font-size: .82rem; color: var(--accent); border-top: 1px solid var(--border); font-weight: 600; }
+  .mile .m-what { padding: 16px 0; border-top: 1px solid var(--border); }
+  .mile .m-what b { display: block; margin-bottom: 3px; color: var(--text); font-weight: 620; }
+  .mile .m-what span { color: var(--muted); font-size: .89rem; }
+
+  /* risk */
+  .risk { display: flex; gap: 14px; padding: 16px 0; border-top: 1px solid var(--border); }
+  .risk:first-child { border-top: none; }
+  .risk .stripe { flex: none; width: 4px; border-radius: 3px; }
+  .risk.crit .stripe { background: var(--crit); }
+  .risk.warn .stripe { background: var(--warn); }
+  .risk .r-body b { display: block; margin-bottom: 3px; }
+  .risk .r-body span { color: var(--muted); font-size: .9rem; }
+
+  .footnote { margin-top: 56px; padding-top: 22px; border-top: 1px solid var(--border); color: var(--faint); font-size: .82rem; }
+  .footnote code { font-size: .82em; }
+  a { color: var(--accent); }
+  .tag-legend { display: flex; flex-wrap: wrap; gap: 8px; margin: 18px 0 0; }
+</style>
+
+<div class="wrap">
+
+  <p class="eyebrow">Engineering Plan &middot; 22 Jul 2026</p>
+  <h1>From demo to platform: making the Fabric Simulator multi&#8209;tenant</h1>
+  <p class="lede">A code-verified audit of the current app, plus the backend and delivery plan to turn a single-tenant configurator into a per-client SaaS served at <code>web.simulator.livinit.ai</code>.</p>
+
+  <div class="meta">
+    <span class="chip"><span class="dot"></span>Backend: <b>Standalone Supabase</b></span>
+    <span class="chip"><span class="dot"></span>Onboarding: <b>Staff admin UI</b></span>
+    <span class="chip"><span class="dot"></span>Tenant model: <b>Simulator-only (RLS)</b></span>
+    <span class="chip"><span class="dot"></span>Host: <b>web.simulator.livinit.ai</b></span>
+  </div>
+
+  <!-- ───────────────────────── AUDIT ───────────────────────── -->
+  <section>
+    <h2><span class="num">01</span> What the code actually says</h2>
+    <p class="section-note">Before proposing work, we read the repo end-to-end. Each claim below was checked against source, not assumed. This determines the size of the job.</p>
+
+    <div class="table-scroll">
+      <table>
+        <thead>
+          <tr><th>Finding</th><th>Evidence in code</th><th style="width:120px">Status</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>No auth, users, or tenants exist</td>
+            <td>Repo-wide search for auth/session/JWT/tenant returns only false positives (comments, prompt text). Nothing real.</td>
+            <td><span class="pill good">Verified</span></td>
+          </tr>
+          <tr>
+            <td>Every asset is hardcoded</td>
+            <td>Product GLBs, ~14 fabric series and PBR maps are literals in <code>src/lib/catalog.js</code>.</td>
+            <td><span class="pill good">Verified</span></td>
+          </tr>
+          <tr>
+            <td>Asset proxy is fully open</td>
+            <td><code>api/s3proxy.ts</code> serves <em>any</em> S3 key to <em>anyone</em> — no session check.</td>
+            <td><span class="pill good">Verified</span></td>
+          </tr>
+          <tr>
+            <td>All AI endpoints are open</td>
+            <td>No <code>authorization</code>/<code>401</code>/<code>403</code> logic in any <code>api/*.ts</code>. The Gemini render calls cost real money per request.</td>
+            <td><span class="pill good">Verified</span></td>
+          </tr>
+          <tr>
+            <td>Product tabs are wired by hand</td>
+            <td><code>index.html</code> hardcodes <code>switchModel('chair')</code> &hellip; The authors even left a comment planning the swap to a data-driven gallery.</td>
+            <td><span class="pill good">Verified</span></td>
+          </tr>
+          <tr>
+            <td>Part segmentation is name + guess</td>
+            <td><code>model.js</code> uses a fixed name dictionary plus a positional-geometry fallback — tuned for these 3 products, not arbitrary client furniture.</td>
+            <td><span class="pill good">Verified</span></td>
+          </tr>
+          <tr>
+            <td>No secrets leak to the browser</td>
+            <td>Only <code>AWS_*</code>, <code>GEMINI_API_KEY</code>, <code>S3_BUCKET</code> live server-side; frontend loads public CDNs only.</td>
+            <td><span class="pill good">Verified</span></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="callout crit">
+      <h4>Read this before anyone builds on this clone</h4>
+      <p>This repository (<code>VIKRAM-0/livinit_fabric_simulator</code>, branch <code>main</code>, commits all "Add files via upload") <b>drifts from the architecture doc shipped inside it.</b> Here the products are <b>chair / accent&#8209;chair / sofa — no bed</b>, and three API files the doc describes (<code>acg-search</code>, <code>acg-map</code>, the path-style S3 proxy) are <b>absent</b>, so the AmbientCG fabric-search path does not exist in this cut.</p>
+      <p>Nothing is broken — nothing references the missing files — but confirm <b>this clone is the intended base of truth</b> before building. The package name <code>furniture-configurator-customer</code> suggests it is the customer-facing fork of a separate designer/admin app.</p>
+    </div>
+  </section>
+
+  <!-- ───────────────────────── THE GAP ───────────────────────── -->
+  <section>
+    <h2><span class="num">02</span> The gap, in one line</h2>
+    <p class="section-note">"See only your own assets" and "log in during consultations" are not features you add to this app — they are the platform layer it was never built with. Roughly 80% of this work is backend that does not exist yet.</p>
+
+    <div class="vs">
+      <div class="col now card">
+        <div class="col-label">Today &mdash; single-tenant demo</div>
+        <ul>
+          <li>One shared, public asset set</li>
+          <li><b>No login</b> — open to anyone with the URL</li>
+          <li>Catalog compiled into JavaScript</li>
+          <li>Any client could read another's files by guessing keys</li>
+          <li>Uncapped, unattributed AI spend</li>
+        </ul>
+      </div>
+      <div class="arrow" aria-hidden="true">&rarr;</div>
+      <div class="col then card">
+        <div class="col-label">Target &mdash; per-client platform</div>
+        <ul>
+          <li>Each account sees <b>only its own</b> furniture &amp; fabrics</li>
+          <li><b>Login required</b>; session drives everything</li>
+          <li>Catalog served per-tenant from a database</li>
+          <li>Isolation enforced in the database <b>and</b> the asset proxy</li>
+          <li>Per-tenant AI quota, logged and capped</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- ───────────────────────── BACKEND ───────────────────────── -->
+  <section>
+    <h2><span class="num">03</span> Backend architecture</h2>
+    <p class="section-note">Standalone Supabase (Auth + Postgres + Row-Level Security) added to this Vercel app. The rendering engine stays untouched — we change where the catalog comes from and who is allowed to fetch it.</p>
+
+    <div class="callout accent">
+      <h4>Reuse what Livinit already runs — don't rebuild it</h4>
+      <p>Livinit's existing backend (<code>api.livinit.ai</code>) and web app already run <b>Supabase auth</b> (email, Google &amp; Apple OAuth, password reset, sessions) and a <b>real Stripe billing/credits system</b> (<code>BillingSnapshot</code> + <code>consume</code>). We keep a <b>separate identity silo</b> — the simulator's users are client <em>businesses</em>, a different population from the consumer app — but we <b>port the proven auth patterns</b> and <b>model AI metering on the existing credits contract</b> rather than writing either from scratch. The one thing new to all of Livinit is the <b>tenant/org model</b> — see the strategic risk below.</p>
+    </div>
+
+    <h3>Identity &amp; access</h3>
+    <div class="card">
+      <p style="margin:0 0 10px;color:var(--muted);font-size:.92rem">Supabase Auth issues the session. A sign-in hook stamps two custom claims into every JWT, read <b>server-side only</b> — never trusted from the client:</p>
+      <pre><span class="c">// JWT claims after login</span>
+{
+  sub:       <span class="p">"&lt;user id&gt;"</span>,
+  tenant_id: <span class="p">"&lt;uuid&gt;"</span>,     <span class="c">// which client this user belongs to</span>
+  role:      <span class="p">"client"</span>        <span class="c">// or "livinit_staff" for onboarding</span>
+}</pre>
+      <p style="margin:10px 0 0;color:var(--muted);font-size:.86rem">A <code>client</code> maps to exactly one tenant in v1. <code>livinit_staff</code> unlocks the admin surface. Email/password + magic link; sessions refresh automatically.</p>
+    </div>
+
+    <h3>Data model &mdash; Postgres + RLS</h3>
+    <p class="section-note" style="margin-bottom:14px">Every tenant-scoped table carries <code>tenant_id</code>. One RLS policy per table — <code>tenant_id = (auth.jwt()-&gt;&gt;'tenant_id')</code> — is the true isolation boundary. Staff get a separate service-role path for onboarding.</p>
+    <div class="schema">
+      <div class="tbl">
+        <h5>tenants</h5>
+        <ul>
+          <li class="key"><em>pk</em><span>id</span></li>
+          <li><em></em><span>name, slug</span></li>
+          <li><em></em><span>status</span></li>
+          <li><em>reserved</em><span>branding</span></li>
+        </ul>
+      </div>
+      <div class="tbl">
+        <h5>memberships</h5>
+        <ul>
+          <li class="key"><em>fk</em><span>user_id</span></li>
+          <li class="key"><em>fk</em><span>tenant_id</span></li>
+          <li><em></em><span>role</span></li>
+        </ul>
+      </div>
+      <div class="tbl">
+        <h5>products</h5>
+        <ul>
+          <li class="key"><em>fk</em><span>tenant_id</span></li>
+          <li><em></em><span>name, status</span></li>
+          <li><em></em><span>glb_key</span></li>
+          <li><em></em><span>thumbnail_key</span></li>
+          <li><em>authored</em><span>part_map</span></li>
+        </ul>
+      </div>
+      <div class="tbl">
+        <h5>fabrics</h5>
+        <ul>
+          <li class="key"><em>fk</em><span>tenant_id</span></li>
+          <li><em></em><span>name, type, hex</span></li>
+          <li><em></em><span>diffuse_key</span></li>
+          <li><em></em><span>normal_key</span></li>
+          <li><em></em><span>roughness_key</span></li>
+          <li><em>PBR</em><span>roughness&hellip;</span></li>
+        </ul>
+      </div>
+      <div class="tbl">
+        <h5>usage_events <em style="text-transform:none;letter-spacing:0">*</em></h5>
+        <ul>
+          <li class="key"><em>fk</em><span>tenant_id</span></li>
+          <li><em></em><span>kind</span></li>
+          <li><em></em><span>cost_units</span></li>
+          <li><em></em><span>created_at</span></li>
+        </ul>
+      </div>
+    </div>
+    <p class="section-note" style="margin:12px 0 0;font-size:.82rem"><em style="font-style:normal;color:var(--accent)">*</em> <code>usage_events</code> is a thin local log; AI-render <b>metering &amp; caps ride Livinit's existing credits contract</b> (<code>BillingSnapshot</code> / <code>consume</code>), so spend is billing-ready rather than a bespoke counter.</p>
+
+    <div class="callout accent">
+      <h4>Why <code>part_map</code> matters</h4>
+      <p>Client furniture won't auto-classify — the current name-dictionary is tuned to three known products. The customizable sections your team segments during onboarding are stored here as an explicit mesh&#8209;node &rarr; part&#8209;name map, and applied at load time. <b>This is the data form of "our team segments the sections."</b></p>
+    </div>
+
+    <h3>API surface</h3>
+    <p class="section-note" style="margin-bottom:14px">Every endpoint verifies the session and derives <code>tenant_id</code> from the JWT. New endpoints in bold; existing ones get an auth wrapper.</p>
+    <div class="table-scroll">
+      <table>
+        <thead><tr><th style="width:190px">Endpoint</th><th style="width:66px">Method</th><th>Responsibility</th><th style="width:104px">Access</th></tr></thead>
+        <tbody>
+          <tr><td><b>/api/catalog</b></td><td><span class="method">GET</span></td><td>Returns this tenant's products + fabrics with proxied asset URLs. Replaces the hardcoded <code>catalog.js</code> data.</td><td><span class="pill neutral">client</span></td></tr>
+          <tr><td>/api/s3proxy</td><td><span class="method">GET</span></td><td>Hardened: rejects any key outside <code>tenants/&lt;id&gt;/</code>; <code>shared/</code> readable by all authed users.</td><td><span class="pill neutral">client</span></td></tr>
+          <tr><td>/api/generate</td><td><span class="method">POST</span></td><td>Gemini product/room render — now gated, attributed &amp; quota-checked.</td><td><span class="pill neutral">client</span></td></tr>
+          <tr><td>/api/gemini-room</td><td><span class="method">POST</span></td><td>"View in My Room" compositor — gated + quota.</td><td><span class="pill neutral">client</span></td></tr>
+          <tr><td>/api/find-fabric</td><td><span class="method">POST</span></td><td>Fabric photo &rarr; PBR JSON — gated + quota.</td><td><span class="pill neutral">client</span></td></tr>
+          <tr><td>/api/enhance-texture</td><td><span class="method">POST</span></td><td>Texture cleanup — gated + quota.</td><td><span class="pill neutral">client</span></td></tr>
+          <tr><td><b>/api/admin/tenant</b></td><td><span class="method">POST</span></td><td>Create tenant + first client login (invite).</td><td><span class="pill warn">staff</span></td></tr>
+          <tr><td><b>/api/admin/product</b></td><td><span class="method">POST</span></td><td>Presign GLB upload, save product + <code>part_map</code>.</td><td><span class="pill warn">staff</span></td></tr>
+          <tr><td><b>/api/admin/fabric</b></td><td><span class="method">POST</span></td><td>Presign map uploads, save fabric row.</td><td><span class="pill warn">staff</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>Asset isolation &amp; storage layout</h3>
+    <p class="section-note" style="margin-bottom:0">One bucket, namespaced by tenant. The proxy compares the requested prefix against the caller's <code>tenant_id</code> — hiding assets in the UI is <em>not</em> isolation.</p>
+    <pre>s3://livinit-simulator/
+  <span class="p">shared/</span>                    <span class="c">// room shells, wood textures — any authed tenant</span>
+    glbs/room_new.glb
+  <span class="p">tenants/&lt;tenant_id&gt;/</span>       <span class="c">// gated: key prefix MUST match the JWT tenant_id</span>
+    glbs/&lt;product&gt;.glb
+    fabric_maps/&lt;series&gt;/{diffuse,normal,roughness}.jpg
+    thumbnails/&lt;product&gt;.jpg</pre>
+
+    <h3>AI gateway &amp; cost control</h3>
+    <div class="grid-2">
+      <div class="card">
+        <h4 style="margin:0 0 8px;font-size:.95rem">The problem today</h4>
+        <p style="margin:0;color:var(--muted);font-size:.9rem">Anyone can POST to <code>/api/generate</code>. In a multi-tenant world with no cap, one client's live demo — or a scraper — runs up your Google bill with no attribution.</p>
+      </div>
+      <div class="card">
+        <h4 style="margin:0 0 8px;font-size:.95rem">The control</h4>
+        <p style="margin:0;color:var(--muted);font-size:.9rem">A shared <code>_lib/auth.ts</code> verifies the JWT on every AI call and meters it through Livinit's <b>existing credits contract</b> (<code>consume</code>) — reusing billing that already exists rather than a bespoke counter. Spend becomes visible, capped, and billable per client.</p>
+      </div>
+    </div>
+
+    <h3>Onboarding &mdash; staff admin</h3>
+    <p class="section-note" style="margin-bottom:0">A Livinit-staff-only surface so a non-engineer can onboard a client end-to-end <em>after</em> the 3D models are built: create the tenant &amp; login, upload each product GLB and author its <code>part_map</code> (reusing the existing <code>viewer.html</code> mesh preview), and register fabrics — seeded from the existing <code>find-fabric</code> analysis where useful. Writes go through the service role, itself guarded by a <code>role = livinit_staff</code> check.</p>
+  </section>
+
+  <!-- ───────────────────────── DELIVERY ───────────────────────── -->
+  <section>
+    <h2><span class="num">04</span> Delivery plan</h2>
+    <p class="section-note">Security is wired in early, alongside auth — not bolted on later. Each phase ends with a gate that must pass before the next begins.</p>
+
+    <div class="phase">
+      <div class="idx">1</div>
+      <div class="body">
+        <h3>Data model &amp; tenant backbone</h3>
+        <p>The isolation boundary comes first. Schema, migrations, and RLS policies keyed on the <code>tenant_id</code> claim; the sign-in hook that stamps the claim.</p>
+        <div class="deliver"><b>Backend:</b> Supabase project, 5 tables, RLS, custom-claims hook.</div>
+        <span class="gate"><b>Gate:</b> authenticated as tenant A, a query returns zero of tenant B's rows.</span>
+      </div>
+    </div>
+    <div class="phase">
+      <div class="idx">2</div>
+      <div class="body">
+        <h3>Auth &amp; gated shell</h3>
+        <p>Login page; boot blocks until a session exists; <code>tenant_id</code> read from the session. Logged-out users can reach nothing. <b>Ported from web-pipeline's proven Supabase auth</b>, not written from scratch.</p>
+        <div class="deliver"><b>Backend:</b> Supabase Auth wiring (reused patterns), session guard, redirect config.</div>
+        <span class="gate"><b>Gate:</b> logged-out = login screen; no <code>/api/*</code> call succeeds pre-login.</span>
+      </div>
+    </div>
+    <div class="phase">
+      <div class="idx">3</div>
+      <div class="body">
+        <h3>Secure the proxies</h3>
+        <p>The phase that actually protects clients from each other. Session check + tenant-prefix enforcement on <code>s3proxy</code>; auth + quota on every AI endpoint.</p>
+        <div class="deliver"><b>Backend:</b> <code>_lib/auth.ts</code>, rewritten <code>s3proxy</code>, quota middleware.</div>
+        <span class="gate"><b>Gate:</b> tenant A requesting tenant B's key &rarr; 403; unauth AI call &rarr; 401; quota trips.</span>
+      </div>
+    </div>
+    <div class="phase">
+      <div class="idx">4</div>
+      <div class="body">
+        <h3>Tenant catalog (largest frontend change)</h3>
+        <p><code>catalog.js</code> becomes a runtime loader fed by <code>/api/catalog</code>; the product switcher goes data-driven; stored <code>part_map</code> replaces the guesswork.</p>
+        <div class="deliver"><b>Backend:</b> <code>/api/catalog</code>. <b>Frontend:</b> loader + dynamic product UI.</div>
+        <span class="gate"><b>Gate:</b> two tenants see two different libraries; apply / room / render all still work.</span>
+      </div>
+    </div>
+    <div class="phase">
+      <div class="idx">5</div>
+      <div class="body">
+        <h3>Staff onboarding admin</h3>
+        <p>Create tenant + login, register products with segmentation, register fabrics — enough that a non-engineer can onboard a client repeatably.</p>
+        <div class="deliver"><b>Backend:</b> 3 admin endpoints + presigned uploads. <b>Frontend:</b> staff-gated admin views.</div>
+        <span class="gate"><b>Gate:</b> staff onboards "Acme"; the new client logs in and sees exactly Acme's assets.</span>
+      </div>
+    </div>
+    <div class="phase">
+      <div class="idx">6</div>
+      <div class="body">
+        <h3>Deploy to web.simulator.livinit.ai</h3>
+        <p>New Vercel project + domain, env vars, Supabase redirect URLs, production smoke including a cross-tenant 403 check.</p>
+        <div class="deliver"><b>Ops:</b> project, domain, secrets, auth redirects.</div>
+        <span class="gate"><b>Gate:</b> real tenant logs in on prod, customizes, renders; cross-tenant access is 403.</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ───────────────────────── MILESTONES ───────────────────────── -->
+  <section>
+    <h2><span class="num">05</span> What's demoable, when</h2>
+    <p class="section-note">Sequenced so there's something to show at each step. Calendar durations are indicative and depend on team size — treat them as ranges to confirm, not commitments.</p>
+    <div class="mile">
+      <div class="row"><div class="m-when">M1</div><div class="m-what"><b>Two isolated tenants, login works</b><span>Phases 1&ndash;2. You can log in as two accounts; the database provably separates them.</span></div></div>
+      <div class="row"><div class="m-when">M2</div><div class="m-what"><b>Isolation is real, end-to-end</b><span>Phase 3. Assets and AI are locked to the session; cross-tenant access returns 403.</span></div></div>
+      <div class="row"><div class="m-when">M3</div><div class="m-what"><b>Each client sees its own catalog</b><span>Phase 4. The simulator is genuinely per-tenant — the headline demo for stakeholders.</span></div></div>
+      <div class="row"><div class="m-when">M4</div><div class="m-what"><b>Repeatable onboarding, live on domain</b><span>Phases 5&ndash;6. Your team onboards new clients without engineering; running at web.simulator.livinit.ai.</span></div></div>
+    </div>
+  </section>
+
+  <!-- ───────────────────────── RISKS ───────────────────────── -->
+  <section>
+    <h2><span class="num">06</span> Risks worth naming out loud</h2>
+    <div class="risk crit">
+      <div class="stripe"></div>
+      <div class="r-body"><b>Isolation must hold below the UI</b><span>Row-level security and the proxy check are the real guarantee. If Phase 3 slips, one client can pull another's furniture by guessing keys. It is ordered early on purpose.</span></div>
+    </div>
+    <div class="risk crit">
+      <div class="stripe"></div>
+      <div class="r-body"><b>Open AI endpoints are an uncapped bill</b><span>Per-tenant quota is v1 scope, not a nice-to-have. Without it, a single demo or scraper can spend real money against your Gemini key.</span></div>
+    </div>
+    <div class="risk warn">
+      <div class="stripe"></div>
+      <div class="r-body"><b>Segmentation is authored, not inferred</b><span>The quality of each client's experience depends on the hand-authored <code>part_map</code>. Budget onboarding time for it; it is human work, not an algorithm.</span></div>
+    </div>
+    <div class="risk warn">
+      <div class="stripe"></div>
+      <div class="r-body"><b>Tenant model scope — decided: simulator-only</b><span>Livinit has only ever modeled individual users. Rather than make orgs a company-wide backend primitive now, the tenant/org model lives <b>only in the simulator</b> (own Supabase, RLS-enforced, zero blast radius on the core backend). If B2B becomes strategic later, promoting orgs to the shared backend is a bounded migration — not a rewrite. The seam is kept clean for that.</span></div>
+    </div>
+    <div class="risk warn">
+      <div class="stripe"></div>
+      <div class="r-body"><b>Confirm the base repo</b><span>This clone drifts from its own architecture doc (no bed, missing search endpoints). Lock which snapshot is canonical before building, or Phase 4 will be built against the wrong catalog.</span></div>
+    </div>
+    <div class="risk warn">
+      <div class="stripe"></div>
+      <div class="r-body"><b>Per-client branding is out of scope (for now)</b><span>"Dedicated experience" hints at each client's own logo/theme. The database reserves a <code>branding</code> column, but the UI is deferred unless you ask — flagging so it isn't an assumed deliverable.</span></div>
+    </div>
+  </section>
+
+  <p class="footnote">
+    Engineering companion with full phase detail and acceptance gates: <code>docs/superpowers/specs/2026-07-22-multi-tenant-simulator-plan.md</code>. All audit findings in this document were verified against source in <code>VIKRAM-0/livinit_fabric_simulator @ main</code>.
+  </p>
+
+</div>

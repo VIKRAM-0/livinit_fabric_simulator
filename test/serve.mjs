@@ -6,7 +6,8 @@
 // and Gemini API using credentials from .env.
 // Usage: node test/serve.mjs [port]
 import http from 'node:http';
-import { readFile } from 'node:fs/promises';
+import { readFile, writeFile, mkdir } from 'node:fs/promises';
+import { createHash } from 'node:crypto';
 import { extname, join, normalize } from 'node:path';
 
 const PORT = Number(process.argv[2]) || 8123;
@@ -61,9 +62,40 @@ async function readJsonBody(req) {
   try { return JSON.parse(Buffer.concat(chunks).toString('utf8')); } catch { return {}; }
 }
 
+// No local AWS credentials → serve assets from the public prod bucket instead
+// of the in-process s3proxy handler (which needs .env keys), disk-cached so
+// each asset hits upstream at most once across runs — the same fallback the
+// original asset-designer harness used. Keys already carry their full
+// fabric_assets/fabric_assets_v2 prefixes.
+const S3_PUBLIC = 'https://livinit-storage-prod.s3.us-east-2.amazonaws.com/';
+const HAS_AWS_CREDS = !!(process.env.AWS_ACCESS_KEY_ID && process.env.AWS_SECRET_ACCESS_KEY && process.env.S3_BUCKET);
+const CACHE = join(ROOT, 'test', '.asset-cache');
+await mkdir(CACHE, { recursive: true });
+const cachePath = (u) => join(CACHE, createHash('sha1').update(u).digest('hex'));
+if (!HAS_AWS_CREDS) console.log('no AWS creds in .env — /api/s3proxy falls back to public bucket ' + S3_PUBLIC);
+
 http.createServer(async (req, res) => {
   try {
     const url = new URL(req.url, `http://localhost:${PORT}`);
+    if (url.pathname === '/api/s3proxy' && !HAS_AWS_CREDS) {
+      const key = url.searchParams.get('key');
+      if (!key) { res.writeHead(400); return res.end('missing key'); }
+      const cp = cachePath(req.url);
+      try {
+        const meta = JSON.parse(await readFile(cp + '.json', 'utf8'));
+        const body = await readFile(cp);
+        res.writeHead(200, { 'content-type': meta.type });
+        return res.end(body);
+      } catch { /* cache miss */ }
+      const up = await fetch(S3_PUBLIC + key);
+      if (!up.ok) { res.writeHead(up.status); return res.end(); }
+      const type = up.headers.get('content-type') || 'application/octet-stream';
+      const buf = Buffer.from(await up.arrayBuffer());
+      await writeFile(cp, buf);
+      await writeFile(cp + '.json', JSON.stringify({ type, url: req.url }));
+      res.writeHead(200, { 'content-type': type, 'cache-control': 'public, max-age=3600' });
+      return res.end(buf);
+    }
     if (url.pathname.startsWith('/api/')) {
       const name = url.pathname.slice('/api/'.length);
       let handler;

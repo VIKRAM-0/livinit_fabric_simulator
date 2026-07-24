@@ -1,0 +1,170 @@
+<style>
+  :root{
+    --bg:#FBFAF7; --surface:#FFFFFF; --surface-2:#F5F3EE; --border:#EAE7DF; --border-strong:#DCD8CC;
+    --text:#20222B; --muted:#5E6172; --faint:#8C8B93;
+    --accent:#5364C9; --accent-soft:#7A91EE; --accent-wash:#EDEFFC;
+    --gold:#C08A3E; --gold-wash:#F7EEDD;
+    --good:#2C9663; --good-wash:#E3F3EA;
+    --shadow:0 1px 2px rgba(32,34,43,.04),0 12px 30px -16px rgba(32,34,43,.18);
+    --sans:system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+  }
+  @media (prefers-color-scheme:dark){:root{
+    --bg:#111017; --surface:#191821; --surface-2:#201F2A; --border:#2B2A36; --border-strong:#3A3947;
+    --text:#EDEBF2; --muted:#A6A4B5; --faint:#726F80;
+    --accent:#8CA0F2; --accent-soft:#7A91EE; --accent-wash:#20233A;
+    --gold:#E0B063; --gold-wash:#2A2113;
+    --good:#4CC38A; --good-wash:#14251C;
+    --shadow:0 1px 2px rgba(0,0,0,.35),0 16px 36px -20px rgba(0,0,0,.7);
+  }}
+  :root[data-theme="light"]{--bg:#FBFAF7;--surface:#FFFFFF;--surface-2:#F5F3EE;--border:#EAE7DF;--border-strong:#DCD8CC;--text:#20222B;--muted:#5E6172;--faint:#8C8B93;--accent:#5364C9;--accent-soft:#7A91EE;--accent-wash:#EDEFFC;--gold:#C08A3E;--gold-wash:#F7EEDD;--good:#2C9663;--good-wash:#E3F3EA;--shadow:0 1px 2px rgba(32,34,43,.04),0 12px 30px -16px rgba(32,34,43,.18);}
+  :root[data-theme="dark"]{--bg:#111017;--surface:#191821;--surface-2:#201F2A;--border:#2B2A36;--border-strong:#3A3947;--text:#EDEBF2;--muted:#A6A4B5;--faint:#726F80;--accent:#8CA0F2;--accent-soft:#7A91EE;--accent-wash:#20233A;--gold:#E0B063;--gold-wash:#2A2113;--good:#4CC38A;--good-wash:#14251C;--shadow:0 1px 2px rgba(0,0,0,.35),0 16px 36px -20px rgba(0,0,0,.7);}
+
+  *{box-sizing:border-box;}
+  body{margin:0;background:var(--bg);color:var(--text);font-family:var(--sans);line-height:1.6;-webkit-font-smoothing:antialiased;}
+  .wrap{max-width:860px;margin:0 auto;padding:clamp(28px,6vw,64px) clamp(18px,5vw,40px) 90px;}
+
+  .eyebrow{font-size:.72rem;letter-spacing:.15em;text-transform:uppercase;color:var(--accent);font-weight:650;margin:0 0 14px;}
+  h1{font-size:clamp(1.8rem,4.4vw,2.6rem);line-height:1.1;margin:0 0 16px;letter-spacing:-.02em;text-wrap:balance;font-weight:720;}
+  .big-idea{font-size:clamp(1.15rem,2.4vw,1.4rem);color:var(--text);margin:0 0 8px;font-weight:560;line-height:1.4;max-width:30ch;}
+  .big-idea .hl{color:var(--accent);}
+  .sub{color:var(--muted);margin:0;font-size:1.02rem;max-width:56ch;}
+
+  /* mall hero */
+  .mall{margin:34px 0 8px;background:linear-gradient(180deg,var(--surface),var(--surface-2));border:1px solid var(--border);border-radius:20px;box-shadow:var(--shadow);padding:26px 24px;}
+  .mall-top{display:flex;align-items:center;gap:12px;margin-bottom:20px;}
+  .mall-top .roof{font-size:1.5rem;}
+  .mall-top b{font-size:1.05rem;}
+  .mall-top span{color:var(--muted);font-size:.9rem;}
+  .shops{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;}
+  @media(max-width:560px){.shops{grid-template-columns:1fr;}}
+  .shop{background:var(--surface);border:1px solid var(--border-strong);border-radius:13px;padding:16px 15px;text-align:center;}
+  .shop .ico{font-size:1.7rem;line-height:1;}
+  .shop b{display:block;margin:8px 0 2px;font-size:.92rem;}
+  .shop span{font-size:.76rem;color:var(--faint);}
+  .shop .lock{display:inline-block;margin-top:9px;font-size:.68rem;font-weight:650;color:var(--accent);background:var(--accent-wash);padding:3px 9px;border-radius:20px;}
+  .mall-note{text-align:center;color:var(--muted);font-size:.86rem;margin:18px 0 0;}
+
+  section{margin-top:clamp(38px,6vw,54px);}
+  h2{font-size:1.28rem;margin:0 0 18px;font-weight:690;letter-spacing:-.01em;}
+
+  .map{display:flex;flex-direction:column;gap:11px;}
+  .item{display:flex;gap:15px;align-items:flex-start;background:var(--surface);border:1px solid var(--border);border-radius:14px;box-shadow:var(--shadow);padding:15px 18px;}
+  .item .em{flex:none;width:42px;height:42px;border-radius:11px;background:var(--surface-2);display:grid;place-items:center;font-size:1.25rem;}
+  .item .tx b{display:block;font-size:.98rem;margin-bottom:2px;}
+  .item .tx p{margin:0;color:var(--muted);font-size:.9rem;}
+  .item .tx .real{color:var(--accent);font-weight:560;}
+  .item.star{border-color:var(--accent-soft);background:linear-gradient(180deg,var(--accent-wash),var(--surface));}
+  .item.star .em{background:var(--accent-wash);}
+
+  .why{display:grid;grid-template-columns:repeat(3,1fr);gap:13px;}
+  @media(max-width:640px){.why{grid-template-columns:1fr;}}
+  .card{background:var(--surface);border:1px solid var(--border);border-radius:15px;box-shadow:var(--shadow);padding:20px 18px;}
+  .card .n{width:30px;height:30px;border-radius:9px;background:var(--good-wash);color:var(--good);display:grid;place-items:center;font-weight:750;font-size:.9rem;margin-bottom:12px;}
+  .card b{display:block;font-size:.98rem;margin-bottom:5px;}
+  .card p{margin:0;color:var(--muted);font-size:.87rem;}
+
+  .honest{margin-top:30px;display:flex;gap:14px;align-items:flex-start;border-left:3px solid var(--gold);background:var(--gold-wash);border-radius:0 13px 13px 0;padding:16px 20px;}
+  .honest .em{font-size:1.15rem;}
+  .honest p{margin:0;font-size:.9rem;color:var(--text);}
+  .honest b{color:var(--gold);}
+
+  .foot{margin-top:48px;padding-top:20px;border-top:1px solid var(--border);color:var(--faint);font-size:.82rem;text-align:center;}
+</style>
+
+<div class="wrap">
+
+  <p class="eyebrow">The simulator, explained simply</p>
+  <h1>Think of it like a shopping mall 🏬</h1>
+  <p class="big-idea">One building. Inside, every furniture client gets their <span class="hl">own private showroom.</span></p>
+  <p class="sub">The technology exists to give each client a space that only they can open, stocked with only their furniture — while everyone shares the same beautiful building.</p>
+
+  <!-- MALL VISUAL -->
+  <div class="mall">
+    <div class="mall-top">
+      <span class="roof">🏬</span>
+      <div><b>The Livinit building</b> &nbsp; <span>one app · web.simulator.livinit.ai</span></div>
+    </div>
+    <div class="shops">
+      <div class="shop">
+        <div class="ico">🛋️</div>
+        <b>Client A's showroom</b>
+        <span>only their furniture</span>
+        <div class="lock">🔑 their key only</div>
+      </div>
+      <div class="shop">
+        <div class="ico">🪑</div>
+        <b>Client B's showroom</b>
+        <span>only their furniture</span>
+        <div class="lock">🔑 their key only</div>
+      </div>
+      <div class="shop">
+        <div class="ico">🛏️</div>
+        <b>Client C's showroom</b>
+        <span>only their furniture</span>
+        <div class="lock">🔑 their key only</div>
+      </div>
+    </div>
+    <p class="mall-note">Same building, same premium lighting — but no one can walk into another's shop.</p>
+  </div>
+
+  <!-- MAPPING -->
+  <section>
+    <h2>What each part really is</h2>
+    <div class="map">
+      <div class="item">
+        <div class="em">🔑</div>
+        <div class="tx"><b>The shop key = logging in</b><p>Only that client's people can open their showroom. No key, no entry.</p></div>
+      </div>
+      <div class="item">
+        <div class="em">🛋️</div>
+        <div class="tx"><b>Their own stock = their own catalog</b><p>Each showroom holds only that client's furniture and fabrics. <span class="real">Client A never sees Client B's sofa.</span> This is the whole promise of the product.</p></div>
+      </div>
+      <div class="item star">
+        <div class="em">🔒</div>
+        <div class="tx"><b>Two locks = nobody enters another's shop</b><p>One lock on the shop door, one on the storage room downstairs. <span class="real">Even if one ever failed, the other still holds.</span> A client's data simply cannot leak to another.</p></div>
+      </div>
+      <div class="item">
+        <div class="em">🧰</div>
+        <div class="tx"><b>We set up the shop = onboarding</b><p>A new client just hands us <span class="real">photos of their furniture and a fabric list.</span> Our team builds the 3D models and marks what's customizable. The client does nothing technical.</p></div>
+      </div>
+      <div class="item">
+        <div class="em">💡</div>
+        <div class="tx"><b>The premium lighting = the 3D engine</b><p>The magic that makes furniture look real and beautiful already exists. Every showroom gets it — we don't rebuild it.</p></div>
+      </div>
+      <div class="item">
+        <div class="em">♻️</div>
+        <div class="tx"><b>Security desk &amp; billing counter = already there</b><p>The building already has an ID system and a billing counter (from Livinit's other products). <span class="real">We reuse them — so there's less to build and we launch faster.</span></p></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- WHY IT MATTERS -->
+  <section>
+    <h2>Why this is good for the business</h2>
+    <div class="why">
+      <div class="card">
+        <div class="n">1</div>
+        <b>Adding a client is easy</b>
+        <p>A new client = opening a new showroom. Repeatable and fast — no engineer needed each time.</p>
+      </div>
+      <div class="card">
+        <div class="n">2</div>
+        <b>Every client's data is safe</b>
+        <p>Fully separated. A competitor's furniture can never leak into another client's view.</p>
+      </div>
+      <div class="card">
+        <div class="n">3</div>
+        <b>We launch faster</b>
+        <p>The lighting, the login, the billing already exist. We just build the showrooms on top.</p>
+      </div>
+    </div>
+  </section>
+
+  <div class="honest">
+    <span class="em">🛡️</span>
+    <p><b>One honest note:</b> a real shop lock can be broken — here the security is far stronger, closer to a bank locker. The mall is just to picture it; the real protection is much tougher.</p>
+  </div>
+
+  <p class="foot">A simple explainer for the Fabric Simulator. Deeper plan &amp; architecture available separately.</p>
+
+</div>

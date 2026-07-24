@@ -1,0 +1,693 @@
+<style>
+  :root{
+    --bg:#F4F5FA; --surface:#FFFFFF; --surface-2:#F1F3F9; --surface-3:#E7EAF3;
+    --border:#E2E5EF; --border-2:#CFD4E2; --text:#161925; --muted:#575E73; --faint:#8990A3;
+    --pw:#5B72E8; --pw-d:#3D4FB8; --pw-soft:#8497F0; --pw-wash:#ECEFFD; --pw-line:#C6CFF7;
+    --coral:#E8734A; --coral-wash:#FCEDE6;
+    --good:#1E9E66; --good-wash:#E1F3EA; --amber:#D2952F; --amber-wash:#F9F0DD;
+    --r-lg:14px; --r:11px; --r-sm:8px;
+    --sh-sm:0 1px 2px rgba(18,22,36,.06);
+    --sh:0 4px 16px -8px rgba(18,22,36,.18), 0 1px 2px rgba(18,22,36,.05);
+    --sh-lg:0 24px 50px -24px rgba(18,22,36,.30);
+    --ease:180ms cubic-bezier(.2,.6,.2,1);
+    --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+    --sans:system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+  }
+  @media (prefers-color-scheme:dark){:root{
+    --bg:#0A0B10; --surface:#14161F; --surface-2:#1A1D28; --surface-3:#232735;
+    --border:#262A38; --border-2:#353B4D; --text:#ECEEF5; --muted:#9AA0B4; --faint:#6B7186;
+    --pw:#8497F0; --pw-d:#5B72E8; --pw-soft:#6C82EE; --pw-wash:#1A2039; --pw-line:#38416E;
+    --coral:#EE8A66; --coral-wash:#2A1912; --good:#4CC38A; --good-wash:#14251C;
+    --amber:#E0A94A; --amber-wash:#2A2213;
+    --sh-sm:0 1px 2px rgba(0,0,0,.4);
+    --sh:0 6px 20px -10px rgba(0,0,0,.6), 0 1px 2px rgba(0,0,0,.4);
+    --sh-lg:0 28px 60px -26px rgba(0,0,0,.8);
+  }}
+  :root[data-theme="light"]{--bg:#F4F5FA;--surface:#FFFFFF;--surface-2:#F1F3F9;--surface-3:#E7EAF3;--border:#E2E5EF;--border-2:#CFD4E2;--text:#161925;--muted:#575E73;--faint:#8990A3;--pw:#5B72E8;--pw-d:#3D4FB8;--pw-soft:#8497F0;--pw-wash:#ECEFFD;--pw-line:#C6CFF7;--coral:#E8734A;--coral-wash:#FCEDE6;--good:#1E9E66;--good-wash:#E1F3EA;--amber:#D2952F;--amber-wash:#F9F0DD;--sh-sm:0 1px 2px rgba(18,22,36,.06);--sh:0 4px 16px -8px rgba(18,22,36,.18),0 1px 2px rgba(18,22,36,.05);--sh-lg:0 24px 50px -24px rgba(18,22,36,.30);}
+  :root[data-theme="dark"]{--bg:#0A0B10;--surface:#14161F;--surface-2:#1A1D28;--surface-3:#232735;--border:#262A38;--border-2:#353B4D;--text:#ECEEF5;--muted:#9AA0B4;--faint:#6B7186;--pw:#8497F0;--pw-d:#5B72E8;--pw-soft:#6C82EE;--pw-wash:#1A2039;--pw-line:#38416E;--coral:#EE8A66;--coral-wash:#2A1912;--good:#4CC38A;--good-wash:#14251C;--amber:#E0A94A;--amber-wash:#2A2213;--sh-sm:0 1px 2px rgba(0,0,0,.4);--sh:0 6px 20px -10px rgba(0,0,0,.6),0 1px 2px rgba(0,0,0,.4);--sh-lg:0 28px 60px -26px rgba(0,0,0,.8);}
+
+  *{box-sizing:border-box;}
+  html,body{margin:0;height:100%;}
+  body{background:var(--bg);color:var(--text);font-family:var(--sans);line-height:1.5;-webkit-font-smoothing:antialiased;overflow:hidden;}
+  button{font:inherit;cursor:pointer;border:none;background:none;color:inherit;}
+  ::selection{background:var(--pw-wash);}
+
+  /* view router */
+  .view{position:fixed;inset:0;display:none;overflow:auto;}
+  .view.active{display:block;animation:fade var(--ease);}
+  @keyframes fade{from{opacity:0;transform:translateY(4px);}to{opacity:1;transform:none;}}
+
+  /* buttons */
+  .btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;font-size:.86rem;font-weight:600;border-radius:var(--r-sm);padding:9px 15px;transition:var(--ease);border:1px solid transparent;white-space:nowrap;}
+  .btn:focus-visible{outline:2px solid var(--pw);outline-offset:2px;}
+  .btn.primary{background:var(--pw-d);color:#fff;}
+  .btn.primary:hover{background:var(--pw);box-shadow:0 6px 16px -8px var(--pw);transform:translateY(-1px);}
+  .btn.ghost{background:var(--surface);border-color:var(--border-2);color:var(--text);}
+  .btn.ghost:hover{border-color:var(--pw);color:var(--pw-d);}
+  .btn.block{width:100%;}
+  .btn:disabled{opacity:.5;cursor:not-allowed;transform:none;}
+  .pill{font-size:.72rem;font-weight:650;padding:3px 10px;border-radius:20px;display:inline-flex;align-items:center;gap:5px;}
+  .pill.live{background:var(--good-wash);color:var(--good);}
+  .pill.draft{background:var(--amber-wash);color:var(--amber);}
+  .logo{display:inline-flex;align-items:center;gap:9px;font-weight:760;letter-spacing:-.02em;font-size:1.02rem;}
+  .logo .mark{width:28px;height:28px;border-radius:9px;background:linear-gradient(135deg,var(--pw-soft),var(--pw-d));display:grid;place-items:center;color:#fff;font-size:.9rem;box-shadow:var(--sh-sm);}
+  .field label{display:block;font-size:.75rem;font-weight:600;color:var(--muted);margin-bottom:6px;}
+  input.tin{width:100%;border:1px solid var(--border-2);border-radius:var(--r-sm);padding:11px 13px;font:inherit;font-size:.88rem;color:var(--text);background:var(--surface);transition:var(--ease);}
+  input.tin:focus{outline:none;border-color:var(--pw);box-shadow:0 0 0 3px var(--pw-wash);}
+  input.tin::placeholder{color:var(--faint);}
+
+  /* ===== LOGIN ===== */
+  #login{display:grid;grid-template-columns:1.05fr .95fr;}
+  @media(max-width:820px){#login{grid-template-columns:1fr;}#login .brandside{display:none;}}
+  .formside{display:flex;flex-direction:column;justify-content:center;padding:6vh clamp(28px,6vw,80px);max-width:560px;}
+  .formside h3{font-size:1.7rem;margin:0 0 6px;font-weight:740;letter-spacing:-.02em;}
+  .formside .sub{color:var(--muted);margin:0 0 26px;font-size:.94rem;}
+  .fstack{display:flex;flex-direction:column;gap:15px;max-width:360px;}
+  .oauth{display:flex;gap:11px;}.oauth .btn{flex:1;}
+  .orline{display:flex;align-items:center;gap:12px;color:var(--faint);font-size:.74rem;}
+  .orline::before,.orline::after{content:"";height:1px;flex:1;background:var(--border);}
+  .brandside{background:linear-gradient(155deg,var(--pw) 0%,var(--pw-d) 55%,#2c357f 100%);color:#fff;display:flex;flex-direction:column;justify-content:space-between;padding:6vh clamp(28px,4vw,56px);position:relative;overflow:hidden;}
+  .brandside::after{content:"";position:absolute;width:420px;height:420px;border-radius:50%;background:rgba(255,255,255,.08);top:-120px;right:-140px;}
+  .brandside .bmark{width:44px;height:44px;border-radius:12px;background:rgba(255,255,255,.16);display:grid;place-items:center;font-size:1.3rem;position:relative;}
+  .brandside h4{font-size:1.9rem;line-height:1.15;margin:24px 0 12px;font-weight:740;letter-spacing:-.02em;position:relative;}
+  .brandside .btext{color:rgba(255,255,255,.85);font-size:.96rem;margin:0;max-width:30ch;position:relative;}
+  .brandside .bfoot{font-size:.78rem;color:rgba(255,255,255,.62);position:relative;}
+  .demo-alt{margin-top:8px;font-size:.78rem;color:var(--faint);}
+  .demo-alt a{color:var(--pw-d);font-weight:600;cursor:pointer;text-decoration:none;}
+
+  /* ===== GATE ===== */
+  #gate{display:grid;place-items:center;background:radial-gradient(120% 80% at 50% 0%,var(--pw-wash),var(--bg));}
+  .gatecard{text-align:center;max-width:420px;padding:40px;}
+  .gatecard .bic{width:64px;height:64px;border-radius:18px;background:linear-gradient(135deg,var(--pw-soft),var(--pw-d));display:grid;place-items:center;color:#fff;font-size:1.7rem;margin:0 auto 22px;box-shadow:var(--sh);}
+  .gatecard h3{font-size:1.5rem;margin:0 0 10px;font-weight:740;letter-spacing:-.01em;}
+  .gatecard p{color:var(--muted);margin:0 0 24px;}
+  .prog{height:7px;border-radius:4px;background:var(--surface-3);overflow:hidden;max-width:280px;margin:0 auto;}
+  .prog i{display:block;height:100%;width:62%;background:linear-gradient(90deg,var(--pw-soft),var(--pw-d));border-radius:4px;}
+  .gatecard .steps{margin-top:14px;font-size:.82rem;color:var(--faint);}
+
+  /* ===== APP SHELL (workspace) ===== */
+  .appbar{display:flex;align-items:center;gap:16px;padding:12px 20px;border-bottom:1px solid var(--border);background:var(--surface);}
+  .appbar .tenant{font-size:.82rem;color:var(--muted);border-left:1px solid var(--border-2);padding-left:16px;}
+  .appbar .tenant b{color:var(--text);}
+  .ptabs{display:flex;gap:4px;margin-left:6px;}
+  .ptabs button{font-size:.82rem;font-weight:560;padding:7px 13px;border-radius:var(--r-sm);color:var(--muted);transition:var(--ease);}
+  .ptabs button:hover{background:var(--surface-2);color:var(--text);}
+  .ptabs button.on{background:var(--surface-3);color:var(--text);font-weight:660;}
+  .appbar .right{margin-left:auto;display:flex;align-items:center;gap:12px;}
+  .credits{display:inline-flex;align-items:center;gap:6px;font-size:.8rem;font-weight:660;color:var(--pw-d);background:var(--pw-wash);border:1px solid var(--pw-line);border-radius:20px;padding:6px 12px;}
+  .avatar{width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,var(--coral),#c9552f);display:grid;place-items:center;color:#fff;font-size:.8rem;font-weight:660;cursor:pointer;transition:var(--ease);}
+  .avatar:hover{transform:scale(1.06);}
+  .menu{position:relative;}
+  .menu-pop{position:absolute;right:0;top:42px;background:var(--surface);border:1px solid var(--border);border-radius:var(--r);box-shadow:var(--sh-lg);padding:6px;min-width:180px;display:none;z-index:40;}
+  .menu-pop.open{display:block;animation:fade 140ms ease-out;}
+  .menu-pop button{display:flex;width:100%;align-items:center;gap:9px;font-size:.84rem;padding:9px 11px;border-radius:var(--r-sm);color:var(--text);transition:var(--ease);text-align:left;}
+  .menu-pop button:hover{background:var(--surface-2);}
+  .menu-pop .sep{height:1px;background:var(--border);margin:5px 0;}
+
+  .appbody{display:grid;grid-template-columns:264px 1fr 280px;height:calc(100% - 57px);}
+  @media(max-width:900px){.appbody{grid-template-columns:1fr;}.appbody .side-r,.appbody .side-l{display:none;}}
+  .col{min-height:0;display:flex;flex-direction:column;}
+  .side-l{border-right:1px solid var(--border);}
+  .side-r{border-left:1px solid var(--border);overflow-y:auto;}
+  .ph{font-size:.72rem;text-transform:uppercase;letter-spacing:.08em;color:var(--faint);font-weight:700;padding:15px 16px 9px;}
+  .searchbar{margin:0 14px 11px;display:flex;align-items:center;gap:8px;border:1px solid var(--border-2);border-radius:var(--r-sm);padding:9px 12px;color:var(--faint);font-size:.82rem;transition:var(--ease);}
+  .searchbar:focus-within,.searchbar:hover{border-color:var(--pw-line);}
+  .searchbar input{border:none;background:none;outline:none;font:inherit;font-size:.82rem;color:var(--text);width:100%;}
+  .filters{display:flex;gap:6px;padding:0 14px 11px;flex-wrap:wrap;}
+  .filters button{font-size:.74rem;font-weight:560;padding:5px 11px;border-radius:7px;color:var(--muted);background:var(--surface-2);transition:var(--ease);}
+  .filters button:hover{background:var(--surface-3);}
+  .filters button.on{background:var(--pw-d);color:#fff;}
+  .swgrid{padding:2px 14px;overflow-y:auto;display:grid;grid-template-columns:repeat(3,1fr);gap:10px;align-content:start;}
+  .sw{border-radius:var(--r-sm);overflow:hidden;border:1px solid var(--border);background:var(--surface);cursor:pointer;transition:var(--ease);text-align:center;}
+  .sw:hover{transform:translateY(-2px);box-shadow:var(--sh);}
+  .sw .im{height:56px;}
+  .sw .nm{font-size:.66rem;color:var(--muted);padding:5px 4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .sw.on{outline:2px solid var(--pw-d);outline-offset:-1px;}
+  .sw.on .nm{color:var(--pw-d);font-weight:600;}
+  .addf{margin:11px 14px 14px;font-size:.78rem;font-weight:600;color:var(--pw-d);border:1px dashed var(--pw-line);border-radius:var(--r-sm);padding:10px;text-align:center;cursor:pointer;transition:var(--ease);}
+  .addf:hover{background:var(--pw-wash);}
+
+  .stage{position:relative;display:grid;place-items:center;overflow:hidden;}
+  :root[data-theme="light"] .stage{background:radial-gradient(120% 120% at 50% 12%,#fdfdff 0%,#eceff8 68%,#e3e7f2 100%);}
+  :root[data-theme="dark"] .stage{background:radial-gradient(120% 120% at 50% 12%,#1d2130 0%,#14161f 68%,#0f1119 100%);}
+  .modeswitch{position:absolute;top:16px;left:50%;transform:translateX(-50%);display:flex;gap:4px;background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:4px;box-shadow:var(--sh-sm);z-index:3;}
+  .modeswitch button{font-size:.78rem;font-weight:600;padding:6px 16px;border-radius:7px;color:var(--muted);transition:var(--ease);}
+  .modeswitch button.on{background:var(--pw-d);color:#fff;}
+  .zn{position:absolute;font-size:.66rem;font-weight:600;background:var(--surface);border:1px solid var(--border);border-radius:20px;padding:3px 10px;box-shadow:var(--sh-sm);z-index:2;cursor:pointer;transition:var(--ease);}
+  .zn:hover{border-color:var(--pw);color:var(--pw-d);}
+  .stageacts{position:absolute;bottom:18px;left:50%;transform:translateX(-50%);display:flex;gap:10px;z-index:3;}
+  .stagehint{position:absolute;bottom:18px;right:18px;font-size:.68rem;color:var(--faint);}
+  .roomscene{position:absolute;inset:0;display:none;}
+  .roomscene.on{display:block;}
+
+  .applied{margin:0 15px 13px;border:1px solid var(--border);border-radius:var(--r);padding:12px;display:flex;gap:11px;align-items:center;background:var(--surface);}
+  .applied .th{width:40px;height:40px;border-radius:var(--r-sm);box-shadow:var(--sh-sm);}
+  .applied b{font-size:.85rem;display:block;}.applied span{font-size:.72rem;color:var(--faint);}
+  .sld{padding:10px 16px;}
+  .sld .r{display:flex;justify-content:space-between;font-size:.76rem;color:var(--muted);margin-bottom:7px;}
+  .sld .r b{color:var(--text);font-weight:600;font-variant-numeric:tabular-nums;}
+  input[type=range]{-webkit-appearance:none;appearance:none;width:100%;height:5px;border-radius:3px;background:var(--surface-3);outline:none;cursor:pointer;}
+  input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:15px;height:15px;border-radius:50%;background:#fff;border:2px solid var(--pw-d);box-shadow:var(--sh-sm);transition:var(--ease);}
+  input[type=range]::-webkit-slider-thumb:hover{transform:scale(1.15);}
+  input[type=range]::-moz-range-thumb{width:15px;height:15px;border-radius:50%;background:#fff;border:2px solid var(--pw-d);}
+  .prt{display:flex;align-items:center;gap:10px;font-size:.8rem;color:var(--muted);padding:8px 16px;cursor:pointer;transition:var(--ease);}
+  .prt:hover{color:var(--text);}
+  .prt .cb{width:16px;height:16px;border-radius:5px;border:1.6px solid var(--border-2);display:grid;place-items:center;color:#fff;font-size:.6rem;transition:var(--ease);}
+  .prt.on .cb{background:var(--pw-d);border-color:var(--pw-d);}
+  .prt.on{color:var(--text);font-weight:560;}
+  .roomctl{display:none;}.roomctl.on{display:block;}
+  .prodctl.on{display:block;}.prodctl{display:block;}
+  .rel{display:flex;align-items:center;justify-content:space-between;padding:9px 16px;font-size:.82rem;color:var(--muted);}
+  .tgl{width:36px;height:20px;border-radius:20px;background:var(--pw-d);position:relative;cursor:pointer;transition:var(--ease);flex:none;}
+  .tgl i{position:absolute;top:2px;left:18px;width:16px;height:16px;border-radius:50%;background:#fff;transition:var(--ease);}
+  .tgl.off{background:var(--border-2);}.tgl.off i{left:2px;}
+  .cchips{display:flex;gap:8px;padding:4px 16px 12px;flex-wrap:wrap;}
+  .cchips i{width:24px;height:24px;border-radius:7px;border:1px solid var(--border);cursor:pointer;transition:var(--ease);}
+  .cchips i:hover{transform:scale(1.1);}
+  .cchips i.on{outline:2px solid var(--pw-d);outline-offset:1px;}
+
+  /* ===== MODALS ===== */
+  .overlay{position:fixed;inset:0;background:rgba(16,18,28,.5);backdrop-filter:blur(2px);display:none;place-items:center;z-index:60;padding:20px;}
+  .overlay.open{display:grid;animation:fade 160ms ease-out;}
+  .modal{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-lg);box-shadow:var(--sh-lg);width:600px;max-width:100%;overflow:hidden;animation:pop 200ms cubic-bezier(.2,.7,.3,1);}
+  @keyframes pop{from{transform:scale(.96) translateY(8px);opacity:0;}to{transform:none;opacity:1;}}
+  .modal .mh{display:flex;align-items:center;justify-content:space-between;padding:15px 19px;border-bottom:1px solid var(--border);}
+  .modal .mh b{font-size:1rem;font-weight:680;}
+  .modal .mh .x{width:30px;height:30px;border-radius:8px;display:grid;place-items:center;color:var(--faint);transition:var(--ease);}
+  .modal .mh .x:hover{background:var(--surface-2);color:var(--text);}
+  .modal .mb{padding:18px 19px;}
+  .modal .mf{display:flex;justify-content:flex-end;gap:10px;padding:13px 19px;border-top:1px solid var(--border);background:var(--surface-2);}
+  .tabrow{display:flex;gap:6px;margin-bottom:16px;}
+  .tabrow button{font-size:.82rem;font-weight:600;padding:8px 14px;border-radius:var(--r-sm);color:var(--muted);background:var(--surface-2);transition:var(--ease);}
+  .tabrow button.on{background:var(--pw-d);color:#fff;}
+  .two{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+  .drop{border:1.5px dashed var(--border-2);border-radius:var(--r);background:var(--surface-2);min-height:150px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;color:var(--faint);font-size:.85rem;text-align:center;transition:var(--ease);cursor:pointer;}
+  .drop:hover{border-color:var(--pw-line);background:var(--pw-wash);}
+  .drop .ic{font-size:1.7rem;}
+  .render-img{border-radius:var(--r);height:220px;position:relative;overflow:hidden;box-shadow:inset 0 0 60px rgba(0,0,0,.15);}
+  .render-img.warm{background:linear-gradient(135deg,#e8d6ba,#c49a72 55%,#7a5a44);}
+  .render-img.room{background:linear-gradient(160deg,#cdd6df,#b7a892 65%,#8f7a5e);}
+  .render-img .tg{position:absolute;top:11px;left:11px;font-size:.68rem;font-weight:600;color:#fff;background:rgba(0,0,0,.4);padding:3px 10px;border-radius:20px;}
+  .analysis{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:12px;}
+  .analysis .a{background:var(--surface-2);border-radius:var(--r-sm);padding:9px;text-align:center;}
+  .analysis .a b{display:block;font-size:.9rem;}.analysis .a span{font-size:.64rem;color:var(--faint);}
+
+  /* ===== STAFF CONSOLE ===== */
+  #staff{display:grid;grid-template-columns:232px 1fr;height:100%;}
+  @media(max-width:820px){#staff{grid-template-columns:1fr;}#staff .sside{display:none;}}
+  .sside{border-right:1px solid var(--border);background:var(--surface-2);padding:18px 14px;display:flex;flex-direction:column;}
+  .sside .snav{display:flex;flex-direction:column;gap:3px;margin-top:16px;}
+  .sside .snav button{display:flex;align-items:center;gap:10px;font-size:.85rem;font-weight:560;color:var(--muted);padding:10px 12px;border-radius:var(--r-sm);transition:var(--ease);text-align:left;}
+  .sside .snav button:hover{background:var(--surface);color:var(--text);}
+  .sside .snav button.on{background:var(--surface);color:var(--text);font-weight:660;box-shadow:var(--sh-sm);}
+  .sside .foot{margin-top:auto;font-size:.74rem;color:var(--faint);padding:12px 8px 0;}
+  .sside .foot .back{color:var(--pw-d);font-weight:600;cursor:pointer;}
+  .smain{overflow-y:auto;padding:28px clamp(20px,4vw,44px);}
+  .smain h2{font-size:1.4rem;margin:0;font-weight:740;letter-spacing:-.01em;}
+  .smh{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:6px;}
+  .smsub{color:var(--muted);font-size:.88rem;margin:0 0 22px;}
+  .card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-lg);box-shadow:var(--sh-sm);}
+  .thead,.trow{display:grid;grid-template-columns:1.7fr .9fr .7fr .7fr;gap:12px;align-items:center;padding:13px 18px;}
+  .thead{font-size:.68rem;text-transform:uppercase;letter-spacing:.06em;color:var(--faint);font-weight:700;border-bottom:1px solid var(--border);}
+  .trow{border-top:1px solid var(--border);font-size:.88rem;cursor:pointer;transition:var(--ease);}
+  .trow:first-of-type{border-top:none;}
+  .trow:hover{background:var(--surface-2);}
+  .trow b{font-weight:600;}.trow span{color:var(--muted);font-size:.82rem;}
+  .stepper{display:flex;gap:8px;margin-bottom:22px;flex-wrap:wrap;}
+  .stepper .st{display:flex;align-items:center;gap:8px;font-size:.8rem;color:var(--faint);font-weight:560;padding:7px 13px;border-radius:20px;background:var(--surface-2);}
+  .stepper .st .n{width:18px;height:18px;border-radius:50%;background:var(--border-2);color:#fff;display:grid;place-items:center;font-size:.66rem;font-weight:700;}
+  .stepper .st.on{background:var(--pw-wash);color:var(--pw-d);}.stepper .st.on .n{background:var(--pw-d);}
+  .stepper .st.done .n{background:var(--good);}
+  .onb{display:grid;grid-template-columns:1fr 1fr;gap:20px;}
+  @media(max-width:760px){.onb{grid-template-columns:1fr;}.two{grid-template-columns:1fr;}}
+  .meshbox{border:1px solid var(--border);border-radius:var(--r);overflow:hidden;}
+  .meshbox .mbh{font-size:.7rem;text-transform:uppercase;letter-spacing:.06em;color:var(--faint);font-weight:700;padding:12px 15px;border-bottom:1px solid var(--border);background:var(--surface-2);}
+  .meshrow{display:grid;grid-template-columns:1fr 1.1fr auto;gap:11px;align-items:center;padding:10px 15px;border-top:1px solid var(--border);}
+  .meshrow:first-of-type{border-top:none;}
+  .meshrow .mn{font-family:var(--mono);font-size:.76rem;color:var(--muted);}
+  .meshrow input{border:1px solid var(--border-2);border-radius:7px;padding:7px 10px;font:inherit;font-size:.8rem;color:var(--text);background:var(--surface);}
+  .meshrow input:focus{outline:none;border-color:var(--pw);box-shadow:0 0 0 3px var(--pw-wash);}
+  .chk{display:flex;align-items:center;gap:11px;padding:11px 0;border-top:1px solid var(--border);font-size:.88rem;}
+  .chk:first-of-type{border-top:none;}
+  .chk .ic{width:22px;height:22px;border-radius:50%;display:grid;place-items:center;font-size:.7rem;color:#fff;flex:none;}
+  .chk .ic.ok{background:var(--good);}.chk .ic.w{background:var(--amber);}
+  .chk .r{margin-left:auto;color:var(--faint);font-size:.8rem;}
+  .previewcard{border:1px solid var(--border);border-radius:var(--r);overflow:hidden;}
+  .previewcard .im{height:170px;display:grid;place-items:center;color:var(--faint);font-size:.82rem;}
+  :root[data-theme="light"] .previewcard .im{background:radial-gradient(120% 120% at 50% 10%,#eef0f8,#dfe3ee);}
+  :root[data-theme="dark"] .previewcard .im{background:radial-gradient(120% 120% at 50% 10%,#1b1e28,#12141c);}
+  .note{font-size:.83rem;color:var(--muted);padding:12px 15px;border:1px solid var(--border);border-left:3px solid var(--pw);border-radius:0 var(--r) var(--r) 0;background:var(--pw-wash);}
+  .note b{color:var(--text);}
+  .sub-view{display:none;}.sub-view.on{display:block;animation:fade var(--ease);}
+
+  /* prototype launcher */
+  .launch{position:fixed;left:16px;bottom:16px;z-index:80;}
+  .launch .lbtn{background:var(--text);color:var(--bg);border-radius:20px;padding:9px 15px;font-size:.78rem;font-weight:650;box-shadow:var(--sh-lg);display:flex;align-items:center;gap:8px;}
+  .launch .lpop{position:absolute;left:0;bottom:48px;background:var(--surface);border:1px solid var(--border);border-radius:var(--r);box-shadow:var(--sh-lg);padding:8px;width:210px;display:none;}
+  .launch .lpop.open{display:block;animation:fade 140ms;}
+  .launch .lpop .gt{font-size:.64rem;text-transform:uppercase;letter-spacing:.06em;color:var(--faint);font-weight:700;padding:8px 9px 4px;}
+  .launch .lpop button{display:block;width:100%;text-align:left;font-size:.82rem;padding:7px 9px;border-radius:7px;color:var(--text);transition:var(--ease);}
+  .launch .lpop button:hover{background:var(--surface-2);color:var(--pw-d);}
+</style>
+
+<!-- ============================ LOGIN ============================ -->
+<section class="view active" id="login">
+  <div class="formside">
+    <div class="logo" style="margin-bottom:34px"><span class="mark">◆</span> Simulator</div>
+    <h3>Sign in</h3>
+    <p class="sub">Use your work account to start a session.</p>
+    <div class="fstack">
+      <div class="oauth"><button class="btn ghost" onclick="go('app')">Continue with Google</button></div>
+      <div class="oauth"><button class="btn ghost" onclick="go('app')">Continue with Apple</button></div>
+      <div class="orline">or</div>
+      <div class="field"><label>Email</label><input class="tin" placeholder="priya@acme.com" value="priya@acme.com"></div>
+      <div class="field"><label>Password</label><input class="tin" type="password" placeholder="Your password" value="password"></div>
+      <button class="btn primary block" onclick="go('app')">Sign in</button>
+      <div class="demo-alt">Demo: <a onclick="go('gate')">sign in as a draft client</a> · <a onclick="go('staff')">open staff console</a></div>
+    </div>
+  </div>
+  <div class="brandside">
+    <div class="bmark">◆</div>
+    <div>
+      <h4>Show fabrics in 3D,<br>live with your customer.</h4>
+      <p class="btext">Your furniture, your finishes — configured in real time during the consultation.</p>
+    </div>
+    <div class="bfoot">Powered by Livinit · web.simulator.livinit.ai</div>
+  </div>
+</section>
+
+<!-- ============================ GATE ============================ -->
+<section class="view" id="gate">
+  <div class="gatecard">
+    <div class="bic">◆</div>
+    <h3>Your simulator is being set up</h3>
+    <p>Our team is building your 3D furniture catalog and fabric library. You'll get access the moment it's ready.</p>
+    <div class="prog"><i></i></div>
+    <div class="steps">Modelling &amp; segmentation · 5 of 8 products ready</div>
+    <button class="btn ghost" style="margin-top:24px" onclick="go('login')">Back to sign in</button>
+  </div>
+</section>
+
+<!-- ============================ WORKSPACE ============================ -->
+<section class="view" id="app">
+  <div class="appbar">
+    <div class="logo"><span class="mark">◆</span> Simulator</div>
+    <div class="tenant">Client&nbsp; <b>Acme Furniture</b></div>
+    <div class="ptabs" id="prodtabs">
+      <button class="on">Sierra Chair</button><button>Accent Chair</button><button>Haven Sofa</button>
+    </div>
+    <div class="right">
+      <span class="credits">⚡ <span id="creditnum">480</span> renders</span>
+      <button class="btn primary" onclick="openModal('m-render')">Render</button>
+      <div class="menu">
+        <div class="avatar" onclick="toggleMenu(event)">P</div>
+        <div class="menu-pop" id="usermenu">
+          <button onclick="closeMenu();go('staff')">🛠 Staff console</button>
+          <button onclick="toggleTheme()">🌓 Toggle theme</button>
+          <div class="sep"></div>
+          <button onclick="closeMenu();go('login')">↩ Sign out</button>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="appbody">
+    <!-- LEFT: library -->
+    <div class="col side-l">
+      <div class="ph" id="libhead">Fabric library</div>
+      <div class="searchbar">🔍 <input placeholder="Search fabrics…"></div>
+      <div class="filters" id="filters"><button class="on">All</button><button>Fabric</button><button>Vinyl</button><button>Leather</button></div>
+      <div class="swgrid" id="swgrid"></div>
+      <div class="addf" onclick="openModal('m-finder')">+ Add fabric</div>
+    </div>
+    <!-- CENTER: stage -->
+    <div class="col stage">
+      <div class="modeswitch"><button class="on" onclick="setMode('product')" id="mode-p">Product</button><button onclick="setMode('room')" id="mode-r">Room</button></div>
+      <!-- product piece -->
+      <div id="productscene">
+        <span class="zn" style="top:30%;left:28%">Backrest</span><span class="zn" style="top:50%;left:60%">Seat</span><span class="zn" style="top:68%;left:30%">Legs</span>
+        <svg width="250" height="240" viewBox="0 0 230 220" id="chairsvg" aria-hidden="true"><ellipse cx="115" cy="196" rx="86" ry="12" fill="rgba(90,96,118,.16)"/><rect x="60" y="96" width="110" height="60" rx="16" class="c-seat" fill="#c8c0b8"/><rect x="58" y="46" width="34" height="86" rx="14" class="c-arm" fill="#bcb3a9"/><rect x="138" y="46" width="34" height="86" rx="14" class="c-arm" fill="#bcb3a9"/><rect x="78" y="40" width="74" height="72" rx="18" class="c-back" fill="#cec6bc"/><rect x="70" y="150" width="12" height="40" rx="5" fill="#8a7f70"/><rect x="148" y="150" width="12" height="40" rx="5" fill="#8a7f70"/></svg>
+      </div>
+      <!-- room scene -->
+      <div class="roomscene" id="roomscene">
+        <div style="position:absolute;inset:0;background:linear-gradient(180deg,#efe9df 0%,#efe9df 62%,#d9cfc0 62%,#d9cfc0 100%)"></div>
+        <div style="position:absolute;top:15%;right:15%;width:130px;height:160px;background:linear-gradient(180deg,#bcd0e6,#e8f0f8);border:6px solid #cbb79c;border-radius:4px"></div>
+        <div style="position:absolute;top:14%;right:12%;width:36px;height:186px;background:repeating-linear-gradient(90deg,#e6ddcf,#e6ddcf 6px,#d8cdba 6px,#d8cdba 12px);border-radius:4px" id="curtainstrip"></div>
+        <svg width="210" height="170" viewBox="0 0 230 180" style="position:absolute;left:16%;bottom:16%" aria-hidden="true"><ellipse cx="115" cy="160" rx="80" ry="10" fill="rgba(60,50,40,.15)"/><rect x="60" y="66" width="110" height="56" rx="16" class="c-seat" fill="#c8c0b8"/><rect x="58" y="20" width="32" height="82" rx="14" fill="#bcb3a9"/><rect x="140" y="20" width="32" height="82" rx="14" fill="#bcb3a9"/><rect x="78" y="14" width="74" height="66" rx="18" class="c-back" fill="#cec6bc"/></svg>
+      </div>
+      <div class="stageacts">
+        <button class="btn ghost" id="act-explode">⤢ Explode</button>
+        <button class="btn ghost" onclick="openModal('m-vimr')">🖼 View in my room</button>
+      </div>
+      <span class="stagehint">drag to orbit · scroll to zoom</span>
+    </div>
+    <!-- RIGHT: adjustments -->
+    <div class="col side-r">
+      <div class="prodctl" id="prodctl">
+        <div class="ph">Applied material</div>
+        <div class="applied"><div class="th" id="app-th" style="background:#c8c0b8"></div><div><b id="app-name">Natural Linen</b><span id="app-on">on Seat, Backrest</span></div></div>
+        <div class="ph">Adjustments</div>
+        <div class="sld"><div class="r"><span>Brightness</span><b id="v-bri">1.0</b></div><input type="range" min="0" max="200" value="100" oninput="document.getElementById('v-bri').textContent=(this.value/100).toFixed(1)"></div>
+        <div class="sld"><div class="r"><span>Roughness</span><b id="v-rou">0.80</b></div><input type="range" min="0" max="100" value="80" oninput="document.getElementById('v-rou').textContent=(this.value/100).toFixed(2)"></div>
+        <div class="sld"><div class="r"><span>Sheen</span><b id="v-she">0.10</b></div><input type="range" min="0" max="100" value="10" oninput="document.getElementById('v-she').textContent=(this.value/100).toFixed(2)"></div>
+        <div class="sld"><div class="r"><span>Pattern scale</span><b id="v-sca">10</b></div><input type="range" min="1" max="24" value="10" oninput="document.getElementById('v-sca').textContent=this.value"></div>
+        <div class="ph">Parts</div>
+        <div id="partlist"></div>
+      </div>
+      <div class="roomctl" id="roomctl">
+        <div class="ph">Curtain colour</div>
+        <div class="cchips" id="cchips"></div>
+        <div class="ph">Room elements</div>
+        <div class="rel">Walls <div class="tgl" onclick="this.classList.toggle('off')"><i></i></div></div>
+        <div class="rel">Floor <div class="tgl" onclick="this.classList.toggle('off')"><i></i></div></div>
+        <div class="rel">Window <div class="tgl" onclick="this.classList.toggle('off')"><i></i></div></div>
+        <div class="rel">Curtains <div class="tgl" onclick="this.classList.toggle('off')"><i></i></div></div>
+        <div class="rel">Rug <div class="tgl off" onclick="this.classList.toggle('off')"><i></i></div></div>
+        <div class="ph">Curtain size</div>
+        <div class="sld"><div class="r"><span>Width</span><b id="v-cw">1.2×</b></div><input type="range" min="80" max="160" value="120" oninput="document.getElementById('v-cw').textContent=(this.value/100).toFixed(1)+'×'"></div>
+        <div class="sld"><div class="r"><span>Drop</span><b id="v-cd">0.9×</b></div><input type="range" min="70" max="130" value="90" oninput="document.getElementById('v-cd').textContent=(this.value/100).toFixed(1)+'×'"></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================ STAFF ============================ -->
+<section class="view" id="staff">
+  <div class="sside">
+    <div class="logo"><span class="mark">◆</span> Simulator</div>
+    <div class="snav">
+      <button class="on" data-snav="clients" onclick="staffNav('clients')">▦ Clients</button>
+      <button data-snav="onboard" onclick="staffNav('onboard')">＋ Onboard</button>
+      <button data-snav="settings" onclick="staffNav('settings')">⚙ Settings</button>
+    </div>
+    <div class="foot">Signed in as <b style="color:var(--muted)">Livinit staff</b><br><span class="back" onclick="go('app')">← Back to app</span></div>
+  </div>
+  <div class="smain">
+    <!-- CLIENTS -->
+    <div class="sub-view on" id="sv-clients">
+      <div class="smh"><h2>Clients</h2><button class="btn primary" onclick="staffNav('onboard')">+ New client</button></div>
+      <p class="smsub">12 tenants · 2 in setup</p>
+      <div class="card">
+        <div class="thead"><span>Client</span><span>Status</span><span>Products</span><span>Fabrics</span></div>
+        <div class="trow" onclick="staffNav('onboard')"><b>Acme Furniture</b><span><span class="pill live">● Live</span></span><span>8</span><span>24</span></div>
+        <div class="trow" onclick="staffNav('onboard')"><b>Bhavya Interiors</b><span><span class="pill draft">● Draft</span></span><span>0</span><span>0</span></div>
+        <div class="trow" onclick="staffNav('onboard')"><b>Cove &amp; Co.</b><span><span class="pill live">● Live</span></span><span>15</span><span>41</span></div>
+        <div class="trow" onclick="staffNav('onboard')"><b>Dune Living</b><span><span class="pill live">● Live</span></span><span>6</span><span>18</span></div>
+        <div class="trow" onclick="staffNav('onboard')"><b>Elm House</b><span><span class="pill draft">● Draft</span></span><span>3</span><span>9</span></div>
+      </div>
+      <div class="note" style="margin-top:18px"><b>Status gates access:</b> a client can only log in once their tenant is Live.</div>
+    </div>
+    <!-- ONBOARD (stepper) -->
+    <div class="sub-view" id="sv-onboard">
+      <div class="smh"><h2>Onboard · Bhavya Interiors</h2><span class="pill draft">● Draft</span></div>
+      <p class="smsub">From 2D images to a live catalog.</p>
+      <div class="stepper" id="stepper">
+        <button class="st on" onclick="obStep(0)"><span class="n">1</span> Account</button>
+        <button class="st" onclick="obStep(1)"><span class="n">2</span> Product</button>
+        <button class="st" onclick="obStep(2)"><span class="n">3</span> Fabric</button>
+        <button class="st" onclick="obStep(3)"><span class="n">4</span> Go live</button>
+      </div>
+      <!-- step 1 account -->
+      <div class="sub-view on" id="ob-0">
+        <div class="card" style="max-width:460px;padding:22px">
+          <div class="field" style="margin-bottom:15px"><label>Client name</label><input class="tin" value="Bhavya Interiors"></div>
+          <div class="field" style="margin-bottom:15px"><label>URL slug</label><input class="tin" value="bhavya"></div>
+          <div class="field" style="margin-bottom:18px"><label>Primary contact (their login)</label><input class="tin" placeholder="buyer@bhavya.com"></div>
+          <button class="btn primary block" onclick="obStep(1)">Create client &amp; send invite →</button>
+          <div class="note" style="margin-top:16px">Creates the tenant in <b>draft</b> + a client membership. Invite emailed.</div>
+        </div>
+      </div>
+      <!-- step 2 product -->
+      <div class="sub-view" id="ob-1">
+        <div class="smh" style="margin-bottom:16px"><h2 style="font-size:1.1rem">New product · Haven Sofa</h2><button class="btn primary" onclick="obStep(2)">Save &amp; continue →</button></div>
+        <div class="onb">
+          <div>
+            <div class="field" style="margin-bottom:14px"><label>Product name</label><input class="tin" value="Haven Sofa"></div>
+            <label style="display:block;font-size:.75rem;font-weight:600;color:var(--muted);margin-bottom:6px">3D model (GLB)</label>
+            <div class="drop"><span class="ic">⬆</span> sofa_haven.glb uploaded<br><span style="font-size:.72rem">4.2 MB · 6 meshes detected</span></div>
+            <div class="note" style="margin-top:14px"><b>part_map</b> is authored here once — arbitrary furniture can't be auto-classified.</div>
+          </div>
+          <div class="meshbox">
+            <div class="mbh">Mesh nodes → parts · toggle = customizable</div>
+            <div class="meshrow"><span class="mn">seat_cushion</span><input value="Seat"><div class="tgl" onclick="this.classList.toggle('off')"><i></i></div></div>
+            <div class="meshrow"><span class="mn">back_cushion</span><input value="Backrest"><div class="tgl" onclick="this.classList.toggle('off')"><i></i></div></div>
+            <div class="meshrow"><span class="mn">arm_L</span><input value="Left Arm"><div class="tgl" onclick="this.classList.toggle('off')"><i></i></div></div>
+            <div class="meshrow"><span class="mn">arm_R</span><input value="Right Arm"><div class="tgl" onclick="this.classList.toggle('off')"><i></i></div></div>
+            <div class="meshrow"><span class="mn">base_frame</span><input value="Base"><div class="tgl off" onclick="this.classList.toggle('off')"><i></i></div></div>
+            <div class="meshrow"><span class="mn">legs</span><input value="Legs"><div class="tgl off" onclick="this.classList.toggle('off')"><i></i></div></div>
+          </div>
+        </div>
+      </div>
+      <!-- step 3 fabric -->
+      <div class="sub-view" id="ob-2">
+        <div class="smh" style="margin-bottom:16px"><h2 style="font-size:1.1rem">Add fabric · Charcoal Velvet</h2><button class="btn primary" onclick="obStep(3)">Save &amp; continue →</button></div>
+        <div class="onb">
+          <div>
+            <div class="field" style="margin-bottom:13px"><label>Name</label><input class="tin" value="Charcoal Velvet"></div>
+            <div style="display:flex;gap:12px;margin-bottom:13px"><div class="field" style="flex:1"><label>Type</label><input class="tin" value="fabric"></div><div class="field" style="width:130px"><label>Base colour</label><input class="tin" value="#3a3a40"></div></div>
+            <label style="display:block;font-size:.75rem;font-weight:600;color:var(--muted);margin-bottom:6px">PBR maps</label>
+            <div class="two" style="grid-template-columns:1fr 1fr 1fr;gap:9px"><div class="drop" style="min-height:80px;font-size:.72rem"><span class="ic" style="font-size:1.1rem">🖼</span>Diffuse</div><div class="drop" style="min-height:80px;font-size:.72rem"><span class="ic" style="font-size:1.1rem">🌐</span>Normal</div><div class="drop" style="min-height:80px;font-size:.72rem"><span class="ic" style="font-size:1.1rem">◐</span>Rough</div></div>
+            <button class="btn ghost" style="margin-top:12px" onclick="openModal('m-finder')">✨ Seed from a photo</button>
+          </div>
+          <div class="meshbox">
+            <div class="mbh">Material defaults (PBR)</div>
+            <div style="padding:6px 4px">
+              <div class="sld"><div class="r"><span>Roughness</span><b>0.55</b></div><input type="range" value="55"></div>
+              <div class="sld"><div class="r"><span>Sheen</span><b>0.60</b></div><input type="range" value="60"></div>
+              <div class="sld"><div class="r"><span>Metalness</span><b>0.00</b></div><input type="range" value="3"></div>
+              <div class="sld"><div class="r"><span>Pattern scale</span><b>8</b></div><input type="range" value="34"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <!-- step 4 go live -->
+      <div class="sub-view" id="ob-3">
+        <div class="smh" style="margin-bottom:16px"><h2 style="font-size:1.1rem">Review &amp; go live</h2><button class="btn primary" id="activatebtn" onclick="activate()">Activate — go live</button></div>
+        <div class="onb">
+          <div class="previewcard"><div class="im">◆ &nbsp; Preview as this client</div><div style="padding:12px 15px;font-size:.82rem;color:var(--muted)">Opens the workspace exactly as Bhavya's consultants will see it.</div></div>
+          <div>
+            <div style="font-size:.72rem;text-transform:uppercase;letter-spacing:.06em;color:var(--faint);font-weight:700;margin-bottom:8px">Readiness checks</div>
+            <div class="chk"><span class="ic ok">✓</span> 4 products registered <span class="r">4 / 4</span></div>
+            <div class="chk"><span class="ic ok">✓</span> Every product has a part map <span class="r">4 / 4</span></div>
+            <div class="chk"><span class="ic ok">✓</span> 12 fabrics with PBR maps <span class="r">12</span></div>
+            <div class="chk"><span class="ic w">!</span> Thumbnails generated <span class="r">3 / 4</span></div>
+            <div class="chk"><span class="ic ok">✓</span> Client login invited <span class="r">sent</span></div>
+            <div class="note" style="margin-top:14px">The amber item is a warning, not a blocker. Activation flips the tenant to Live.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <!-- SETTINGS -->
+    <div class="sub-view" id="sv-settings">
+      <div class="smh"><h2>Settings</h2></div>
+      <p class="smsub">Workspace &amp; billing for the simulator platform.</p>
+      <div class="card" style="max-width:520px;padding:20px">
+        <div class="rel" style="padding:11px 0">Appearance <button class="btn ghost" onclick="toggleTheme()">🌓 Toggle theme</button></div>
+        <div class="rel" style="padding:11px 0;border-top:1px solid var(--border)">Default render quota / tenant <b style="color:var(--text)">500 / mo</b></div>
+        <div class="rel" style="padding:11px 0;border-top:1px solid var(--border)">Storage bucket <b style="color:var(--text)" class="mn" >simulator-assets</b></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================ MODALS ============================ -->
+<div class="overlay" id="m-finder" onclick="if(event.target===this)closeModal('m-finder')">
+  <div class="modal">
+    <div class="mh"><b>Fabric Finder</b><button class="x" onclick="closeModal('m-finder')">✕</button></div>
+    <div class="mb">
+      <div class="tabrow"><button class="on" onclick="tabSel(this)">Upload photo</button><button onclick="tabSel(this)">Search library</button></div>
+      <div class="two">
+        <div class="drop"><span class="ic">📷</span>Drop a fabric photo<br><span style="font-size:.72rem">or click to browse</span></div>
+        <div>
+          <div style="display:flex;gap:11px;align-items:center;margin-bottom:10px"><div style="width:46px;height:46px;border-radius:9px;background:#b98e6b"></div><div><b style="font-size:.88rem">Woven Linen</b><div style="font-size:.72rem;color:var(--faint)">detected · matte weave</div></div></div>
+          <div class="analysis"><div class="a"><b>0.78</b><span>Rough</span></div><div class="a"><b>0.12</b><span>Sheen</span></div><div class="a"><b>0</b><span>Metal</span></div><div class="a"><b>#cfc7ba</b><span>Colour</span></div></div>
+        </div>
+      </div>
+    </div>
+    <div class="mf"><button class="btn ghost" onclick="closeModal('m-finder')">Preview on model</button><button class="btn primary" onclick="closeModal('m-finder')">Save to my fabrics</button></div>
+  </div>
+</div>
+
+<div class="overlay" id="m-render" onclick="if(event.target===this)closeModal('m-render')">
+  <div class="modal">
+    <div class="mh"><b>Render</b><button class="x" onclick="closeModal('m-render')">✕</button></div>
+    <div class="mb">
+      <div class="tabrow"><button class="on" onclick="tabSel(this)">Product shot</button><button onclick="tabSel(this)">Room shot</button></div>
+      <div class="render-img warm"><span class="tg">✨ AI render · gemini</span></div>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-top:11px;font-size:.8rem;color:var(--faint)"><span>Sierra Chair · <span id="rendername">Natural Linen</span></span><span class="credits">⚡ <span id="creditnum2">479</span> left</span></div>
+    </div>
+    <div class="mf"><button class="btn ghost" onclick="spendCredit()">↻ Render again</button><button class="btn ghost" onclick="closeModal('m-render')">⤓ Download</button><button class="btn primary" onclick="closeModal('m-render')">Share</button></div>
+  </div>
+</div>
+
+<div class="overlay" id="m-vimr" onclick="if(event.target===this)closeModal('m-vimr')">
+  <div class="modal" style="width:640px">
+    <div class="mh"><b>View in my room</b><button class="x" onclick="closeModal('m-vimr')">✕</button></div>
+    <div class="mb">
+      <div class="two">
+        <div><div style="font-size:.72rem;text-transform:uppercase;letter-spacing:.06em;color:var(--faint);font-weight:700;margin-bottom:7px">1 · Your room photo</div><div class="drop" style="min-height:180px"><span class="ic">🏠</span>living-room.jpg<br><span style="font-size:.72rem">uploaded</span></div></div>
+        <div><div style="font-size:.72rem;text-transform:uppercase;letter-spacing:.06em;color:var(--faint);font-weight:700;margin-bottom:7px">2 · Result</div><div class="render-img room" style="height:180px"><span class="tg">✨ composited</span></div></div>
+      </div>
+    </div>
+    <div class="mf"><button class="btn ghost" onclick="closeModal('m-vimr')">Change photo</button><button class="btn primary" onclick="closeModal('m-vimr')">Generate</button></div>
+  </div>
+</div>
+
+<!-- ============================ LAUNCHER ============================ -->
+<div class="launch">
+  <button class="lbtn" onclick="document.getElementById('lpop').classList.toggle('open')">◆ Prototype ▴</button>
+  <div class="lpop" id="lpop">
+    <div class="gt">Consultant</div>
+    <button onclick="go('login')">Login</button>
+    <button onclick="go('gate')">Being set up (gate)</button>
+    <button onclick="go('app');setMode('product')">Workspace · Product</button>
+    <button onclick="go('app');setMode('room')">Workspace · Room</button>
+    <button onclick="go('app');openModal('m-finder')">Fabric Finder</button>
+    <button onclick="go('app');openModal('m-render')">Render result</button>
+    <button onclick="go('app');openModal('m-vimr')">View in my room</button>
+    <div class="gt">Staff</div>
+    <button onclick="go('staff');staffNav('clients')">Clients</button>
+    <button onclick="go('staff');staffNav('onboard');obStep(0)">Create client</button>
+    <button onclick="go('staff');staffNav('onboard');obStep(1)">Onboard product</button>
+    <button onclick="go('staff');staffNav('onboard');obStep(2)">Add fabric</button>
+    <button onclick="go('staff');staffNav('onboard');obStep(3)">QA &amp; go live</button>
+  </div>
+</div>
+
+<script>
+(function(){
+  const FABRICS=[
+    {n:'Natural Linen',c:'#c8c0b8'},{n:'Slate',c:'#8a9bb0'},{n:'Cognac',c:'#6d4b3a'},
+    {n:'Charcoal',c:'#3a3a40'},{n:'Sage',c:'#a7bfa0'},{n:'Ochre',c:'#d8b26a'},
+    {n:'Brick',c:'#b0524a'},{n:'Ivory',c:'#e4ddd0'},{n:'Teal Grey',c:'#4f6472'}
+  ];
+  const CURTAINS=[
+    {n:'Linen Sheer',c:'#e6ddcf'},{n:'Velvet',c:'#8a97a8'},{n:'Cotton',c:'#c9b79a'},{n:'Blackout',c:'#5a6472'}
+  ];
+  const CCOLORS=['#e6ddcf','#cbb79c','#9aa7b5','#7d6f5c','#5a6472','#b0524a'];
+  const PARTS=['Seat','Backrest','Left Arm','Right Arm','Legs / Base'];
+  let selected=0, mode='product';
+
+  window.go=function(id){
+    document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
+    document.getElementById(id).classList.add('active');
+    document.querySelectorAll('.overlay').forEach(o=>o.classList.remove('open'));
+    window.scrollTo(0,0);
+  };
+  window.toggleTheme=function(){
+    const r=document.documentElement;
+    const cur=r.getAttribute('data-theme')|| (matchMedia('(prefers-color-scheme:dark)').matches?'dark':'light');
+    r.setAttribute('data-theme', cur==='dark'?'light':'dark');
+  };
+  window.toggleMenu=function(e){e.stopPropagation();document.getElementById('usermenu').classList.toggle('open');};
+  window.closeMenu=function(){document.getElementById('usermenu').classList.remove('open');};
+  document.addEventListener('click',()=>closeMenu());
+
+  window.openModal=function(id){document.getElementById(id).classList.add('open');};
+  window.closeModal=function(id){document.getElementById(id).classList.remove('open');};
+  window.tabSel=function(btn){[...btn.parentElement.children].forEach(b=>b.classList.remove('on'));btn.classList.add('on');};
+
+  // library render (product = fabrics, room = curtains)
+  function renderLib(){
+    const grid=document.getElementById('swgrid');
+    const list = mode==='room'?CURTAINS:FABRICS;
+    document.getElementById('libhead').textContent = mode==='room'?'Curtain fabric':'Fabric library';
+    grid.innerHTML='';
+    list.forEach((f,i)=>{
+      const el=document.createElement('div');
+      el.className='sw'+((mode!=='room'&&i===selected)?' on':(mode==='room'&&i===0?' on':''));
+      el.innerHTML=`<div class="im" style="background:${f.c}"></div><div class="nm">${f.n}</div>`;
+      el.onclick=()=>{
+        if(mode==='room'){grid.querySelectorAll('.sw').forEach(s=>s.classList.remove('on'));el.classList.add('on');
+          document.getElementById('curtainstrip').style.background=`repeating-linear-gradient(90deg,${f.c},${f.c} 6px,${shade(f.c)} 6px,${shade(f.c)} 12px)`;
+          return;}
+        selected=i; grid.querySelectorAll('.sw').forEach(s=>s.classList.remove('on')); el.classList.add('on');
+        applyFabric(f);
+      };
+      grid.appendChild(el);
+    });
+  }
+  function shade(hex){return hex;} // simple placeholder
+  function applyFabric(f){
+    document.getElementById('app-name').textContent=f.n;
+    document.getElementById('app-th').style.background=f.c;
+    document.getElementById('rendername').textContent=f.n;
+    document.querySelectorAll('#chairsvg .c-seat, #chairsvg .c-back, #roomscene .c-seat, #roomscene .c-back').forEach(m=>{
+      // only recolor checked parts (Seat/Backrest by default)
+    });
+    document.querySelectorAll('.c-seat').forEach(m=>m.setAttribute('fill',f.c));
+    document.querySelectorAll('.c-back').forEach(m=>m.setAttribute('fill',mix(f.c)));
+  }
+  function mix(hex){return hex;}
+
+  // parts
+  function renderParts(){
+    const box=document.getElementById('partlist'); box.innerHTML='';
+    PARTS.forEach((p,i)=>{
+      const on=i<2;
+      const el=document.createElement('div'); el.className='prt'+(on?' on':'');
+      el.innerHTML=`<span class="cb">${on?'✓':''}</span> ${p}`;
+      el.onclick=()=>{el.classList.toggle('on');el.querySelector('.cb').textContent=el.classList.contains('on')?'✓':'';updateAppliedOn();};
+      box.appendChild(el);
+    });
+  }
+  function updateAppliedOn(){
+    const on=[...document.querySelectorAll('#partlist .prt.on')].map(e=>e.textContent.trim());
+    document.getElementById('app-on').textContent = on.length? 'on '+on.slice(0,2).join(', ')+(on.length>2?' +'+(on.length-2):'') : 'no parts selected';
+  }
+
+  // curtain colours
+  function renderCChips(){
+    const box=document.getElementById('cchips'); box.innerHTML='';
+    CCOLORS.forEach((c,i)=>{const el=document.createElement('i');el.style.background=c;if(i===0)el.classList.add('on');
+      el.onclick=()=>{box.querySelectorAll('i').forEach(x=>x.classList.remove('on'));el.classList.add('on');};box.appendChild(el);});
+  }
+
+  window.setMode=function(m){
+    mode=m;
+    document.getElementById('mode-p').classList.toggle('on',m==='product');
+    document.getElementById('mode-r').classList.toggle('on',m==='room');
+    document.getElementById('productscene').style.display=m==='room'?'none':'';
+    document.getElementById('roomscene').classList.toggle('on',m==='room');
+    document.getElementById('prodctl').style.display=m==='room'?'none':'block';
+    document.getElementById('roomctl').classList.toggle('on',m==='room');
+    renderLib();
+  };
+
+  // product tabs
+  document.getElementById('prodtabs').addEventListener('click',e=>{
+    if(e.target.tagName==='BUTTON'){[...e.target.parentElement.children].forEach(b=>b.classList.remove('on'));e.target.classList.add('on');}
+  });
+  // filters
+  document.getElementById('filters').addEventListener('click',e=>{
+    if(e.target.tagName==='BUTTON'){[...e.target.parentElement.children].forEach(b=>b.classList.remove('on'));e.target.classList.add('on');}
+  });
+  // explode toggle
+  document.getElementById('act-explode').addEventListener('click',function(){this.classList.toggle('primary');this.classList.toggle('ghost');});
+
+  // credits
+  window.spendCredit=function(){
+    let n=parseInt(document.getElementById('creditnum').textContent)-1;
+    document.getElementById('creditnum').textContent=n;
+    document.getElementById('creditnum2').textContent=n-1<0?0:n;
+  };
+
+  // staff nav
+  window.staffNav=function(id){
+    document.querySelectorAll('#staff .snav button').forEach(b=>b.classList.toggle('on',b.dataset.snav===id));
+    ['clients','onboard','settings'].forEach(v=>document.getElementById('sv-'+v).classList.toggle('on',v===id));
+  };
+  window.obStep=function(i){
+    document.querySelectorAll('#stepper .st').forEach((s,idx)=>{s.classList.toggle('on',idx===i);s.classList.toggle('done',idx<i);});
+    [0,1,2,3].forEach(idx=>document.getElementById('ob-'+idx).classList.toggle('on',idx===i));
+  };
+  window.activate=function(){
+    const b=document.getElementById('activatebtn');
+    b.textContent='✓ Live'; b.disabled=true;
+    setTimeout(()=>{staffNav('clients');b.textContent='Activate — go live';b.disabled=false;},700);
+  };
+
+  // init
+  renderLib(); renderParts(); renderCChips(); updateAppliedOn();
+  applyFabric(FABRICS[0]);
+})();
+</script>

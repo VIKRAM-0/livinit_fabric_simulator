@@ -646,6 +646,8 @@ export function handleGLBUpload(input) {
   window._customGLBUrl = URL.createObjectURL(file);
   const label = file.name.replace(/\.(glb|gltf)$/i, '');
   showToast('Loading ' + label + '…');
+  E._uploadedModel = true;    // uploads can't be saved (spec §4.1) and reset history
+  window._historyClear?.();
   window.loadModel(window._customGLBUrl);
   // Tag active tab with "Custom"
   ['tab-chair','tab-sofa'].forEach(id => {

@@ -1,8 +1,18 @@
 import { E, markDirty, showToast, saveMaterialSnapshot, setSliderVal, _gltfSceneCache, roomFurnitureModels, FABRIC_ENV_INTENSITY } from '../../lib/engine.js';
 import { appStore } from '../../lib/store.js';
-import { setActiveFabric, setModelKey } from '../../lib/actions.js';
+import { setActiveFabric, setModelKey, resetSliders } from '../../lib/actions.js';
 import { getGLBUrl } from '../../lib/catalog.js';
 import { spinModel360 } from './viewport.js';
+
+// Fired whenever a product model is ready (fresh processGLTF or cached room
+// switch): history re-baselines first, then any one-shot continuation
+// (e.g. Saved-panel load) runs against the settled scene.
+function _modelReadyHooks() {
+  window._historyOnModelReady?.();
+  if (typeof window._onModelReady === 'function') {
+    const f = window._onModelReady; window._onModelReady = null; f();
+  }
+}
 
 // ── Fabric tiling scale ───────────────────────────────────────────────────
 // How many metres of surface one UV unit spans, measured from the geometry:
@@ -424,6 +434,10 @@ export function processGLTF(gltf) {
     document.getElementById('loading').classList.remove('on');
     document.getElementById('v-hint').style.display='flex';
     if (typeof window._tourOnReady === 'function') { window._tourOnReady(); window._tourOnReady = null; }
+    // Fresh load: align the STORE with the DOM defaults set below, or the
+    // history baseline captures the previous model's stale slider values.
+    resetSliders();
+    _modelReadyHooks();
     setSliderVal('brightness',1);setSliderVal('roughness',0.72);setSliderVal('metalness',0);
     setSliderVal('sheen',0,2);setSliderVal('scale',10,1);setSliderVal('norm',1,1);
     _maybeAutoSpin(appStore.getState().currentModelKey);
@@ -477,6 +491,8 @@ export function switchModel(key) {
   }
 
   const prevKey = appStore.getState().currentModelKey;
+  E._uploadedModel = false;
+  window._historyClear?.();   // design-edit history never crosses products (spec §2)
   setModelKey(key);
   document.getElementById('tab-chair').classList.toggle('active', key === 'chair');
   document.getElementById('tab-accent_chair').classList.toggle('active', key === 'accent_chair');
@@ -504,6 +520,7 @@ export function switchModel(key) {
       buildPieceList();
       window._applySnapshotToModel(E.currentModel, key);
       markDirty();
+      _modelReadyHooks();
     } else {
       // Not cached yet — load fresh (avoid calling processGLTF in room mode;
       // it would re-centre the model and clobber E.meshEntries/curtain entries)
@@ -527,6 +544,7 @@ export function switchModel(key) {
         buildPieceList();
         window._applySnapshotToModel(E.currentModel, key);
         markDirty();
+        _modelReadyHooks();
         document.getElementById('loading').classList.remove('on');
       }, undefined, () => {
         document.getElementById('loading').classList.remove('on');

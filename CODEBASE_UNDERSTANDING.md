@@ -277,3 +277,17 @@ All GLB/texture URLs in `catalog.js` route through `s3proxy.ts` rather than hitt
 - **Material snapshots** (`saveMaterialSnapshot`/`E.modelMaterialSnapshots`) are how fabric choices survive switching between chair/sofa/bed and entering/exiting room mode — always call `saveMaterialSnapshot()` after a material-mutating action if you're adding a new one, or state will silently not persist.
 - **`CUSTOM_FABRIC_ITEMS` is a shared-by-reference array** across 4 different `LIBRARY` groups (chair/sofa/bed_wooden/bed_fabric all point at the same array for "My Fabrics") — never reassign it, only `.push()` (that's why `addCustomFabric` exists as the single mutation point).
 - **All external asset URLs are proxied through `/api/s3proxy`**, not hit directly — this keeps AWS credentials server-side and lets `test/serve.mjs` disk-cache them.
+
+---
+
+## 11. Design history + saved designs (added 2026-07-24)
+
+One serializable **DesignState** (`{v, productKey, parts:{partName→FabricRef}, baseColorHex, sliders, curtain}`) powers Undo/Redo/Reset/Save/Load:
+
+- **`src/lib/design-constants.js`** — dependency-free slider/curtain defaults (leaf so node tests never import `engine.js`/THREE; `actions.js` re-exports them).
+- **`src/lib/design-state.js`** — pure ref/fingerprint/default helpers (node-tested).
+- **`src/lib/design-state-live.js`** — `captureDesignState()` (reads `appliedFabric?.name ?? userData._fabricName`) and `applyDesignState(state, {silent, fast})` — a queued replay through `applySwatchToEntries`/slider appliers/curtain setters. `fast:true` (undo/redo) skips the Gemini enhance pipeline and reuses `enhanceCache`; saved-design loads use `fast:false`.
+- **`src/lib/history.js`** — pure undo/redo stack factory (cap 50); the singleton is wired in `boot.js` (`window._historyRecord/_historyClear/_historySeed`, `undoDesign/redoDesign/resetDesign`, ⌘Z/⇧⌘Z). Records fire from `applySwatchToEntries`, curtain setters, and a document-level `change` listener for slider releases (excluding `#s-env-brightness`). Product switch and GLB upload clear history; `_modelReadyHooks()` in `model.js` re-seeds and runs the one-shot `window._onModelReady` (used by saved-design loads).
+- **`src/features/saved/`** — `saved-store.js` (per-user localStorage CRUD, key `livinit_sim_designs_v1:<email>`, cap 30, `quota`/`full` error codes) + `saved-panel.js` (Save dialog + thumbnail via `preserveDrawingBuffer`, Saved panel list/load/rename/delete). Uploaded GLBs can't be saved (`E._uploadedModel`).
+- **Tests**: `npm run test:unit` (history/design-state/saved-store + admin/csv), `npm run test:design` (`test/design-check.mjs` — full history/save/load/touch/tablet sweep; auto-degrades to a synthetic model when `/api/s3proxy` has no AWS creds, in which case GLB/texture loading goes untested).
+- **Tablet**: drawer breakpoint is now ≤999px; 1000–1194px gets a persistent 320px panel; `hover:none` hides the zoom lens/mouse hints; `pointer:coarse` upsizes targets; swatch drag uses pointer events (`pointerdown` on `.bar-sw`, `pointermove/up` in `initDragDrop`).

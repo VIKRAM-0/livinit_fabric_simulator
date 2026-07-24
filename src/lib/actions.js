@@ -1,12 +1,14 @@
 import { appStore } from './store.js';
 import { CUSTOM_FABRIC_ITEMS } from './catalog.js';
+import { SLIDER_DEFAULTS, CURTAIN_STATE_DEFAULTS } from './design-constants.js';
+// Defaults live in design-constants.js (a dependency-free leaf) so the pure
+// design-state.js module can import them without pulling in engine.js/THREE.
+export { SLIDER_DEFAULTS, CURTAIN_STATE_DEFAULTS };
 // Actions — the ONLY setState callers (docs/superpowers/specs §5).
 // Modules read via appStore.getState() and mutate via these functions;
 // nothing else may call appStore.setState.
 //
 // Classic script: exposes action functions in the shared global scope.
-
-export const SLIDER_DEFAULTS = { brightness: 1.0, roughness: 0.72, metalness: 0, sheen: 0, scale: 10.0, norm: 1.0 };
 
 export function setSlider(name, v) {
   appStore.setState(s => ({ sliders: { ...s.sliders, [name]: v } }));
@@ -27,8 +29,6 @@ export function setModelKey(key) {
 export function setRoomMode(on) {
   appStore.setState(() => ({ roomMode: on }));
 }
-
-export const CURTAIN_STATE_DEFAULTS = { shape:'drape', fabric:'linen', color:'#EDE6D8', widthFactor:1, lengthFactor:1 };
 
 export function setCurtain(patch) {
   appStore.setState(s => ({ curtainState: { ...s.curtainState, ...patch } }));
