@@ -745,6 +745,13 @@ input[type=range]::-webkit-slider-thumb{appearance:none;width:13px;height:13px;b
 @media (min-width:1000px) and (max-width:1194px){
   .config-panel{width:320px}
 }
+/* Tablet widths: the fixed tenant badge overlaps the CTA cluster (undo/redo/
+   reset were hidden beneath it — found in the live iPad pass). Drop the CTA
+   row below the badge; collision-proof for any tenant-name length. Phones
+   (≤640) keep their own tighter rule. */
+@media (min-width:641px) and (max-width:1194px){
+  .canvas-cta{top:max(64px, env(safe-area-inset-top, 0px) + 56px)}
+}
 /* Touch: no hover affordances — the zoom lens and mouse hints are dead weight. */
 @media (hover:none){
   #hover-zoom-lens{display:none !important}

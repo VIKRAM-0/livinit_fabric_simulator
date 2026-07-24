@@ -170,9 +170,12 @@ try {
     const r = await page.evaluate(() => {
       const p = document.querySelector('.config-panel');
       const cs = getComputedStyle(p);
-      return { fixed: cs.position === 'fixed', width: p.getBoundingClientRect().width, overflow: document.documentElement.scrollWidth > window.innerWidth };
+      const cta = document.querySelector('.canvas-cta').getBoundingClientRect();
+      const badge = document.getElementById('tenant-badge').getBoundingClientRect();
+      const collide = badge.width > 0 && cta.left < badge.right && badge.left < cta.right && cta.top < badge.bottom && badge.top < cta.bottom;
+      return { fixed: cs.position === 'fixed', width: p.getBoundingClientRect().width, overflow: document.documentElement.scrollWidth > window.innerWidth, collide };
     });
-    check(`${w}×${h}: ${drawer ? 'drawer' : 'persistent panel'}`, r.fixed === drawer && !r.overflow, `fixed=${r.fixed} w=${Math.round(r.width)}`);
+    check(`${w}×${h}: ${drawer ? 'drawer' : 'persistent panel'}`, r.fixed === drawer && !r.overflow && !r.collide, `fixed=${r.fixed} w=${Math.round(r.width)} badgeCollide=${r.collide}`);
   }
 
   exitCode = results.every(Boolean) ? 0 : 1;
