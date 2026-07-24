@@ -53,7 +53,10 @@ export async function loadTexFirstSuccess(urls, isSrgb) {
 // PBR-map pipeline below). Swatch images + fallback maps stay on the old
 // bucket location (read-only reuse).
 export const POLY_API  = 'https://api.polyhaven.com/files/';
-export const POLY_IDS  = { wood: 'wood_plank_05' };
+// 'wood_plank_05' was removed from Poly Haven (API now 404s it, killing the
+// wood normal/roughness maps). 'wood_planks' is live and carries the same
+// nor_gl / Rough / Diffuse 2k-jpg entries getPolyMaps picks.
+export const POLY_IDS  = { wood: 'wood_planks' };
 
 export const WF = SB + 'fabric_assets/wood_texture/custom/';
 export const CHAIR_WOOD = [
