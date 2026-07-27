@@ -26,7 +26,10 @@ export default async function handler(req: any, res: any) {
 
     res.setHeader('Content-Type', ContentType || 'application/octet-stream');
     if (ContentLength) res.setHeader('Content-Length', String(ContentLength));
-    res.setHeader('Cache-Control', 'public, max-age=3600');
+    // s-maxage: cache at the CDN/edge (max-age alone never did — every user
+    // re-streamed 7-9 MB GLBs through this function; measured ~13 s each).
+    // Assets under fabric_assets* are replace-rarely: 1 day edge TTL + SWR.
+    res.setHeader('Cache-Control', 'public, max-age=3600, s-maxage=86400, stale-while-revalidate=604800');
 
     if (Body instanceof Readable) {
       Body.pipe(res);

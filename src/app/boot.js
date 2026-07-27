@@ -88,13 +88,8 @@ document.addEventListener('click', e => {
 // App bootstrap — runs only after a session exists and the tenant catalog is
 // applied (multi-tenant gate at the bottom of this file). `allowed` is the
 // tenant's product-key list; the initial load + preload respect it.
-function startApp(allowed){
-window.loadScripts([
-  'https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/DRACOLoader.js',
-  'https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js',
-  'https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/environments/RoomEnvironment.js',
-  'https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/TransformControls.js',
-]).then(()=>{
+function startApp(allowed, scriptsReady){
+scriptsReady.then(()=>{
   window.initThree();
 
   // Init TransformControls for furniture move mode
@@ -136,7 +131,10 @@ window.loadScripts([
 
   // Background preload — only the tenant's own models, cached so every tab
   // switch is instant. Other tenants' products are never fetched.
-  [
+  // Defer until the FIRST model is on screen — these are 7-9 MB each and were
+  // competing with the visible model for bandwidth. model.js fires
+  // _onModelReady once, after processGLTF completes, then nulls it.
+  window._onModelReady = () => [
     { url: ACCENT_CHAIR_GLB, roomKey: 'accent_chair' },
     { url: SOFA_GLB,         roomKey: 'sofa' },
   ].filter(({ roomKey }) => allowed.includes(roomKey)).forEach(({ url, roomKey }) => {
@@ -158,10 +156,16 @@ window.loadScripts([
 // ── Boot (guest mode — the login gate was removed) ────────────────────────
 // Scope the UI to the tenant catalog, wire the account chrome, then boot.
 async function bootWithSession(session){
+  const scriptsReady = window.loadScripts([
+    'https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/DRACOLoader.js',
+    'https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js',
+    'https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/environments/RoomEnvironment.js',
+    'https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/TransformControls.js',
+  ]);
   const tenant = await loadTenantCatalog(session);
   const first = applyTenantToUI(tenant, session) || 'chair';
   _wireTenantMenu(session, tenant);
-  startApp(tenant.products.length ? tenant.products : ['chair']);
+  startApp(tenant.products.length ? tenant.products : ['chair'], scriptsReady);
   // Demo credit meter: count each render against the badge. Real counter
   // comes from GET /api/billing once the credits contract is wired.
   const _render = window.renderScene;
