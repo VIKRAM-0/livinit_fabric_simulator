@@ -768,3 +768,5 @@ input[type=range]::-webkit-slider-thumb{appearance:none;width:13px;height:13px;b
   input[type=range]{height:32px}
   input[type=range]::-webkit-slider-thumb{width:22px;height:22px}
 }
+/* The 3D canvas owns its gestures — no page pan/zoom from touches on it. */
+#viewer{touch-action:none}

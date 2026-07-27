@@ -515,6 +515,50 @@ export function initThree() {
     E.sph.r=Math.max(minR,Math.min(30,E.sph.r+e.deltaY*0.004));camUpdate();e.preventDefault();
   },{passive:false});
 
+  // ── Touch controls (tablet): 1-finger orbit, 2-finger pinch-zoom + pan ──
+  // Mirrors the mouse handlers above; same speeds, same zoom clamps as wheel.
+  // preventDefault stops page pan/zoom and synthetic mouse events on the
+  // canvas (dbltap-to-move-furniture stays mouse-only for now).
+  let touchMode = null, lastTouches = [];
+  const _tDist = t => Math.hypot(t[0].clientX - t[1].clientX, t[0].clientY - t[1].clientY);
+  canvas.addEventListener('touchstart', e => {
+    if (E.dragActive) return;
+    e.preventDefault();
+    lastTouches = [...e.touches];
+    touchMode = e.touches.length === 2 ? 'pinch' : 'orbit';
+  }, {passive: false});
+  canvas.addEventListener('touchmove', e => {
+    if (E.dragActive) return;
+    e.preventDefault();
+    const t = [...e.touches];
+    if (touchMode === 'pinch' && t.length === 2 && lastTouches.length === 2) {
+      const d0 = _tDist(lastTouches), d1 = _tDist(t);
+      if (d0 > 0 && d1 > 0) {
+        const minR = appStore.getState().roomMode ? 0.3 : (E.minZoomR || 0.3);
+        E.sph.r = Math.max(minR, Math.min(30, E.sph.r * (d0 / d1)));
+      }
+      const mx0 = (lastTouches[0].clientX + lastTouches[1].clientX) / 2,
+            my0 = (lastTouches[0].clientY + lastTouches[1].clientY) / 2,
+            mx1 = (t[0].clientX + t[1].clientX) / 2,
+            my1 = (t[0].clientY + t[1].clientY) / 2;
+      const spd = 0.002 * E.sph.r;
+      const right = new THREE.Vector3().crossVectors(E.camera.getWorldDirection(new THREE.Vector3()), E.camera.up).normalize();
+      E.tgt.addScaledVector(right, -(mx1 - mx0) * spd);
+      E.tgt.addScaledVector(E.camera.up, (my1 - my0) * spd);
+      camUpdate();
+    } else if (touchMode === 'orbit' && t.length === 1 && lastTouches.length >= 1) {
+      const dx = t[0].clientX - lastTouches[0].clientX, dy = t[0].clientY - lastTouches[0].clientY;
+      E.sph.theta -= dx * 0.007;
+      E.sph.phi = Math.max(0.1, Math.min(Math.PI - 0.1, E.sph.phi - dy * 0.007));
+      camUpdate();
+    }
+    lastTouches = t;
+  }, {passive: false});
+  canvas.addEventListener('touchend', e => {
+    lastTouches = [...e.touches];
+    touchMode = e.touches.length === 2 ? 'pinch' : e.touches.length === 1 ? 'orbit' : null;
+  });
+
   // ── Hover-to-zoom fabric preview ─────────────────────────────────────────
   // Dwell on a part for HOVER_ZOOM_DELAY ms → show a magnified lens of the
   // fabric texture actually applied to that mesh, read live off the mesh's
