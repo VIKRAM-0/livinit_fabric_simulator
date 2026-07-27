@@ -521,16 +521,18 @@ export function initThree() {
   // canvas (dbltap-to-move-furniture stays mouse-only for now).
   let touchMode = null, lastTouches = [];
   const _tDist = t => Math.hypot(t[0].clientX - t[1].clientX, t[0].clientY - t[1].clientY);
+  // targetTouches, NOT touches: a finger resting elsewhere on the page (e.g.
+  // scrolling the swatch panel two-handed) must not corrupt canvas gestures.
   canvas.addEventListener('touchstart', e => {
     if (E.dragActive) return;
     e.preventDefault();
-    lastTouches = [...e.touches];
-    touchMode = e.touches.length === 2 ? 'pinch' : 'orbit';
+    lastTouches = [...e.targetTouches];
+    touchMode = e.targetTouches.length === 2 ? 'pinch' : 'orbit';
   }, {passive: false});
   canvas.addEventListener('touchmove', e => {
     if (E.dragActive) return;
     e.preventDefault();
-    const t = [...e.touches];
+    const t = [...e.targetTouches];
     if (touchMode === 'pinch' && t.length === 2 && lastTouches.length === 2) {
       const d0 = _tDist(lastTouches), d1 = _tDist(t);
       if (d0 > 0 && d1 > 0) {
@@ -555,8 +557,8 @@ export function initThree() {
     lastTouches = t;
   }, {passive: false});
   canvas.addEventListener('touchend', e => {
-    lastTouches = [...e.touches];
-    touchMode = e.touches.length === 2 ? 'pinch' : e.touches.length === 1 ? 'orbit' : null;
+    lastTouches = [...e.targetTouches];
+    touchMode = e.targetTouches.length === 2 ? 'pinch' : e.targetTouches.length === 1 ? 'orbit' : null;
   });
 
   // ── Hover-to-zoom fabric preview ─────────────────────────────────────────
