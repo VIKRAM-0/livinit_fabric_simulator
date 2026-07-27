@@ -247,7 +247,10 @@ tailwind.config = {
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
             <span class="pill-label">View in My Room</span>
           </button>
-          <button class="pill-btn pill-btn--primary" onclick="">Get A Quote →</button>
+          <button class="pill-btn pill-btn--primary" onclick="renderScene()" title="Render">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>
+            Render
+          </button>
         </div>
         <div id="zone-overlay"></div>
         <div id="loading">
@@ -509,10 +512,6 @@ tailwind.config = {
               Material Adjustments
             </div>
             <!-- .sl-row rows rendered by src/panels.js -->
-          </div>
-
-          <div style="padding:14px 16px 18px">
-            <button class="pill-btn pill-btn--primary" onclick="" style="width:100%">Get A Quote →</button>
           </div>
 
         </div><!-- /panel-room -->
