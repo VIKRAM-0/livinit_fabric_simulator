@@ -13,6 +13,12 @@ export default async function handler(req: any, res: any) {
   const key = req.query.key as string;
   if (!key) return res.status(400).json({ error: 'missing key' });
 
+  // Only the two public asset prefixes are servable — the bucket also holds
+  // mutable admin-written objects that must not become edge-cached public reads.
+  if (!key.startsWith('fabric_assets/') && !key.startsWith('fabric_assets_v2/')) {
+    return res.status(403).json({ error: 'forbidden key' });
+  }
+
   // Full bucket-relative key is supplied by the caller (catalog.js) — no
   // implicit prefix. Legacy-reused assets (Room GLB, wood textures) carry an
   // explicit 'fabric_assets/' prefix in their key string; new assets carry
@@ -24,6 +30,8 @@ export default async function handler(req: any, res: any) {
       new GetObjectCommand({ Bucket: process.env.S3_BUCKET!, Key: s3Key })
     );
 
+    if (!Body) return res.status(404).json({ error: 'not found' });
+
     res.setHeader('Content-Type', ContentType || 'application/octet-stream');
     if (ContentLength) res.setHeader('Content-Length', String(ContentLength));
     // s-maxage: cache at the CDN/edge (max-age alone never did — every user
@@ -33,7 +41,7 @@ export default async function handler(req: any, res: any) {
 
     if (Body instanceof Readable) {
       Body.pipe(res);
-    } else if (Body) {
+    } else {
       const reader = (Body as any).getReader();
       const pump = async (): Promise<void> => {
         const { done, value } = await reader.read();
@@ -42,8 +50,6 @@ export default async function handler(req: any, res: any) {
         return pump();
       };
       await pump();
-    } else {
-      res.status(404).json({ error: 'not found' });
     }
   } catch (e: any) {
     res.status(e.$metadata?.httpStatusCode || 500).json({ error: e.message });
