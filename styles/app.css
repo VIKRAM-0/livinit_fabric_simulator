@@ -764,7 +764,7 @@ input[type=range]::-webkit-slider-thumb{appearance:none;width:13px;height:13px;b
   .canvas-cta .pill-btn{height:44px}
   .seg-chip{min-height:40px}
   .saved-act{height:38px;min-width:38px}
-  .bar-sw{touch-action:none}
+  .bar-sw{touch-action:pan-y}
   input[type=range]{height:32px}
   input[type=range]::-webkit-slider-thumb{width:22px;height:22px}
 }

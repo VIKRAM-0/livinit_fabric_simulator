@@ -148,7 +148,14 @@ export function buildLibrary() {
       }
     });
 
-    sw.addEventListener('pointerdown', e => { e.preventDefault(); window.startDrag(e, gi, ii); });
+    // Drag-to-apply is a mouse/pen affordance. On touch it armed on pointerdown,
+    // which hijacked list scrolling and dropped fabrics by accident — touch users
+    // tap to apply (the click handler above).
+    sw.addEventListener('pointerdown', e => {
+      if (e.pointerType !== 'mouse' && e.pointerType !== 'pen') return;
+      e.preventDefault();
+      window.startDrag(e, gi, ii);
+    });
     swatchesEl.appendChild(sw);
   });
 
