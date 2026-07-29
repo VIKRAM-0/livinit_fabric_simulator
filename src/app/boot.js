@@ -6,7 +6,7 @@ import '../components/ui/panels.js';   // side-effect: injects slider/applied ma
 import { E, markDirty, showToast, _gltfSceneCache, roomFurnitureModels } from '../lib/engine.js';
 import { appStore } from '../lib/store.js';
 import { CHAIR_GLB, ACCENT_CHAIR_GLB, SOFA_GLB, getGLBUrl } from '../lib/catalog.js';
-import { getSession } from '../lib/auth.js';
+import { getSession, initAuthUI, showAuthGate, hideGate, showDraftGate, showAuthNetError, hideAuthNetError, signOut, watchForSignOut } from '../lib/auth.js';
 import { loadTenantCatalog, applyTenantToUI, spendRenderCredit } from '../lib/tenant.js';
 import { createHistory } from '../lib/history.js';
 import { captureDesignState, applyDesignState, fingerprintDesignState, defaultDesignState } from '../lib/design-state-live.js';
@@ -153,21 +153,19 @@ scriptsReady.then(()=>{
 }).catch(e=>{console.error('Script load failed',e);showToast('Failed to load Three.js loaders');});
 }
 
-// ── Boot (guest mode — the login gate was removed) ────────────────────────
-// Scope the UI to the tenant catalog, wire the account chrome, then boot.
-async function bootWithSession(session){
+// ── Boot ────────────────────────────────────────────────────────────────
+// Guest sandbox stays the default, no-login landing (see design doc §1).
+// A real session gates on the tenant's live status via GET /simulator/me.
+async function bootWithSession(session, tenant){
   const scriptsReady = window.loadScripts([
     'https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/DRACOLoader.js',
     'https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js',
     'https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/environments/RoomEnvironment.js',
     'https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/TransformControls.js',
   ]);
-  const tenant = await loadTenantCatalog(session);
   const first = applyTenantToUI(tenant, session) || 'chair';
   _wireTenantMenu(session, tenant);
   startApp(tenant.products.length ? tenant.products : ['chair'], scriptsReady);
-  // Demo credit meter: count each render against the badge. Real counter
-  // comes from GET /api/billing once the credits contract is wired.
   const _render = window.renderScene;
   window.renderScene = (...a) => { spendRenderCredit(); return _render(...a); };
   void first;
@@ -181,9 +179,41 @@ function _wireTenantMenu(session, tenant){
     `${session.user.name} · ${tenant.name}`;
   av.addEventListener('click', e => { e.stopPropagation(); menu.classList.toggle('open'); });
   document.addEventListener('click', () => menu.classList.remove('open'));
+  document.getElementById('tenant-signin')?.addEventListener('click', e => { e.stopPropagation(); showAuthGate(); }, { once: true });
+  document.getElementById('tenant-signout')?.addEventListener('click', e => { e.stopPropagation(); signOut(); }, { once: true });
 }
 
-bootWithSession(getSession());
+// Entry point: resolve the session, then either boot straight in (demo, or
+// a real 'live' tenant) or show the appropriate gate state. initAuthUI()
+// wires the form once up front regardless of path — cheap, and needed
+// before showAuthGate() can be meaningfully shown from the tenant menu.
+async function main(){
+  initAuthUI();
+  hideGate();
+  watchForSignOut();
+
+  const session = await getSession();
+  const result = await loadTenantCatalog(session);
+
+  if (result.networkError) {
+    showAuthNetError(() => { hideAuthNetError(); main(); });
+    return;
+  }
+  if (result.staffNotSupported) {
+    showToast('Staff console not built yet — sign in with a client account.');
+    signOut();
+    return;
+  }
+  if (result.blocked) {
+    showDraftGate(result.tenant);
+    return;
+  }
+
+  hideGate();
+  await bootWithSession(session, result);
+}
+
+main();
 
 // Narrow-window sidebar drawer toggle (floating "Fabrics" pill; no-op >=1024px)
 function toggleSidebar(){ document.getElementById('right-panel')?.classList.toggle('open'); }
