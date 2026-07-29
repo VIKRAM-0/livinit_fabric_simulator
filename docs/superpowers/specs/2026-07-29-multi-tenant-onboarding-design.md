@@ -260,6 +260,20 @@ Stored as jsonb (authored/read/versioned as one unit, never queried per-part) �
   (declarative, testable, always-on) and into application TypeScript (one forgotten
   check away from a breach). `service_role` stays reserved for migrations and system
   writes only (the AI gateway's `usage_events` inserts, the Phase-2 claims hook).
+- **How the guest sandbox (§1) fits this model without a special-cased public policy:**
+  `anon` (a request with no session at all) stays fully revoked on every table, no
+  exception. A guest visitor instead gets a real, if disposable, session via Supabase's
+  anonymous sign-in (`signInAnonymously()`), which creates a genuine `auth.users` row
+  (`is_anonymous = true`) and authenticates as Postgres's `authenticated` role — the same
+  role every real client uses. A trigger (Phase 2) auto-creates a `memberships` row for
+  any such user pointing at a fixed, seeded `guest` tenant. Net effect: guest access
+  flows through the exact same `accessible_tenant_ids()` path as every other tenant —
+  no bypass, no second code path to keep in sync, and the guest tenant's tight
+  `daily_ai_quota` applies to it exactly like any other tenant's. This is a Phase 2
+  concern to implement (it needs real Supabase Auth), but it's recorded here because the
+  RLS policy shape in Phase 1 has to already be correct for it — a naive "add a public
+  SELECT policy for the guest tenant" alternative would have created a second,
+  harder-to-audit access path for no real benefit.
 
 ### 3.5 Local verification (no cloud Supabase project required)
 
