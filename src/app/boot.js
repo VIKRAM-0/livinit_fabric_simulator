@@ -6,7 +6,7 @@ import '../components/ui/panels.js';   // side-effect: injects slider/applied ma
 import { E, markDirty, showToast, _gltfSceneCache, roomFurnitureModels } from '../lib/engine.js';
 import { appStore } from '../lib/store.js';
 import { CHAIR_GLB, ACCENT_CHAIR_GLB, SOFA_GLB, getGLBUrl } from '../lib/catalog.js';
-import { getSession, initAuthUI, showAuthGate, hideGate, showDraftGate, showAuthNetError, hideAuthNetError, signOut, watchForSignOut } from '../lib/auth.js';
+import { getSession, initAuthUI, showAuthGate, hideGate, showDraftGate, showAuthNetError, signOut, watchForSignOut } from '../lib/auth.js';
 import { loadTenantCatalog, applyTenantToUI, spendRenderCredit } from '../lib/tenant.js';
 import { createHistory } from '../lib/history.js';
 import { captureDesignState, applyDesignState, fingerprintDesignState, defaultDesignState } from '../lib/design-state-live.js';
@@ -179,7 +179,7 @@ function _wireTenantMenu(session, tenant){
     `${session.user.name} · ${tenant.name}`;
   av.addEventListener('click', e => { e.stopPropagation(); menu.classList.toggle('open'); });
   document.addEventListener('click', () => menu.classList.remove('open'));
-  document.getElementById('tenant-signin')?.addEventListener('click', e => { e.stopPropagation(); showAuthGate(); }, { once: true });
+  document.getElementById('tenant-signin')?.addEventListener('click', e => { e.stopPropagation(); showAuthGate(); });
   document.getElementById('tenant-signout')?.addEventListener('click', e => { e.stopPropagation(); signOut(); }, { once: true });
 }
 
@@ -196,7 +196,7 @@ async function main(){
   const result = await loadTenantCatalog(session);
 
   if (result.networkError) {
-    showAuthNetError(() => { hideAuthNetError(); main(); });
+    showAuthNetError(() => location.reload());
     return;
   }
   if (result.staffNotSupported) {

@@ -87,7 +87,7 @@ tailwind.config = {
      pointer-events:all on first visit) or the tour swallows login clicks. */
   #auth-gate{position:fixed;inset:0;z-index:800;display:none;grid-template-columns:1.05fr .95fr;background:rgb(var(--md-surface));}
   @media(max-width:860px){#auth-gate{grid-template-columns:1fr}.auth-brand{display:none!important}}
-  .auth-formside{display:flex;flex-direction:column;justify-content:center;padding:6vh clamp(28px,6vw,84px);}
+  .auth-formside{position:relative;display:flex;flex-direction:column;justify-content:center;padding:6vh clamp(28px,6vw,84px);}
   .auth-logo{display:flex;align-items:center;gap:10px;font:800 17px/1 var(--font-sans);letter-spacing:-.02em;color:rgb(var(--md-on-surface));margin-bottom:36px;}
   .auth-logo-mark{width:30px;height:30px;border-radius:9px;background:linear-gradient(135deg,rgb(var(--md-primary)/.85),rgb(var(--md-primary)));display:grid;place-items:center;color:#fff;}
   .auth-h{font:800 26px/1.15 var(--font-sans);letter-spacing:-.02em;color:rgb(var(--md-on-surface));margin:0 0 6px;}
@@ -138,6 +138,7 @@ tailwind.config = {
 
 <div id="auth-gate" role="dialog" aria-label="Sign in">
   <div class="auth-formside" id="auth-login">
+    <button type="button" class="auth-eye" id="auth-gate-close" aria-label="Back" style="position:absolute;top:18px;right:18px"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
     <div class="auth-logo"><span class="auth-logo-mark"><svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l9 5.5v9L12 22l-9-5.5v-9z"/></svg></span> Simulator</div>
     <h3 class="auth-h">Sign in</h3>
     <p class="auth-sub">Use your work account to start a consultation session.</p>
@@ -180,6 +181,7 @@ tailwind.config = {
     <h3>Couldn't reach the simulator</h3>
     <p>Check your connection and try again.</p>
     <button class="auth-cta" id="auth-neterr-retry" style="max-width:220px">Retry</button>
+    <button class="auth-cta" id="auth-neterr-signout" style="max-width:220px;margin-top:10px">Sign out</button>
   </div>
 </div>
 
