@@ -1,13 +1,13 @@
 // Save flow + Saved panel UI (spec §4.2).
 import { E, showToast } from '../../lib/engine.js';
 import { appStore } from '../../lib/store.js';
-import { getSession } from '../../lib/auth.js';
+import { getCachedSession } from '../../lib/auth.js';
 import { captureDesignState } from '../../lib/design-state-live.js';
 import { createSavedStore } from './saved-store.js';
 
 let _store = null;
 export function savedStore() {
-  if (!_store) _store = createSavedStore(getSession()?.user?.email || 'anon');
+  if (!_store) _store = createSavedStore(getCachedSession()?.user?.email || 'anon');
   return _store;
 }
 
