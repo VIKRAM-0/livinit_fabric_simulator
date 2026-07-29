@@ -1,6 +1,6 @@
 # Real Login + Tenant Gating — Design
 
-**Date:** 2026-07-29 · **Branch:** TBD · **Approved by founder:** no (approved by user in-session, not yet by founder)
+**Date:** 2026-07-29 · **Branch:** created during planning (see writing-plans output) · **Approved by founder:** no (approved by user in-session, not yet by founder)
 
 ## 1. Problem
 
@@ -61,8 +61,13 @@ supabase-config.js  →  supabase-client.js  →  auth.js  →  boot.js  →  te
   the pre-removal version in git history, e.g. `df835e7`), with the demo-account
   quick-fill chips removed — there are no demo passwords once this ships.
 - **`src/lib/tenant.js`** — `loadTenantCatalog(session)` replaces its speculative
-  `GET /api/catalog` call with `GET {SIMULATOR_API_BASE}/simulator/me`, `Authorization:
-  Bearer <access_token>`. Maps the response's `tenant.lifecycle_status` into the
+  `GET /api/catalog` call with `GET https://api.livinit.ai/simulator/me`,
+  `Authorization: Bearer <access_token>`. This frontend has never called
+  `backend-livinit` before (its own `api/*.ts` Vercel functions are unrelated,
+  separate serverless endpoints) — `https://api.livinit.ai` is backend-livinit's
+  production domain per its `CONTEXT.md`; no dev/staging API domain exists to target
+  separately, so there is one environment to wire against. Maps the response's
+  `tenant.lifecycle_status` into the
   existing tenant shape (`name`, `status`, `products`, `credits`) that
   `applyTenantToUI` already consumes — `products`/`credits` stay client-side-derived
   for now (backend doesn't expose a real catalog/credits yet), only `status`/`name`
