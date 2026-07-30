@@ -46,6 +46,7 @@ export async function loadTenantCatalog(session) {
     products: ALL_PRODUCTS,
     credits: PLACEHOLDER_CREDITS,
     businessGoal: me.tenant.business_goal,
+    role: me.role,
   };
 }
 

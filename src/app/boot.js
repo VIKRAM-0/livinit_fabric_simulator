@@ -211,6 +211,10 @@ async function main(){
   }
 
   if (session.source === 'real' && !result.businessGoal) {
+    if (result.role !== 'client_admin') {
+      showDraftGate(result);
+      return;
+    }
     showWorkspaceSetup(result, (updatedTenant) => bootWithSession(session, updatedTenant));
     return;
   }
