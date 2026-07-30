@@ -118,6 +118,18 @@ tailwind.config = {
   #auth-draft p,#auth-neterr p{font:400 14px var(--font-sans);color:rgb(var(--md-on-surface-variant));margin:0 0 22px;}
   #auth-draft .dprog{height:7px;border-radius:4px;background:rgb(var(--md-surface-container-high,231 235 244));overflow:hidden;max-width:280px;margin:0 auto 12px;}
   #auth-draft .dprog i{display:block;height:100%;width:62%;background:rgb(var(--md-primary));border-radius:4px;}
+  #workspace-setup{position:fixed;inset:0;z-index:800;display:none;place-items:center;background:rgb(var(--md-surface));}
+  #workspace-setup .ws-card{max-width:440px;width:92vw;padding:6vh clamp(24px,5vw,48px);}
+  #workspace-setup h3{font:800 24px/1.2 var(--font-sans);letter-spacing:-.02em;color:rgb(var(--md-on-surface));margin:0 0 8px;}
+  #workspace-setup .ws-sub{font:400 14px var(--font-sans);color:rgb(var(--md-on-surface-variant));margin:0 0 24px;}
+  #workspace-setup .ws-field label{display:block;font:600 11px var(--font-sans);color:rgb(var(--md-on-surface-variant));margin-bottom:6px;}
+  #workspace-setup .ws-in{width:100%;border:1px solid rgb(var(--md-outline-variant));border-radius:10px;padding:12px 14px;font:500 14px var(--font-sans);color:rgb(var(--md-on-surface));background:rgb(var(--md-surface-container-lowest,255 255 255));margin-bottom:18px;}
+  #workspace-setup .ws-goal{display:flex;flex-direction:column;gap:8px;margin-bottom:18px;}
+  #workspace-setup .ws-goal label{display:flex;align-items:center;gap:9px;font:500 13.5px var(--font-sans);color:rgb(var(--md-on-surface));padding:10px 12px;border:1px solid rgb(var(--md-outline-variant));border-radius:10px;cursor:pointer;}
+  #workspace-setup .ws-goal input[type=radio]{accent-color:rgb(var(--md-primary));}
+  #workspace-setup .ws-err{display:none;font:600 12.5px var(--font-sans);color:#c0392b;background:rgba(210,40,20,.08);border:1px solid rgba(210,40,20,.25);border-radius:9px;padding:9px 12px;margin-bottom:14px;}
+  #workspace-setup .ws-cta{width:100%;border:none;border-radius:10px;padding:13px;font:700 14px var(--font-sans);color:#fff;background:rgb(var(--md-primary));cursor:pointer;}
+  #workspace-setup .ws-cta:disabled{opacity:.6;cursor:default;}
 </style>
 </head>
 <body>
@@ -182,6 +194,31 @@ tailwind.config = {
     <p>Check your connection and try again.</p>
     <button class="auth-cta" id="auth-neterr-retry" style="max-width:220px">Retry</button>
     <button class="auth-cta" id="auth-neterr-signout" style="max-width:220px;margin-top:10px">Sign out</button>
+  </div>
+</div>
+
+<div id="workspace-setup" role="dialog" aria-label="Set up your workspace">
+  <div class="ws-card">
+    <h3>Set up your workspace</h3>
+    <p class="ws-sub">A couple of quick details before you start.</p>
+    <form id="ws-form" novalidate>
+      <div class="ws-err" id="ws-err" role="alert"></div>
+      <div class="ws-field">
+        <label for="ws-name">Workspace name</label>
+        <input class="ws-in" id="ws-name" type="text" maxlength="80">
+      </div>
+      <div class="ws-field">
+        <label>What's your main goal?</label>
+        <div class="ws-goal">
+          <label><input type="radio" name="ws-goal" value="Sell configured furniture online"> Sell configured furniture online</label>
+          <label><input type="radio" name="ws-goal" value="In-store or live sales consultation tool"> In-store or live sales consultation tool</label>
+          <label><input type="radio" name="ws-goal" value="Reduce returns from fabric/color mismatch"> Reduce returns from fabric/color mismatch</label>
+          <label><input type="radio" name="ws-goal" value="Showcase catalog to trade/designers"> Showcase catalog to trade/designers</label>
+          <label><input type="radio" name="ws-goal" value="__other__"> Other: <input class="ws-in" id="ws-goal-other" type="text" style="margin:0 0 0 8px;flex:1" placeholder="Tell us"></label>
+        </div>
+      </div>
+      <button class="ws-cta" type="submit">Continue</button>
+    </form>
   </div>
 </div>
 
