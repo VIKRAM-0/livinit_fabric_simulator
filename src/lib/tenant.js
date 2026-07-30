@@ -45,6 +45,7 @@ export async function loadTenantCatalog(session) {
     slug: me.tenant.slug,
     products: ALL_PRODUCTS,
     credits: PLACEHOLDER_CREDITS,
+    businessGoal: me.tenant.business_goal,
   };
 }
 
@@ -60,6 +61,8 @@ async function fetchMe(accessToken, { retried = false } = {}) {
     if (!r.ok) throw new Error(`me: ${r.status}`);
     const body = await r.json();
     return { role: body.role, tenant: body.tenant };
+    // Note: body.tenant.business_goal passes through unchanged — no field
+    // list to update here, this function returns the whole tenant object.
   } catch (e) {
     if (!retried) return fetchMe(accessToken, { retried: true });
     console.error('GET /simulator/me failed after retry', e);
