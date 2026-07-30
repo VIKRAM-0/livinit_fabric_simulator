@@ -42,8 +42,13 @@ export function showWorkspaceSetup(tenant, onComplete) {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${session.accessToken}`,
         },
-        body: JSON.stringify({ business_goal: businessGoal }),
+        body: JSON.stringify({ business_goal: businessGoal, name: nameInput.value.trim() || undefined }),
       });
+      if (r.status === 403) {
+        err.textContent = "You don't have permission to complete this — contact your workspace admin.";
+        err.style.display = 'block';
+        return;
+      }
       if (!r.ok) throw new Error(`tenant update: ${r.status}`);
       const updated = await r.json();
       panel.style.display = 'none';
