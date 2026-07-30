@@ -7,6 +7,7 @@ import { E, markDirty, showToast, _gltfSceneCache, roomFurnitureModels } from '.
 import { appStore } from '../lib/store.js';
 import { CHAIR_GLB, ACCENT_CHAIR_GLB, SOFA_GLB, getGLBUrl } from '../lib/catalog.js';
 import { getSession, initAuthUI, showAuthGate, hideGate, showDraftGate, showAuthNetError, signOut, watchForSignOut } from '../lib/auth.js';
+import { showWorkspaceSetup } from '../features/onboarding/workspace-setup.js';
 import { loadTenantCatalog, applyTenantToUI, spendRenderCredit } from '../lib/tenant.js';
 import { createHistory } from '../lib/history.js';
 import { captureDesignState, applyDesignState, fingerprintDesignState, defaultDesignState } from '../lib/design-state-live.js';
@@ -206,6 +207,11 @@ async function main(){
   }
   if (result.blocked) {
     showDraftGate(result.tenant);
+    return;
+  }
+
+  if (session.source === 'real' && !result.businessGoal) {
+    showWorkspaceSetup(result, (updatedTenant) => bootWithSession(session, updatedTenant));
     return;
   }
 
