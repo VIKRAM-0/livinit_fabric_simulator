@@ -153,3 +153,14 @@ The intake flow (create workspace → business goal → add fabrics/products →
 extract → review → publish to simulator) covers how a tenant's catalog gets INTO the
 simulator. This spec covers end-user data AFTER publish. No overlap; per-tenant viewpoints
 is a prerequisite for that vision, and free-text `product_key` keeps both compatible.
+
+## Deploy checklist (manual — Hetzner box + Supabase)
+
+1. Apply `0011_designs_viewpoints.sql` to the Supabase project (SQL editor), same
+   process as 0001–0010. The `simulator` schema is already in Exposed schemas.
+2. Deploy backend-livinit to the Hetzner box (135.181.63.185) — manual pull/restart.
+   Verify: `api.livinit.ai/simulator/docs` lists /designs and /viewpoints.
+3. Deploy the simulator frontend to the same box (custom runner, manual pull/restart).
+4. Live pass: real login on two browsers — design saved on one appears on the other;
+   client_admin lock applies to that tenant only (check a second tenant unaffected).
+5. Note: 0011 omits FORCE ROW LEVEL SECURITY (0006 convention) — harmless today (PostgREST connects as authenticated); align in a follow-up migration if table-owner access ever matters.
