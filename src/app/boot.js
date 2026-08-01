@@ -18,6 +18,8 @@ import * as render from '../features/render/index.js';
 import * as finder from '../features/finder/index.js';
 import * as saved from '../features/saved/index.js';
 import '../features/tour/tour.js';      // self-wires window._tour*
+import { initSavedStore } from '../features/saved/saved-panel.js';
+import { migrateLocalDesigns } from '../features/saved/migrate-local-designs.js';
 
 // Inline onclick= handlers + cross-feature window.* calls resolve here.
 Object.assign(window, configurator, library, room, render, finder, saved,
@@ -217,6 +219,15 @@ async function main(){
     }
     showWorkspaceSetup(result, (updatedTenant) => bootWithSession(session, updatedTenant));
     return;
+  }
+
+  const store = initSavedStore(session);
+  if (session.source === 'real') {
+    // Fire-and-forget: a failed migration retries next login; never blocks boot.
+    migrateLocalDesigns(session.user.email, store).then(({ migrated, limitHit }) => {
+      if (migrated) showToast(migrated + ' design' + (migrated > 1 ? 's' : '') + ' synced to your account');
+      if (limitHit) showToast('Design limit reached — some local designs were not synced');
+    }).catch(() => {});
   }
 
   hideGate();
