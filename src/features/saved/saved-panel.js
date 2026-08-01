@@ -3,11 +3,20 @@ import { E, showToast } from '../../lib/engine.js';
 import { appStore } from '../../lib/store.js';
 import { getCachedSession } from '../../lib/auth.js';
 import { captureDesignState } from '../../lib/design-state-live.js';
-import { createSavedStore } from './saved-store.js';
+import { createSavedStore, asAsyncStore } from './saved-store.js';
+import { createApiSavedStore } from './saved-store-api.js';
 
 let _store = null;
+// Boot calls this once the session is known; anything earlier (or demo/guest)
+// falls back to the localStorage store via savedStore()'s lazy init.
+export function initSavedStore(session) {
+  _store = session?.source === 'real' && session.accessToken
+    ? createApiSavedStore(session.accessToken)
+    : asAsyncStore(createSavedStore(session?.user?.email || 'anon'));
+  return _store;
+}
 export function savedStore() {
-  if (!_store) _store = createSavedStore(getCachedSession()?.user?.email || 'anon');
+  if (!_store) initSavedStore(getCachedSession());
   return _store;
 }
 
@@ -41,20 +50,23 @@ export function closeSaveDesignDialog() {
   document.getElementById('save-dialog').style.display = 'none';
 }
 
-export function confirmSaveDesign() {
+export async function confirmSaveDesign() {
   const name = document.getElementById('save-name-input').value.trim();
   if (!name) { document.getElementById('save-name-input').focus(); return; }
+  const btn = document.querySelector('#save-dialog .pill-btn--primary');
+  if (btn) btn.disabled = true;
   try {
     const state = captureDesignState();
-    savedStore().save({ name, productKey: state.productKey, thumb: captureThumb(), state });
+    await savedStore().save({ name, productKey: state.productKey, thumb: captureThumb(), state });
     closeSaveDesignDialog();
     showToast('“' + name + '” saved');
     window.renderSavedPanel?.();   // refresh the list if the panel is open
   } catch (e) {
     showToast(e.code === 'full' ? 'Design limit reached — delete old designs first'
       : e.code === 'quota' ? 'Storage full — delete old designs first'
+      : e.code === 'network' ? 'No connection — design not saved'
       : 'Could not save design');
-  }
+  } finally { if (btn) btn.disabled = false; }
 }
 
 // ── Saved panel (list/load/rename/delete) ─────────────────────────────────
@@ -68,9 +80,16 @@ export function toggleSavedPanel(force) {
 
 function _esc(s) { const d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
 
-export function renderSavedPanel() {
-  const list = savedStore().list();
+export async function renderSavedPanel() {
   const body = document.getElementById('saved-panel-body');
+  body.innerHTML = '<div class="saved-empty">Loading…</div>';
+  let list;
+  try { list = await savedStore().list(); }
+  catch {
+    body.innerHTML = '<div class="saved-empty">Couldn’t load designs.<br>'
+      + '<button class="saved-act" onclick="renderSavedPanel()">Retry</button></div>';
+    return;
+  }
   if (!list.length) {
     body.innerHTML = '<div class="saved-empty">No saved designs yet.<br>Style a product, then hit <b>Save</b>.</div>';
     return;
@@ -93,7 +112,7 @@ export function renderSavedPanel() {
 }
 
 export async function loadSavedDesign(id) {
-  const rec = savedStore().get(id);
+  const rec = await savedStore().get(id);
   if (!rec) return;
   toggleSavedPanel(false);
   const { applyDesignState } = await import('../../lib/design-state-live.js');
@@ -112,29 +131,33 @@ export async function loadSavedDesign(id) {
   }
 }
 
-export function deleteSavedDesign(id) {
+export async function deleteSavedDesign(id) {
   const card = document.querySelector('.saved-card[data-id="' + id + '"]');
   if (card && !card.classList.contains('confirm-del')) {
     card.classList.add('confirm-del');   // first tap arms, second confirms
     setTimeout(() => card.classList.remove('confirm-del'), 2500);
     return;
   }
-  savedStore().remove(id);
+  try { await savedStore().remove(id); }
+  catch { showToast('Could not delete design'); return; }
   renderSavedPanel();
   showToast('Design deleted');
 }
 
-export function renameSavedDesign(id) {
+export async function renameSavedDesign(id) {
   const card = document.querySelector('.saved-card[data-id="' + id + '"]');
-  const rec = savedStore().get(id);
+  const rec = await savedStore().get(id);
   if (!card || !rec) return;
   const nameEl = card.querySelector('.saved-name');
   nameEl.innerHTML = '<input class="saved-rename-in" maxlength="60" value="' + _esc(rec.name) + '">';
   const input = nameEl.querySelector('input');
   input.focus(); input.select();
-  const commit = () => {
+  const commit = async () => {
     const v = input.value.trim();
-    if (v) { try { savedStore().rename(id, v); } catch { showToast('Storage full'); } }
+    if (v) {
+      try { await savedStore().rename(id, v); }
+      catch (e) { showToast(e.code === 'network' ? 'No connection — not renamed' : 'Could not rename'); }
+    }
     renderSavedPanel();
   };
   input.addEventListener('blur', commit);

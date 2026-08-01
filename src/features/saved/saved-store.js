@@ -39,3 +39,15 @@ export function createSavedStore(email, storage = globalThis.localStorage) {
     remove(id) { write(read().filter(d => d.id !== id)); },
   };
 }
+
+// Async-shaped wrapper so saved-panel.js has ONE call convention whether the
+// store is this localStorage one (demo/guest) or the API one (real sessions).
+export function asAsyncStore(store) {
+  return {
+    list: async () => store.list(),
+    get: async (id) => store.get(id),
+    save: async (rec) => store.save(rec),
+    rename: async (id, name) => store.rename(id, name),
+    remove: async (id) => store.remove(id),
+  };
+}
