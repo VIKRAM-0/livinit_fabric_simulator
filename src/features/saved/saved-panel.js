@@ -50,11 +50,14 @@ export function closeSaveDesignDialog() {
   document.getElementById('save-dialog').style.display = 'none';
 }
 
+let _saving = false;
 export async function confirmSaveDesign() {
+  if (_saving) return;
   const name = document.getElementById('save-name-input').value.trim();
   if (!name) { document.getElementById('save-name-input').focus(); return; }
   const btn = document.querySelector('#save-dialog .pill-btn--primary');
   if (btn) btn.disabled = true;
+  _saving = true;
   try {
     const state = captureDesignState();
     await savedStore().save({ name, productKey: state.productKey, thumb: captureThumb(), state });
@@ -66,7 +69,7 @@ export async function confirmSaveDesign() {
       : e.code === 'quota' ? 'Storage full — delete old designs first'
       : e.code === 'network' ? 'No connection — design not saved'
       : 'Could not save design');
-  } finally { if (btn) btn.disabled = false; }
+  } finally { _saving = false; if (btn) btn.disabled = false; }
 }
 
 // ── Saved panel (list/load/rename/delete) ─────────────────────────────────
