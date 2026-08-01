@@ -3,6 +3,8 @@ import { appStore } from '../../lib/store.js';
 import { getHitEntry, entryGroup } from './materials.js';
 import { groupEntriesByName } from './model.js';
 import { PRODUCT_VIEWPOINTS } from '../../lib/catalog.js';
+import { resolveViewpoint, lockSource } from './viewpoint-resolve.js';
+import { SIMULATOR_API } from '../../lib/tenant.js';
 // Product info, zone overlay, Three.js init, script loader, GLB upload
 // Classic script (not a module): top-level let/const/function share the
 // global scope across all src/*.js files, preserving original semantics.
@@ -167,17 +169,14 @@ export function updateZoneLabelPositions() {
 // against process.env.ADMIN_KEY (a Vercel env var) — never stored in S3.
 const VIEWPOINTS_API = '/api/viewpoints';
 let _s3Locks = {};
+let _tenantLocks = {};
+let _vpCtx = { accessToken: null, role: null };
+export function setViewpointContext(ctx) { _vpCtx = ctx || { accessToken: null, role: null }; }
 
-// The effective viewpoint for a product (S3 published → shipped default).
-function _resolveViewpoint(key) {
-  return _s3Locks[key] || PRODUCT_VIEWPOINTS[key] || null;
-}
+// The effective viewpoint for a product (tenant lock → S3 published → shipped default).
+function _resolveViewpoint(key) { return resolveViewpoint(key, _tenantLocks, _s3Locks, PRODUCT_VIEWPOINTS); }
 // Where did the current viewpoint come from? (drives the state label)
-function _lockSource(key) {
-  if (_s3Locks[key]) return 'published';
-  if (PRODUCT_VIEWPOINTS[key]) return 'default';
-  return 'none';
-}
+function _lockSource(key) { return lockSource(key, _tenantLocks, _s3Locks, PRODUCT_VIEWPOINTS); }
 export function hasLock(key) { return _lockSource(key) !== 'none'; }
 
 // The admin key: cached in localStorage, prompted for once. Returns null if the
@@ -204,6 +203,19 @@ export async function loadLockedViewpoints() {
   refreshViewpointUI();
 }
 
+// Tenant-specific locks from the backend; global/default stay as fallback.
+export async function loadTenantViewpoints() {
+  if (!_vpCtx.accessToken) return;
+  try {
+    const res = await fetch(SIMULATOR_API + '/viewpoints', {
+      headers: { Authorization: 'Bearer ' + _vpCtx.accessToken }, cache: 'no-store',
+    });
+    if (res.ok) _tenantLocks = await res.json() || {};
+  } catch (e) { /* offline — tenant layer stays empty, fallbacks apply */ }
+  applyLockedViewpoint(appStore.getState().currentModelKey);
+  refreshViewpointUI();
+}
+
 // Set product `key`'s zoom-in floor from its published/default viewpoint. This
 // does NOT move the camera — the initial framing stays at the normal default;
 // the lock only limits how far you can zoom IN (closest allowed radius = vp.r).
@@ -223,11 +235,57 @@ function _snippetFor(key, vp) {
   return `  ${key}: { theta: ${n(vp.theta)}, phi: ${n(vp.phi)}, r: ${n(vp.r)}, tgt: [${n(vp.tgt[0])}, ${n(vp.tgt[1])}, ${n(vp.tgt[2])}] },`;
 }
 
+// Tenant lock: writes to the per-tenant backend store (Task 3), visible only
+// to this tenant. Requires client_admin role — routed to from
+// lockCurrentViewpoint/unlockCurrentViewpoint below.
+async function _lockTenantViewpoint() {
+  const key = appStore.getState().currentModelKey;
+  const viewpoint = { theta: E.sph.theta, phi: E.sph.phi, r: E.sph.r, tgt: [E.tgt.x, E.tgt.y, E.tgt.z] };
+  const btn = document.getElementById('btn-vp-lock');
+  if (btn) btn.disabled = true;
+  try {
+    const res = await fetch(SIMULATOR_API + '/viewpoints/' + encodeURIComponent(key), {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + _vpCtx.accessToken },
+      body: JSON.stringify(viewpoint),
+    });
+    if (!res.ok) { showToast('Could not save viewpoint'); return; }
+    const data = await res.json();
+    _tenantLocks[key] = data.viewpoint;
+    E.minZoomR = data.viewpoint.r;
+    refreshViewpointUI();
+    showToast('Viewpoint locked for your workspace');
+  } catch (e) { showToast('Could not save viewpoint'); }
+  finally { if (btn) btn.disabled = false; }
+}
+
+async function _unlockTenantViewpoint() {
+  const key = appStore.getState().currentModelKey;
+  if (!_tenantLocks[key]) { showToast('No workspace viewpoint set for ' + key.replace('_', ' ')); return; }
+  const btn = document.getElementById('btn-vp-unlock');
+  if (btn) btn.disabled = true;
+  try {
+    const res = await fetch(SIMULATOR_API + '/viewpoints/' + encodeURIComponent(key), {
+      method: 'DELETE', headers: { Authorization: 'Bearer ' + _vpCtx.accessToken },
+    });
+    if (!res.ok && res.status !== 204) { showToast('Could not clear viewpoint'); return; }
+    delete _tenantLocks[key];
+    applyLockedViewpoint(key);
+    showToast('Workspace viewpoint cleared — back to default');
+  } catch (e) { showToast('Could not clear viewpoint'); }
+  finally { if (btn) btn.disabled = false; }
+}
+
 // Lock: publish the current pose as this product's viewpoint for EVERY visitor.
 // Requires the admin key (prompted once, cached). On success it lands in S3 and
 // the next visitor's load picks it up. Also shows a matching PRODUCT_VIEWPOINTS
 // snippet so the shipped default can be kept in sync.
+//
+// client_admin tenants route to the per-tenant backend lock instead (Task 3) —
+// the admin-key S3 path below stays code-reachable as a Livinit-internal tool
+// but is hidden from the UI (see refreshViewpointUI's role gate).
 export async function lockCurrentViewpoint() {
+  if (_vpCtx.role === 'client_admin') return _lockTenantViewpoint();
   const key = appStore.getState().currentModelKey;
   const adminKey = _getAdminKey('Enter the viewpoint admin key to publish this shot to all visitors:');
   if (!adminKey) return;
@@ -262,6 +320,7 @@ export async function lockCurrentViewpoint() {
 // Unlock: clear this product's published viewpoint (requires the key) and revert
 // to the shipped default.
 export async function unlockCurrentViewpoint() {
+  if (_vpCtx.role === 'client_admin') return _unlockTenantViewpoint();
   const key = appStore.getState().currentModelKey;
   if (!_s3Locks[key]) { showToast('No published viewpoint to clear for ' + key.replace('_', ' ')); return; }
   const adminKey = _getAdminKey('Enter the viewpoint admin key to clear this published shot:');
@@ -289,9 +348,16 @@ export function refreshViewpointUI() {
   const key = appStore.getState().currentModelKey;
   const src = _lockSource(key);
   const vp = _resolveViewpoint(key);
-  const base = { published: 'Published to all', default: 'Using shipped default', none: 'No zoom limit set' }[src];
+  const base = { tenant: 'Locked for your workspace', published: 'Published to all',
+                 default: 'Using shipped default', none: 'No zoom limit set' }[src];
   label.textContent = vp ? `${base} · zoom-in min ${vp.r.toFixed(2)}` : base;
   _updateViewpointReadout();
+
+  const isVpAdmin = _vpCtx.role === 'client_admin';
+  const lockBtn = document.getElementById('btn-vp-lock');
+  const unlockBtn = document.getElementById('btn-vp-unlock');
+  if (lockBtn) lockBtn.style.display = isVpAdmin ? '' : 'none';
+  if (unlockBtn) unlockBtn.style.display = isVpAdmin ? '' : 'none';
 }
 
 // Live theta/phi/r readout — updated as the camera moves while Settings is open.

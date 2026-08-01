@@ -131,6 +131,7 @@ scriptsReady.then(()=>{
   // is showing. Owner sets these via the lock icon (admin); everyone else just
   // inherits the framed pose + zoom-in floor.
   window.loadLockedViewpoints?.();
+  window.loadTenantViewpoints?.();
 
   // Background preload — only the tenant's own models, cached so every tab
   // switch is instant. Other tenants' products are never fetched.
@@ -167,6 +168,7 @@ async function bootWithSession(session, tenant){
     'https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/TransformControls.js',
   ]);
   const first = applyTenantToUI(tenant, session) || 'chair';
+  window.setViewpointContext?.({ accessToken: session.accessToken || null, role: tenant.role || null });
   _wireTenantMenu(session, tenant);
   startApp(tenant.products.length ? tenant.products : ['chair'], scriptsReady);
   const _render = window.renderScene;
