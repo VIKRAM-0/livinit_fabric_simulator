@@ -4,7 +4,7 @@
 // network — they're scoped entirely from DEMO_TENANTS, exactly as before
 // this feature. Real sessions call the actual multi-tenant backend.
 
-const SIMULATOR_API = 'https://api.livinit.ai/simulator';
+export const SIMULATOR_API = 'https://api.livinit.ai/simulator';
 
 // The full product catalog every 'live' real tenant gets today — the
 // backend doesn't expose a per-tenant catalog yet (see design doc §1,
