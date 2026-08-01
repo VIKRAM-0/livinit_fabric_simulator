@@ -33,7 +33,7 @@ two most user-visible data sets are not account-aligned:
 
 ## Backend (`backend-livinit`)
 
-### Migration `src/simulator/sql/migrations/0006_designs_viewpoints.sql`
+### Migration `src/simulator/sql/migrations/0011_designs_viewpoints.sql`
 
 ```sql
 create table simulator.designs (

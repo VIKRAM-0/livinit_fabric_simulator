@@ -115,7 +115,9 @@ export async function renderSavedPanel() {
 }
 
 export async function loadSavedDesign(id) {
-  const rec = await savedStore().get(id);
+  let rec;
+  try { rec = await savedStore().get(id); }
+  catch { showToast('Could not load design'); return; }
   if (!rec) return;
   toggleSavedPanel(false);
   const { applyDesignState } = await import('../../lib/design-state-live.js');
@@ -149,7 +151,9 @@ export async function deleteSavedDesign(id) {
 
 export async function renameSavedDesign(id) {
   const card = document.querySelector('.saved-card[data-id="' + id + '"]');
-  const rec = await savedStore().get(id);
+  let rec;
+  try { rec = await savedStore().get(id); }
+  catch { showToast('Could not load design'); return; }
   if (!card || !rec) return;
   const nameEl = card.querySelector('.saved-name');
   nameEl.innerHTML = '<input class="saved-rename-in" maxlength="60" value="' + _esc(rec.name) + '">';

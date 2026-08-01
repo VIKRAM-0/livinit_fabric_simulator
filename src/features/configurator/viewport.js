@@ -158,10 +158,13 @@ export function updateZoneLabelPositions() {
 // free). Controlled from the Settings popover (Lock / Unlock).
 //
 // Resolution order, most-specific first:
-//   1. S3 lock          — the live viewpoint, published by whoever holds the key
-//                         (api/viewpoints.ts, keyed by process.env.ADMIN_KEY)
-//   2. PRODUCT_VIEWPOINTS — the baked-in default that ships with the app
-//   3. none             — free framing, zoom floor 0.3
+//   1. Tenant lock       — per-tenant viewpoint published from the backend by a
+//                         client_admin (most specific; overrides everything below)
+//   2. S3 lock           — the global "Livinit default" viewpoint, published by
+//                         whoever holds the admin key (api/viewpoints.ts, keyed
+//                         by process.env.ADMIN_KEY)
+//   3. PRODUCT_VIEWPOINTS — the baked-in default that ships with the app
+//   4. none              — free framing, zoom floor 0.3
 //
 // Anyone with the admin key can Lock (publish) a new viewpoint from Settings; it
 // lands in S3 and every visitor picks it up on their next load. Unlock clears the

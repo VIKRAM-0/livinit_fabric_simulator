@@ -66,12 +66,13 @@ test('retry skips designs already on the server (name+productKey dedupe)', async
   assert.deepEqual(api.saved.map((d) => d.name), ['B']);
 });
 
-test('limit stops the run but still clears and marks (leftovers can never fit)', async () => {
+test('limit stops the run but preserves the local key (leftovers kept for later)', async () => {
   mem.set(KEY, local(['A', 'B', 'C']));
   const api = apiStub({ limitOn: 'B' });
   const res = await migrateLocalDesigns('p@acme.com', api, storage);
   assert.deepEqual(res, { migrated: 1, limitHit: true });
-  assert.equal(mem.has(KEY), false);
+  assert.deepEqual(api.saved.map((d) => d.name), ['A']);
+  assert.equal(mem.has(KEY), true);
   assert.equal(mem.get(MARK), '1');
 });
 

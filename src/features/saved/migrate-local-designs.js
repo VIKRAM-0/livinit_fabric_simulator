@@ -1,11 +1,14 @@
 // One-time move of a user's localStorage designs to their account (spec:
 // migration section). Ordering that makes it safe to retry:
-//   - the local KEY is removed only after the loop finishes without a
-//     network/api error — a mid-run failure keeps it, so next login retries;
+//   - the local KEY is removed only after every design in it has actually
+//     been uploaded — a mid-run network/api failure keeps it, so next login
+//     retries;
 //   - retries dedupe against the server by (name, productKey), so designs
 //     uploaded in an earlier partial run are never duplicated;
-//   - hitting the 30-limit still clears+marks: the leftovers could never
-//     upload anyway, and the caller shows a toast for them.
+//   - hitting the 30-limit is NOT a success: the loop stops, but the KEY is
+//     deliberately kept (leftovers are preserved locally for a future manual
+//     sync / once slots free up) — only the MARK is set, so boot doesn't
+//     retry-nag every login. The caller shows a toast explaining this.
 export async function migrateLocalDesigns(email, apiStore, storage = globalThis.localStorage) {
   const norm = String(email || '').toLowerCase();
   const KEY = 'livinit_sim_designs_v1:' + norm;
@@ -33,6 +36,14 @@ export async function migrateLocalDesigns(email, apiStore, storage = globalThis.
       if (e.code === 'full') { limitHit = true; break; }
       throw e;   // network/api → keep KEY, no MARK; retried next login
     }
+  }
+
+  if (limitHit) {
+    // Leftovers beyond the cap were never uploaded — keep them locally
+    // rather than destroying data the toast implies still exists. Only mark
+    // as migrated so boot doesn't retry-nag every login.
+    storage.setItem(MARK, '1');
+    return { migrated, limitHit };
   }
 
   storage.removeItem(KEY);
