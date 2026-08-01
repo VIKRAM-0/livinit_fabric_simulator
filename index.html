@@ -83,21 +83,11 @@ tailwind.config = {
     35%      { box-shadow: 0 0 0 2px var(--accent, #6b8f71); }
   }
   .panel-pulse { animation: panelPulse .7s ease-in-out 2; border-radius: 10px; }
-</style>
-</head>
-<body>
-
-<!-- ══ AUTH GATE ═══════════════════════════════════════════════════════
-     Multi-tenant login. Shown until a session exists (src/lib/auth.js);
-     draft tenants get the "being set up" variant instead of the workspace.
-     Styled with the same md-* role tokens as the rest of the app. -->
-<style>
   /* z-index 800: must sit ABOVE the onboarding tour overlay (#tour-ov, z 700,
-     pointer-events:all on first visit) or the tour swallows login clicks. The
-     tour then shows over the app after sign-in, as designed. */
+     pointer-events:all on first visit) or the tour swallows login clicks. */
   #auth-gate{position:fixed;inset:0;z-index:800;display:none;grid-template-columns:1.05fr .95fr;background:rgb(var(--md-surface));}
   @media(max-width:860px){#auth-gate{grid-template-columns:1fr}.auth-brand{display:none!important}}
-  .auth-formside{display:flex;flex-direction:column;justify-content:center;padding:6vh clamp(28px,6vw,84px);}
+  .auth-formside{position:relative;display:flex;flex-direction:column;justify-content:center;padding:6vh clamp(28px,6vw,84px);}
   .auth-logo{display:flex;align-items:center;gap:10px;font:800 17px/1 var(--font-sans);letter-spacing:-.02em;color:rgb(var(--md-on-surface));margin-bottom:36px;}
   .auth-logo-mark{width:30px;height:30px;border-radius:9px;background:linear-gradient(135deg,rgb(var(--md-primary)/.85),rgb(var(--md-primary)));display:grid;place-items:center;color:#fff;}
   .auth-h{font:800 26px/1.15 var(--font-sans);letter-spacing:-.02em;color:rgb(var(--md-on-surface));margin:0 0 6px;}
@@ -112,29 +102,41 @@ tailwind.config = {
   .auth-eye:hover{background:rgb(var(--md-surface-container));}
   .auth-cta{width:100%;border:none;border-radius:10px;padding:13px;font:700 14px var(--font-sans);color:#fff;background:rgb(var(--md-primary));cursor:pointer;transition:transform .15s,box-shadow .15s;}
   .auth-cta:hover{transform:translateY(-1px);box-shadow:0 8px 18px -8px rgb(var(--md-primary)/.7);}
+  .auth-cta:disabled{opacity:.6;cursor:default;transform:none;box-shadow:none;}
   .auth-err{display:none;font:600 12.5px var(--font-sans);color:#c0392b;background:rgba(210,40,20,.08);border:1px solid rgba(210,40,20,.25);border-radius:9px;padding:9px 12px;}
   .auth-shake{animation:authShake .3s ease-in-out;}
   @keyframes authShake{25%{transform:translateX(-5px)}75%{transform:translateX(5px)}}
-  .auth-demo{margin-top:6px;font:500 12px var(--font-sans);color:rgb(var(--md-on-surface-variant));}
-  .auth-demo-chips{display:flex;gap:7px;flex-wrap:wrap;margin-top:8px;}
-  .auth-demo-chips button{font:600 11.5px var(--font-mono,monospace);padding:6px 10px;border-radius:8px;border:1px dashed rgb(var(--md-outline-variant));background:rgb(var(--md-surface-container));color:rgb(var(--md-on-surface-variant));cursor:pointer;transition:all .15s;}
-  .auth-demo-chips button:hover{border-color:rgb(var(--md-primary));color:rgb(var(--md-primary));}
   .auth-brand{background:linear-gradient(155deg,rgb(var(--md-primary)) 0%,rgb(var(--md-primary)/.82) 55%,#2c357f 100%);color:#fff;display:flex;flex-direction:column;justify-content:space-between;padding:6vh clamp(28px,4vw,56px);position:relative;overflow:hidden;}
   .auth-brand::after{content:"";position:absolute;width:440px;height:440px;border-radius:50%;background:rgba(255,255,255,.08);top:-130px;right:-150px;}
   .auth-brand-mark{width:46px;height:46px;border-radius:13px;background:rgba(255,255,255,.16);display:grid;place-items:center;position:relative;}
   .auth-brand h4{font:800 30px/1.15 var(--font-sans);letter-spacing:-.02em;margin:26px 0 12px;position:relative;}
   .auth-brand p{font:400 15px var(--font-sans);color:rgba(255,255,255,.85);margin:0;max-width:30ch;position:relative;}
   .auth-brand .bfoot{font:500 12px var(--font-sans);color:rgba(255,255,255,.6);position:relative;}
-  /* draft variant */
-  #auth-draft{display:none;grid-column:1/-1;place-self:center;text-align:center;max-width:420px;padding:40px;}
-  #auth-draft .dic{width:64px;height:64px;border-radius:18px;background:linear-gradient(135deg,rgb(var(--md-primary)/.8),rgb(var(--md-primary)));display:grid;place-items:center;color:#fff;margin:0 auto 22px;}
-  #auth-draft h3{font:800 22px var(--font-sans);letter-spacing:-.01em;margin:0 0 10px;color:rgb(var(--md-on-surface));}
-  #auth-draft p{font:400 14px var(--font-sans);color:rgb(var(--md-on-surface-variant));margin:0 0 22px;}
+  #auth-draft,#auth-neterr{display:none;grid-column:1/-1;place-self:center;text-align:center;max-width:420px;padding:40px;}
+  #auth-draft .dic,#auth-neterr .dic{width:64px;height:64px;border-radius:18px;background:linear-gradient(135deg,rgb(var(--md-primary)/.8),rgb(var(--md-primary)));display:grid;place-items:center;color:#fff;margin:0 auto 22px;}
+  #auth-draft h3,#auth-neterr h3{font:800 22px var(--font-sans);letter-spacing:-.01em;margin:0 0 10px;color:rgb(var(--md-on-surface));}
+  #auth-draft p,#auth-neterr p{font:400 14px var(--font-sans);color:rgb(var(--md-on-surface-variant));margin:0 0 22px;}
   #auth-draft .dprog{height:7px;border-radius:4px;background:rgb(var(--md-surface-container-high,231 235 244));overflow:hidden;max-width:280px;margin:0 auto 12px;}
   #auth-draft .dprog i{display:block;height:100%;width:62%;background:rgb(var(--md-primary));border-radius:4px;}
-  /* tenant badge (workspace chrome) */
-  /* Top-center: .canvas-cta owns the top-right corner (app.css:27), so the
-     tenant chrome sits centered above the canvas instead. */
+  #workspace-setup{position:fixed;inset:0;z-index:800;display:none;place-items:center;background:rgb(var(--md-surface));}
+  #workspace-setup .ws-card{max-width:440px;width:92vw;padding:6vh clamp(24px,5vw,48px);}
+  #workspace-setup h3{font:800 24px/1.2 var(--font-sans);letter-spacing:-.02em;color:rgb(var(--md-on-surface));margin:0 0 8px;}
+  #workspace-setup .ws-sub{font:400 14px var(--font-sans);color:rgb(var(--md-on-surface-variant));margin:0 0 24px;}
+  #workspace-setup .ws-field label{display:block;font:600 11px var(--font-sans);color:rgb(var(--md-on-surface-variant));margin-bottom:6px;}
+  #workspace-setup .ws-in{width:100%;border:1px solid rgb(var(--md-outline-variant));border-radius:10px;padding:12px 14px;font:500 14px var(--font-sans);color:rgb(var(--md-on-surface));background:rgb(var(--md-surface-container-lowest,255 255 255));margin-bottom:18px;}
+  #workspace-setup .ws-goal{display:flex;flex-direction:column;gap:8px;margin-bottom:18px;}
+  #workspace-setup .ws-goal label{display:flex;align-items:center;gap:9px;font:500 13.5px var(--font-sans);color:rgb(var(--md-on-surface));padding:10px 12px;border:1px solid rgb(var(--md-outline-variant));border-radius:10px;cursor:pointer;}
+  #workspace-setup .ws-goal input[type=radio]{accent-color:rgb(var(--md-primary));}
+  #workspace-setup .ws-err{display:none;font:600 12.5px var(--font-sans);color:#c0392b;background:rgba(210,40,20,.08);border:1px solid rgba(210,40,20,.25);border-radius:9px;padding:9px 12px;margin-bottom:14px;}
+  #workspace-setup .ws-cta{width:100%;border:none;border-radius:10px;padding:13px;font:700 14px var(--font-sans);color:#fff;background:rgb(var(--md-primary));cursor:pointer;}
+  #workspace-setup .ws-cta:disabled{opacity:.6;cursor:default;}
+</style>
+</head>
+<body>
+
+<!-- Tenant chrome styles (badge + account menu) — kept after the login gate
+     was removed; the gate's stylesheet used to carry these. -->
+<style>
   #tenant-badge{position:fixed;top:14px;left:50%;transform:translateX(-50%);z-index:150;display:none;align-items:center;gap:10px;background:rgb(var(--md-surface-container-lowest,255 255 255)/.92);backdrop-filter:blur(8px);border:1px solid rgb(var(--md-outline-variant));border-radius:22px;padding:6px 8px 6px 14px;box-shadow:var(--elev-2,0 2px 8px rgba(0,0,0,.08));font-family:var(--font-sans);}
   #tenant-badge .tb-name{font:700 12.5px var(--font-sans);color:rgb(var(--md-on-surface));}
   #tenant-badge .tb-credits{display:inline-flex;align-items:center;gap:5px;font:700 11.5px var(--font-sans);color:rgb(var(--md-primary));background:rgb(var(--md-primary)/.09);border-radius:16px;padding:4px 10px;}
@@ -145,8 +147,10 @@ tailwind.config = {
   #tenant-menu button:hover{background:rgb(var(--md-surface-container));}
   #tenant-menu .tm-hd{font:600 11px var(--font-sans);color:rgb(var(--md-on-surface-variant));padding:8px 11px 6px;border-bottom:1px solid rgb(var(--md-outline-variant));margin-bottom:4px;}
 </style>
+
 <div id="auth-gate" role="dialog" aria-label="Sign in">
   <div class="auth-formside" id="auth-login">
+    <button type="button" class="auth-eye" id="auth-gate-close" aria-label="Back" style="position:absolute;top:18px;right:18px"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
     <div class="auth-logo"><span class="auth-logo-mark"><svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l9 5.5v9L12 22l-9-5.5v-9z"/></svg></span> Simulator</div>
     <h3 class="auth-h">Sign in</h3>
     <p class="auth-sub">Use your work account to start a consultation session.</p>
@@ -166,13 +170,6 @@ tailwind.config = {
         </div>
       </div>
       <button class="auth-cta" type="submit">Sign in</button>
-      <div class="auth-demo">Demo accounts (password <b>demo</b>):
-        <div class="auth-demo-chips">
-          <button type="button" data-demo-acc="priya@acme.com">priya@acme.com</button>
-          <button type="button" data-demo-acc="dana@cove.co">dana@cove.co</button>
-          <button type="button" data-demo-acc="buyer@bhavya.com">buyer@bhavya.com</button>
-        </div>
-      </div>
     </form>
   </div>
   <div class="auth-brand" aria-hidden="true">
@@ -181,7 +178,7 @@ tailwind.config = {
       <h4>Show fabrics in 3D,<br>live with your customer.</h4>
       <p>Your furniture, your finishes — configured in real time during the consultation.</p>
     </div>
-    <div class="bfoot">Powered by Livinit · web.simulator.livinit.ai</div>
+    <div class="bfoot">Powered by Livinit</div>
   </div>
   <div id="auth-draft">
     <div class="dic"><svg width="26" height="26" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l9 5.5v9L12 22l-9-5.5v-9z"/></svg></div>
@@ -190,6 +187,38 @@ tailwind.config = {
     <div class="dprog"><i></i></div>
     <p style="font-size:12px;margin-bottom:26px">Modelling &amp; segmentation in progress</p>
     <button class="auth-cta" id="auth-draft-signout" style="max-width:220px">Back to sign in</button>
+  </div>
+  <div id="auth-neterr">
+    <div class="dic"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg></div>
+    <h3>Couldn't reach the simulator</h3>
+    <p>Check your connection and try again.</p>
+    <button class="auth-cta" id="auth-neterr-retry" style="max-width:220px">Retry</button>
+    <button class="auth-cta" id="auth-neterr-signout" style="max-width:220px;margin-top:10px">Sign out</button>
+  </div>
+</div>
+
+<div id="workspace-setup" role="dialog" aria-label="Set up your workspace">
+  <div class="ws-card">
+    <h3>Set up your workspace</h3>
+    <p class="ws-sub">A couple of quick details before you start.</p>
+    <form id="ws-form" novalidate>
+      <div class="ws-err" id="ws-err" role="alert"></div>
+      <div class="ws-field">
+        <label for="ws-name">Workspace name</label>
+        <input class="ws-in" id="ws-name" type="text" maxlength="80">
+      </div>
+      <div class="ws-field">
+        <label>What's your main goal?</label>
+        <div class="ws-goal">
+          <label><input type="radio" name="ws-goal" value="Sell configured furniture online"> Sell configured furniture online</label>
+          <label><input type="radio" name="ws-goal" value="In-store or live sales consultation tool"> In-store or live sales consultation tool</label>
+          <label><input type="radio" name="ws-goal" value="Reduce returns from fabric/color mismatch"> Reduce returns from fabric/color mismatch</label>
+          <label><input type="radio" name="ws-goal" value="Showcase catalog to trade/designers"> Showcase catalog to trade/designers</label>
+          <label><input type="radio" name="ws-goal" value="__other__"> Other: <input class="ws-in" id="ws-goal-other" type="text" style="margin:0 0 0 8px;flex:1" placeholder="Tell us"></label>
+        </div>
+      </div>
+      <button class="ws-cta" type="submit">Continue</button>
+    </form>
   </div>
 </div>
 
@@ -221,7 +250,8 @@ tailwind.config = {
 </div>
 <div id="tenant-menu">
   <div class="tm-hd" id="tenant-menu-user"></div>
-  <button id="tenant-signout"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg> Sign out</button>
+  <button id="tenant-signin" style="display:none"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg> Sign in</button>
+  <button id="tenant-signout" style="display:none"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg> Sign out</button>
 </div>
 
 <div class="app">
@@ -339,7 +369,10 @@ tailwind.config = {
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
             <span class="pill-label">View in My Room</span>
           </button>
-          <button class="pill-btn pill-btn--primary" onclick="">Get A Quote →</button>
+          <button class="pill-btn pill-btn--primary" onclick="renderScene()" title="Render">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>
+            Render
+          </button>
         </div>
         <div id="zone-overlay"></div>
         <div id="loading">
@@ -601,10 +634,6 @@ tailwind.config = {
               Material Adjustments
             </div>
             <!-- .sl-row rows rendered by src/panels.js -->
-          </div>
-
-          <div style="padding:14px 16px 18px">
-            <button class="pill-btn pill-btn--primary" onclick="" style="width:100%">Get A Quote →</button>
           </div>
 
         </div><!-- /panel-room -->

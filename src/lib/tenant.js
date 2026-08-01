@@ -1,38 +1,80 @@
 // Tenant catalog seam — "each account sees only its own assets".
 //
-// loadTenantCatalog() first tries the real backend (GET /api/catalog with the
-// session bearer). Until that endpoint ships, it falls back to DEMO_TENANTS,
-// which scope the existing built-in catalog per tenant. The UI-facing shape is
-// identical in both modes, so wiring the real API later touches nothing else.
+// Demo sessions (guest sandbox + headless test identity) never hit the
+// network — they're scoped entirely from DEMO_TENANTS, exactly as before
+// this feature. Real sessions call the actual multi-tenant backend.
 
-// Demo tenants — different product sets prove the isolation visually:
-// switching accounts changes which products (and therefore which fabric
-// libraries) exist at all.
+export const SIMULATOR_API = 'https://api.livinit.ai/simulator';
+
+// The full product catalog every 'live' real tenant gets today — the
+// backend doesn't expose a per-tenant catalog yet (see design doc §1,
+// "products/credits stay client-side-derived for now"). Matches the demo
+// tenants' full set below.
+const ALL_PRODUCTS = ['chair', 'accent_chair', 'sofa'];
+// Pre-existing fabricated number (was already fake before this feature —
+// see src/lib/tenant.js history and the design doc's "credits" decision).
+// Not fixed here; out of scope for this pass.
+const PLACEHOLDER_CREDITS = 480;
+
 const DEMO_TENANTS = {
+  guest:  { name: 'Livinit Simulator', status: 'live', products: ['chair', 'accent_chair', 'sofa'], credits: 480 },
   acme:   { name: 'Acme Furniture', status: 'live',  products: ['chair', 'accent_chair', 'sofa'], credits: 480 },
   cove:   { name: 'Cove & Co.',     status: 'live',  products: ['chair', 'sofa'],                 credits: 120 },
   bhavya: { name: 'Bhavya Interiors', status: 'draft', products: [], credits: 0 },
 };
 
 export async function loadTenantCatalog(session) {
-  // Real backend first — silently fall back if it isn't deployed yet.
+  if (session.source === 'demo') {
+    return DEMO_TENANTS[session.tenantId] || DEMO_TENANTS.guest;
+  }
+
+  const me = await fetchMe(session.accessToken);
+  if (me === null) return { networkError: true };
+
+  if (me.role === 'livinit_staff') return { staffNotSupported: true };
+
+  if (!me.tenant) return { networkError: true }; // client role with no tenant row: not a valid state, treat as an error rather than guessing
+
+  if (me.tenant.status !== 'live') {
+    return { blocked: true, tenant: { name: me.tenant.name, status: me.tenant.status } };
+  }
+
+  return {
+    name: me.tenant.name,
+    status: 'live',
+    slug: me.tenant.slug,
+    products: ALL_PRODUCTS,
+    credits: PLACEHOLDER_CREDITS,
+    businessGoal: me.tenant.business_goal,
+    role: me.role,
+  };
+}
+
+async function fetchMe(accessToken, { retried = false } = {}) {
   try {
     const ctl = new AbortController();
-    const t = setTimeout(() => ctl.abort(), 3000);
-    const r = await fetch('/api/catalog', {
-      headers: { Authorization: 'Bearer ' + (session.token || 'demo') },
+    const t = setTimeout(() => ctl.abort(), 8000);
+    const r = await fetch(`${SIMULATOR_API}/me`, {
+      headers: { Authorization: `Bearer ${accessToken}` },
       signal: ctl.signal,
     });
     clearTimeout(t);
-    if (r.ok) return await r.json(); // { name, status, products[], credits }
-  } catch { /* endpoint not live yet — demo mode */ }
-  return DEMO_TENANTS[session.tenantId] || DEMO_TENANTS.acme;
+    if (!r.ok) throw new Error(`me: ${r.status}`);
+    const body = await r.json();
+    return { role: body.role, tenant: body.tenant };
+    // Note: body.tenant.business_goal passes through unchanged — no field
+    // list to update here, this function returns the whole tenant object.
+  } catch (e) {
+    if (!retried) return fetchMe(accessToken, { retried: true });
+    console.error('GET /simulator/me failed after retry', e);
+    return null;
+  }
 }
 
 // Scope the existing UI to the tenant: hide product tabs outside their
-// catalog, stamp the tenant chrome (badge, credits, avatar initials).
+// catalog, stamp the tenant chrome (badge, credits, avatar initials), and
+// show the correct sign-in/sign-out entry point.
 export function applyTenantToUI(tenant, session) {
-  // Product picker — hide models this tenant doesn't own.
   const tabs = { chair: 'tab-chair', accent_chair: 'tab-accent_chair', sofa: 'tab-sofa' };
   let firstAllowed = null;
   Object.entries(tabs).forEach(([key, id]) => {
@@ -43,7 +85,6 @@ export function applyTenantToUI(tenant, session) {
     if (allowed && !firstAllowed) firstAllowed = key;
   });
 
-  // Tenant badge (floating, top-right of the canvas)
   const badge = document.getElementById('tenant-badge');
   if (badge) {
     badge.style.display = 'flex';
@@ -52,15 +93,18 @@ export function applyTenantToUI(tenant, session) {
     const initials = (session.user.name || 'U').slice(0, 1).toUpperCase();
     const av = document.getElementById('tenant-avatar');
     if (av) av.textContent = initials;
-    // Rail avatar mirrors the signed-in user
     const rail = document.querySelector('.nav-rail-avatar');
     if (rail) { rail.textContent = initials; rail.title = session.user.name + ' · ' + tenant.name; }
   }
+
+  const signin = document.getElementById('tenant-signin');
+  const signout = document.getElementById('tenant-signout');
+  if (signin) signin.style.display = session.source === 'demo' ? 'flex' : 'none';
+  if (signout) signout.style.display = session.source === 'real' ? 'flex' : 'none';
+
   return firstAllowed;
 }
 
-// Demo credit meter — decrements the badge when a render fires. The real
-// counter comes from GET /api/billing once the credits contract is wired.
 export function spendRenderCredit() {
   const el = document.getElementById('tenant-credits-n');
   if (!el) return;

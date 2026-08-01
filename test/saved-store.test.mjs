@@ -64,3 +64,15 @@ test('corrupt JSON degrades to empty list', () => {
   const s = createSavedStore('priya@acme.com', storage);
   assert.deepEqual(s.list(), []);
 });
+
+test('asAsyncStore preserves behavior behind an async surface', async () => {
+  const { asAsyncStore } = await import('../src/features/saved/saved-store.js');
+  const s = asAsyncStore(createSavedStore('priya@acme.com', storage));
+  const d = await s.save({ name: 'A', productKey: 'chair', thumb: null, state: STATE });
+  assert.equal((await s.list()).length, 1);
+  assert.equal((await s.get(d.id)).name, 'A');
+  await s.rename(d.id, 'B');
+  assert.equal((await s.get(d.id)).name, 'B');
+  await s.remove(d.id);
+  assert.equal((await s.list()).length, 0);
+});

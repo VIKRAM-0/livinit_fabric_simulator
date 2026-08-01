@@ -3,6 +3,8 @@ import { appStore } from '../../lib/store.js';
 import { getHitEntry, entryGroup } from './materials.js';
 import { groupEntriesByName } from './model.js';
 import { PRODUCT_VIEWPOINTS } from '../../lib/catalog.js';
+import { resolveViewpoint, lockSource } from './viewpoint-resolve.js';
+import { SIMULATOR_API } from '../../lib/tenant.js';
 // Product info, zone overlay, Three.js init, script loader, GLB upload
 // Classic script (not a module): top-level let/const/function share the
 // global scope across all src/*.js files, preserving original semantics.
@@ -156,10 +158,13 @@ export function updateZoneLabelPositions() {
 // free). Controlled from the Settings popover (Lock / Unlock).
 //
 // Resolution order, most-specific first:
-//   1. S3 lock          — the live viewpoint, published by whoever holds the key
-//                         (api/viewpoints.ts, keyed by process.env.ADMIN_KEY)
-//   2. PRODUCT_VIEWPOINTS — the baked-in default that ships with the app
-//   3. none             — free framing, zoom floor 0.3
+//   1. Tenant lock       — per-tenant viewpoint published from the backend by a
+//                         client_admin (most specific; overrides everything below)
+//   2. S3 lock           — the global "Livinit default" viewpoint, published by
+//                         whoever holds the admin key (api/viewpoints.ts, keyed
+//                         by process.env.ADMIN_KEY)
+//   3. PRODUCT_VIEWPOINTS — the baked-in default that ships with the app
+//   4. none              — free framing, zoom floor 0.3
 //
 // Anyone with the admin key can Lock (publish) a new viewpoint from Settings; it
 // lands in S3 and every visitor picks it up on their next load. Unlock clears the
@@ -167,17 +172,14 @@ export function updateZoneLabelPositions() {
 // against process.env.ADMIN_KEY (a Vercel env var) — never stored in S3.
 const VIEWPOINTS_API = '/api/viewpoints';
 let _s3Locks = {};
+let _tenantLocks = {};
+let _vpCtx = { accessToken: null, role: null };
+export function setViewpointContext(ctx) { _vpCtx = ctx || { accessToken: null, role: null }; }
 
-// The effective viewpoint for a product (S3 published → shipped default).
-function _resolveViewpoint(key) {
-  return _s3Locks[key] || PRODUCT_VIEWPOINTS[key] || null;
-}
+// The effective viewpoint for a product (tenant lock → S3 published → shipped default).
+function _resolveViewpoint(key) { return resolveViewpoint(key, _tenantLocks, _s3Locks, PRODUCT_VIEWPOINTS); }
 // Where did the current viewpoint come from? (drives the state label)
-function _lockSource(key) {
-  if (_s3Locks[key]) return 'published';
-  if (PRODUCT_VIEWPOINTS[key]) return 'default';
-  return 'none';
-}
+function _lockSource(key) { return lockSource(key, _tenantLocks, _s3Locks, PRODUCT_VIEWPOINTS); }
 export function hasLock(key) { return _lockSource(key) !== 'none'; }
 
 // The admin key: cached in localStorage, prompted for once. Returns null if the
@@ -204,6 +206,19 @@ export async function loadLockedViewpoints() {
   refreshViewpointUI();
 }
 
+// Tenant-specific locks from the backend; global/default stay as fallback.
+export async function loadTenantViewpoints() {
+  if (!_vpCtx.accessToken) return;
+  try {
+    const res = await fetch(SIMULATOR_API + '/viewpoints', {
+      headers: { Authorization: 'Bearer ' + _vpCtx.accessToken }, cache: 'no-store',
+    });
+    if (res.ok) _tenantLocks = await res.json() || {};
+  } catch (e) { /* offline — tenant layer stays empty, fallbacks apply */ }
+  applyLockedViewpoint(appStore.getState().currentModelKey);
+  refreshViewpointUI();
+}
+
 // Set product `key`'s zoom-in floor from its published/default viewpoint. This
 // does NOT move the camera — the initial framing stays at the normal default;
 // the lock only limits how far you can zoom IN (closest allowed radius = vp.r).
@@ -223,11 +238,57 @@ function _snippetFor(key, vp) {
   return `  ${key}: { theta: ${n(vp.theta)}, phi: ${n(vp.phi)}, r: ${n(vp.r)}, tgt: [${n(vp.tgt[0])}, ${n(vp.tgt[1])}, ${n(vp.tgt[2])}] },`;
 }
 
+// Tenant lock: writes to the per-tenant backend store (Task 3), visible only
+// to this tenant. Requires client_admin role — routed to from
+// lockCurrentViewpoint/unlockCurrentViewpoint below.
+async function _lockTenantViewpoint() {
+  const key = appStore.getState().currentModelKey;
+  const viewpoint = { theta: E.sph.theta, phi: E.sph.phi, r: E.sph.r, tgt: [E.tgt.x, E.tgt.y, E.tgt.z] };
+  const btn = document.getElementById('btn-vp-lock');
+  if (btn) btn.disabled = true;
+  try {
+    const res = await fetch(SIMULATOR_API + '/viewpoints/' + encodeURIComponent(key), {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + _vpCtx.accessToken },
+      body: JSON.stringify(viewpoint),
+    });
+    if (!res.ok) { showToast('Could not save viewpoint'); return; }
+    const data = await res.json();
+    _tenantLocks[key] = data.viewpoint;
+    E.minZoomR = data.viewpoint.r;
+    refreshViewpointUI();
+    showToast('Viewpoint locked for your workspace');
+  } catch (e) { showToast('Could not save viewpoint'); }
+  finally { if (btn) btn.disabled = false; }
+}
+
+async function _unlockTenantViewpoint() {
+  const key = appStore.getState().currentModelKey;
+  if (!_tenantLocks[key]) { showToast('No workspace viewpoint set for ' + key.replace('_', ' ')); return; }
+  const btn = document.getElementById('btn-vp-unlock');
+  if (btn) btn.disabled = true;
+  try {
+    const res = await fetch(SIMULATOR_API + '/viewpoints/' + encodeURIComponent(key), {
+      method: 'DELETE', headers: { Authorization: 'Bearer ' + _vpCtx.accessToken },
+    });
+    if (!res.ok && res.status !== 204) { showToast('Could not clear viewpoint'); return; }
+    delete _tenantLocks[key];
+    applyLockedViewpoint(key);
+    showToast('Workspace viewpoint cleared — back to default');
+  } catch (e) { showToast('Could not clear viewpoint'); }
+  finally { if (btn) btn.disabled = false; }
+}
+
 // Lock: publish the current pose as this product's viewpoint for EVERY visitor.
 // Requires the admin key (prompted once, cached). On success it lands in S3 and
 // the next visitor's load picks it up. Also shows a matching PRODUCT_VIEWPOINTS
 // snippet so the shipped default can be kept in sync.
+//
+// client_admin tenants route to the per-tenant backend lock instead (Task 3) —
+// the admin-key S3 path below stays code-reachable as a Livinit-internal tool
+// but is hidden from the UI (see refreshViewpointUI's role gate).
 export async function lockCurrentViewpoint() {
+  if (_vpCtx.role === 'client_admin') return _lockTenantViewpoint();
   const key = appStore.getState().currentModelKey;
   const adminKey = _getAdminKey('Enter the viewpoint admin key to publish this shot to all visitors:');
   if (!adminKey) return;
@@ -262,6 +323,7 @@ export async function lockCurrentViewpoint() {
 // Unlock: clear this product's published viewpoint (requires the key) and revert
 // to the shipped default.
 export async function unlockCurrentViewpoint() {
+  if (_vpCtx.role === 'client_admin') return _unlockTenantViewpoint();
   const key = appStore.getState().currentModelKey;
   if (!_s3Locks[key]) { showToast('No published viewpoint to clear for ' + key.replace('_', ' ')); return; }
   const adminKey = _getAdminKey('Enter the viewpoint admin key to clear this published shot:');
@@ -289,9 +351,16 @@ export function refreshViewpointUI() {
   const key = appStore.getState().currentModelKey;
   const src = _lockSource(key);
   const vp = _resolveViewpoint(key);
-  const base = { published: 'Published to all', default: 'Using shipped default', none: 'No zoom limit set' }[src];
+  const base = { tenant: 'Locked for your workspace', published: 'Published to all',
+                 default: 'Using shipped default', none: 'No zoom limit set' }[src];
   label.textContent = vp ? `${base} · zoom-in min ${vp.r.toFixed(2)}` : base;
   _updateViewpointReadout();
+
+  const isVpAdmin = _vpCtx.role === 'client_admin';
+  const lockBtn = document.getElementById('btn-vp-lock');
+  const unlockBtn = document.getElementById('btn-vp-unlock');
+  if (lockBtn) lockBtn.style.display = isVpAdmin ? '' : 'none';
+  if (unlockBtn) unlockBtn.style.display = isVpAdmin ? '' : 'none';
 }
 
 // Live theta/phi/r readout — updated as the camera moves while Settings is open.
@@ -514,6 +583,52 @@ export function initThree() {
     const minR = appStore.getState().roomMode ? 0.3 : (E.minZoomR || 0.3);
     E.sph.r=Math.max(minR,Math.min(30,E.sph.r+e.deltaY*0.004));camUpdate();e.preventDefault();
   },{passive:false});
+
+  // ── Touch controls (tablet): 1-finger orbit, 2-finger pinch-zoom + pan ──
+  // Mirrors the mouse handlers above; same speeds, same zoom clamps as wheel.
+  // preventDefault stops page pan/zoom and synthetic mouse events on the
+  // canvas (dbltap-to-move-furniture stays mouse-only for now).
+  let touchMode = null, lastTouches = [];
+  const _tDist = t => Math.hypot(t[0].clientX - t[1].clientX, t[0].clientY - t[1].clientY);
+  // targetTouches, NOT touches: a finger resting elsewhere on the page (e.g.
+  // scrolling the swatch panel two-handed) must not corrupt canvas gestures.
+  canvas.addEventListener('touchstart', e => {
+    if (E.dragActive) return;
+    e.preventDefault();
+    lastTouches = [...e.targetTouches];
+    touchMode = e.targetTouches.length === 2 ? 'pinch' : 'orbit';
+  }, {passive: false});
+  canvas.addEventListener('touchmove', e => {
+    if (E.dragActive) return;
+    e.preventDefault();
+    const t = [...e.targetTouches];
+    if (touchMode === 'pinch' && t.length === 2 && lastTouches.length === 2) {
+      const d0 = _tDist(lastTouches), d1 = _tDist(t);
+      if (d0 > 0 && d1 > 0) {
+        const minR = appStore.getState().roomMode ? 0.3 : (E.minZoomR || 0.3);
+        E.sph.r = Math.max(minR, Math.min(30, E.sph.r * (d0 / d1)));
+      }
+      const mx0 = (lastTouches[0].clientX + lastTouches[1].clientX) / 2,
+            my0 = (lastTouches[0].clientY + lastTouches[1].clientY) / 2,
+            mx1 = (t[0].clientX + t[1].clientX) / 2,
+            my1 = (t[0].clientY + t[1].clientY) / 2;
+      const spd = 0.002 * E.sph.r;
+      const right = new THREE.Vector3().crossVectors(E.camera.getWorldDirection(new THREE.Vector3()), E.camera.up).normalize();
+      E.tgt.addScaledVector(right, -(mx1 - mx0) * spd);
+      E.tgt.addScaledVector(E.camera.up, (my1 - my0) * spd);
+      camUpdate();
+    } else if (touchMode === 'orbit' && t.length === 1 && lastTouches.length >= 1) {
+      const dx = t[0].clientX - lastTouches[0].clientX, dy = t[0].clientY - lastTouches[0].clientY;
+      E.sph.theta -= dx * 0.007;
+      E.sph.phi = Math.max(0.1, Math.min(Math.PI - 0.1, E.sph.phi - dy * 0.007));
+      camUpdate();
+    }
+    lastTouches = t;
+  }, {passive: false});
+  canvas.addEventListener('touchend', e => {
+    lastTouches = [...e.targetTouches];
+    touchMode = e.targetTouches.length === 2 ? 'pinch' : e.targetTouches.length === 1 ? 'orbit' : null;
+  });
 
   // ── Hover-to-zoom fabric preview ─────────────────────────────────────────
   // Dwell on a part for HOVER_ZOOM_DELAY ms → show a magnified lens of the

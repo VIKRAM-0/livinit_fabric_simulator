@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "private": true,
   "scripts": {
-    "test:unit": "node --test test/history.test.mjs test/design-state.test.mjs test/saved-store.test.mjs",
+    "test:unit": "node --test test/history.test.mjs test/design-state.test.mjs test/saved-store.test.mjs test/saved-store-api.test.mjs test/migrate-local-designs.test.mjs test/viewpoint-resolve.test.mjs",
     "test:design": "node test/design-check.mjs"
   },
   "engines": {

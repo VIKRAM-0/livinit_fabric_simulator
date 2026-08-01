@@ -6,7 +6,8 @@ import '../components/ui/panels.js';   // side-effect: injects slider/applied ma
 import { E, markDirty, showToast, _gltfSceneCache, roomFurnitureModels } from '../lib/engine.js';
 import { appStore } from '../lib/store.js';
 import { CHAIR_GLB, ACCENT_CHAIR_GLB, SOFA_GLB, getGLBUrl } from '../lib/catalog.js';
-import { getSession, initAuthUI, hideGate, showDraftGate, signOut } from '../lib/auth.js';
+import { getSession, initAuthUI, showAuthGate, hideGate, showDraftGate, showAuthNetError, signOut, watchForSignOut } from '../lib/auth.js';
+import { showWorkspaceSetup } from '../features/onboarding/workspace-setup.js';
 import { loadTenantCatalog, applyTenantToUI, spendRenderCredit } from '../lib/tenant.js';
 import { createHistory } from '../lib/history.js';
 import { captureDesignState, applyDesignState, fingerprintDesignState, defaultDesignState } from '../lib/design-state-live.js';
@@ -17,6 +18,8 @@ import * as render from '../features/render/index.js';
 import * as finder from '../features/finder/index.js';
 import * as saved from '../features/saved/index.js';
 import '../features/tour/tour.js';      // self-wires window._tour*
+import { initSavedStore } from '../features/saved/saved-panel.js';
+import { migrateLocalDesigns } from '../features/saved/migrate-local-designs.js';
 
 // Inline onclick= handlers + cross-feature window.* calls resolve here.
 Object.assign(window, configurator, library, room, render, finder, saved,
@@ -88,13 +91,8 @@ document.addEventListener('click', e => {
 // App bootstrap — runs only after a session exists and the tenant catalog is
 // applied (multi-tenant gate at the bottom of this file). `allowed` is the
 // tenant's product-key list; the initial load + preload respect it.
-function startApp(allowed){
-window.loadScripts([
-  'https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/DRACOLoader.js',
-  'https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js',
-  'https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/environments/RoomEnvironment.js',
-  'https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/TransformControls.js',
-]).then(()=>{
+function startApp(allowed, scriptsReady){
+scriptsReady.then(()=>{
   window.initThree();
 
   // Init TransformControls for furniture move mode
@@ -133,10 +131,14 @@ window.loadScripts([
   // is showing. Owner sets these via the lock icon (admin); everyone else just
   // inherits the framed pose + zoom-in floor.
   window.loadLockedViewpoints?.();
+  window.loadTenantViewpoints?.();
 
   // Background preload — only the tenant's own models, cached so every tab
   // switch is instant. Other tenants' products are never fetched.
-  [
+  // Defer until the FIRST model is on screen — these are 7-9 MB each and were
+  // competing with the visible model for bandwidth. model.js fires
+  // _onModelReady once, after processGLTF completes, then nulls it.
+  window._onModelReady = () => [
     { url: ACCENT_CHAIR_GLB, roomKey: 'accent_chair' },
     { url: SOFA_GLB,         roomKey: 'sofa' },
   ].filter(({ roomKey }) => allowed.includes(roomKey)).forEach(({ url, roomKey }) => {
@@ -155,18 +157,20 @@ window.loadScripts([
 }).catch(e=>{console.error('Script load failed',e);showToast('Failed to load Three.js loaders');});
 }
 
-// ── Multi-tenant gate ─────────────────────────────────────────────────────
-// No session → login screen. Draft tenant → "being set up". Live tenant →
-// scope the UI to their catalog, wire the account chrome, then boot.
-async function bootWithSession(session){
-  hideGate();
-  const tenant = await loadTenantCatalog(session);
-  if (tenant.status === 'draft') { showDraftGate(tenant); return; }
+// ── Boot ────────────────────────────────────────────────────────────────
+// Guest sandbox stays the default, no-login landing (see design doc §1).
+// A real session gates on the tenant's live status via GET /simulator/me.
+async function bootWithSession(session, tenant){
+  const scriptsReady = window.loadScripts([
+    'https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/DRACOLoader.js',
+    'https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js',
+    'https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/environments/RoomEnvironment.js',
+    'https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/TransformControls.js',
+  ]);
   const first = applyTenantToUI(tenant, session) || 'chair';
+  window.setViewpointContext?.({ accessToken: session.accessToken || null, role: tenant.role || null });
   _wireTenantMenu(session, tenant);
-  startApp(tenant.products.length ? tenant.products : ['chair']);
-  // Demo credit meter: count each render against the badge. Real counter
-  // comes from GET /api/billing once the credits contract is wired.
+  startApp(tenant.products.length ? tenant.products : ['chair'], scriptsReady);
   const _render = window.renderScene;
   window.renderScene = (...a) => { spendRenderCredit(); return _render(...a); };
   void first;
@@ -180,13 +184,59 @@ function _wireTenantMenu(session, tenant){
     `${session.user.name} · ${tenant.name}`;
   av.addEventListener('click', e => { e.stopPropagation(); menu.classList.toggle('open'); });
   document.addEventListener('click', () => menu.classList.remove('open'));
-  document.getElementById('tenant-signout')?.addEventListener('click', signOut);
+  document.getElementById('tenant-signin')?.addEventListener('click', e => { e.stopPropagation(); showAuthGate(); });
+  document.getElementById('tenant-signout')?.addEventListener('click', e => { e.stopPropagation(); signOut(); }, { once: true });
 }
 
-{
-  const s = getSession();
-  if (s) bootWithSession(s); else initAuthUI(bootWithSession);
+// Entry point: resolve the session, then either boot straight in (demo, or
+// a real 'live' tenant) or show the appropriate gate state. initAuthUI()
+// wires the form once up front regardless of path — cheap, and needed
+// before showAuthGate() can be meaningfully shown from the tenant menu.
+async function main(){
+  initAuthUI();
+  hideGate();
+  watchForSignOut();
+
+  const session = await getSession();
+  const result = await loadTenantCatalog(session);
+
+  if (result.networkError) {
+    showAuthNetError(() => location.reload());
+    return;
+  }
+  if (result.staffNotSupported) {
+    showToast('Staff console not built yet — sign in with a client account.');
+    signOut();
+    return;
+  }
+  if (result.blocked) {
+    showDraftGate(result.tenant);
+    return;
+  }
+
+  if (session.source === 'real' && !result.businessGoal) {
+    if (result.role !== 'client_admin') {
+      showDraftGate(result);
+      return;
+    }
+    showWorkspaceSetup(result, (updatedTenant) => bootWithSession(session, updatedTenant));
+    return;
+  }
+
+  const store = initSavedStore(session);
+  if (session.source === 'real') {
+    // Fire-and-forget: a failed migration retries next login; never blocks boot.
+    migrateLocalDesigns(session.user.email, store).then(({ migrated, limitHit }) => {
+      if (migrated) showToast(migrated + ' design' + (migrated > 1 ? 's' : '') + ' synced to your account');
+      if (limitHit) showToast('Design limit reached — some local designs were not synced');
+    }).catch(() => {});
+  }
+
+  hideGate();
+  await bootWithSession(session, result);
 }
+
+main();
 
 // Narrow-window sidebar drawer toggle (floating "Fabrics" pill; no-op >=1024px)
 function toggleSidebar(){ document.getElementById('right-panel')?.classList.toggle('open'); }

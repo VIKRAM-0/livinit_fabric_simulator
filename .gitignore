@@ -3,3 +3,4 @@ test/.shots/
 test/.asset-cache/
 .DS_Store
 .superpowers/
+.worktrees/
